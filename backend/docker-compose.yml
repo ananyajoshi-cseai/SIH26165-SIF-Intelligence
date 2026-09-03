@@ -1,0 +1,16 @@
+services:
+  db:
+    image: pgvector/pgvector:pg17
+    container_name: sif-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: sif_intelligence
+      POSTGRES_USER: sif_user
+      POSTGRES_PASSWORD: sif_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - sif_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  sif_postgres_data:
