@@ -12,11 +12,14 @@ class ReportCreate(BaseModel):
 
 
 class ReportResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True,
+        populate_by_name=True,
+    )
 
     id: UUID
     raw_text: str
-    metadata: dict
+    metadata: dict = Field(validation_alias="metadata_")
     is_synthetic: bool
 
 
