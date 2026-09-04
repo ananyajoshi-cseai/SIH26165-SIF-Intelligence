@@ -1,6 +1,7 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from app.services.csv_service import import_reports_from_csv
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
@@ -78,6 +79,40 @@ def analyze_report_endpoint(
         confidence=analysis.confidence,
         extraction=analysis.extracted_data,
     )
+
+@router.post("/upload", status_code=status.HTTP_201_CREATED)
+async def upload_reports(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+):
+    if not file.filename or not file.filename.lower().endswith(".csv"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only CSV files are supported",
+        )
+
+    content = await file.read()
+
+    try:
+        reports = import_reports_from_csv(db, content)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
+    return {
+        "filename": file.filename,
+        "total_rows": len(reports),
+        "created": len(reports),
+        "reports": [
+            {
+                "report_id": str(report.id),
+                "site": report.metadata_.get("site", "Unknown"),
+            }
+            for report in reports
+        ],
+    }
 
 @router.get(
     "/{report_id}",
