@@ -3,8 +3,9 @@ from app.services.vector_service import find_similar_reports
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from app.services.csv_service import import_reports_from_csv
 from sqlalchemy.orm import Session
-
+from app.services.graph_service import build_causal_graph
 from app.db.database import get_db
+from app.schemas.graph import GraphResponse
 from app.schemas.report import (
     AnalyzeRequest,
     AnalyzeResponse,
@@ -113,6 +114,8 @@ async def upload_reports(
             for report in reports
         ],
     }
+
+
 @router.get("/{report_id}/similar")
 def get_similar_reports_endpoint(
     report_id: UUID,
@@ -142,6 +145,27 @@ def get_similar_reports_endpoint(
             for report, similarity in results
         ],
     }
+
+@router.get(
+    "/{report_id}/graph",
+    response_model=GraphResponse,
+)
+def get_causal_graph(
+    report_id: UUID,
+    db: Session = Depends(get_db),
+):
+    try:
+        return build_causal_graph(
+            db=db,
+            report_id=report_id,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+
+
 @router.get(
     "/{report_id}",
     response_model=ReportResponse,
