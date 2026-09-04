@@ -4,7 +4,13 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
-from app.schemas.report import ReportCreate, ReportResponse
+from app.schemas.report import (
+    AnalyzeRequest,
+    AnalyzeResponse,
+    ReportCreate,
+    ReportResponse,
+)
+from app.services.analysis_service import analyze_report
 from app.services.report_service import (
     create_report,
     delete_report,
@@ -44,6 +50,34 @@ def list_reports(
 ):
     return get_reports(db)
 
+@router.post(
+    "/analyze",
+    response_model=AnalyzeResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def analyze_report_endpoint(
+    payload: AnalyzeRequest,
+    db: Session = Depends(get_db),
+):
+    report = create_report(
+        db=db,
+        raw_text=payload.text,
+        site=payload.site,
+        is_synthetic=True,
+    )
+
+    analysis = analyze_report(
+        db=db,
+        report=report,
+    )
+
+    return AnalyzeResponse(
+        report_id=report.id,
+        risk_score=analysis.risk_score,
+        risk_level=analysis.sif_level,
+        confidence=analysis.confidence,
+        extraction=analysis.extracted_data,
+    )
 
 @router.get(
     "/{report_id}",
