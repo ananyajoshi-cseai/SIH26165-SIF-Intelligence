@@ -1,5 +1,5 @@
 from uuid import UUID
-
+from app.services.vector_service import find_similar_reports
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from app.services.csv_service import import_reports_from_csv
 from sqlalchemy.orm import Session
@@ -113,7 +113,35 @@ async def upload_reports(
             for report in reports
         ],
     }
+@router.get("/{report_id}/similar")
+def get_similar_reports_endpoint(
+    report_id: UUID,
+    db: Session = Depends(get_db),
+):
+    try:
+        results = find_similar_reports(
+            db=db,
+            report_id=report_id,
+            top_k=3,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
 
+    return {
+        "report_id": str(report_id),
+        "similar_reports": [
+            {
+                "report_id": str(report.id),
+                "similarity": round(float(similarity), 4),
+                "site": report.metadata_.get("site", "Unknown"),
+                "text": report.raw_text,
+            }
+            for report, similarity in results
+        ],
+    }
 @router.get(
     "/{report_id}",
     response_model=ReportResponse,

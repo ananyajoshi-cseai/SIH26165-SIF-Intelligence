@@ -1,5 +1,5 @@
 from uuid import UUID
-
+from app.services.vector_service import generate_and_store_embedding
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -22,8 +22,9 @@ def create_report(
     db.commit()
     db.refresh(report)
 
-    return report
+    generate_and_store_embedding(db, report)
 
+    return report
 
 def get_report(
     db: Session,
