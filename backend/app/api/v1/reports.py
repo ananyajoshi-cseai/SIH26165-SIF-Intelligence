@@ -26,6 +26,9 @@ from app.services.vector_service import find_similar_reports
 from app.schemas.pattern import EmergingPatternsResponse
 from app.services.pattern_service import detect_emerging_patterns
 
+from app.schemas.barrier import BarrierIntelligenceResponse
+from app.services.barrier_service import get_barrier_failure_intelligence
+
 router = APIRouter(
     prefix="/reports",
     tags=["Reports"],
@@ -202,6 +205,19 @@ def submit_feedback(
         risk_level=analysis.sif_level,
         confidence=analysis.confidence,
         status=analysis.status,
+    )
+
+@router.get(
+    "/barrier-intelligence",
+    response_model=BarrierIntelligenceResponse,
+)
+def get_barrier_intelligence(
+    db: Session = Depends(get_db),
+):
+    barrier_failures = get_barrier_failure_intelligence(db)
+
+    return BarrierIntelligenceResponse(
+        barrier_failures=barrier_failures,
     )
 
 @router.get(
