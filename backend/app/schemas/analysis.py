@@ -22,3 +22,15 @@ class AnalysisResponse(BaseModel):
     sif_level: str
     confidence: float
     status: str
+
+
+class FeedbackRequest(BaseModel):
+    extracted_data: ExtractionData
+
+
+class FeedbackResponse(BaseModel):
+    report_id: UUID
+    risk_score: int
+    risk_level: str
+    confidence: float
+    status: str

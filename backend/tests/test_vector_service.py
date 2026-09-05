@@ -40,19 +40,19 @@ def test_find_similar_reports():
 
     try:
         report_a = Report(
-            raw_text="Worker entered a confined space without atmospheric testing.",
+            raw_text="Worker entered a confined space during midnight maintenance at Unit Orion without atmospheric testing.",
             metadata_={"site": "Test Site A"},
             is_synthetic=True,
         )
 
         report_b = Report(
-            raw_text="Worker entered a confined space and atmospheric testing was incomplete.",
+            raw_text="Worker entered a confined space during night maintenance at Unit Orion and atmospheric testing was incomplete.",
             metadata_={"site": "Test Site B"},
             is_synthetic=True,
         )
 
         report_c = Report(
-            raw_text="Worker was exposed to an unguarded rotating machine.",
+            raw_text="Worker was exposed to an unguarded rotating machine during pump maintenance at Unit Vega.",
             metadata_={"site": "Test Site C"},
             is_synthetic=True,
         )
