@@ -23,7 +23,8 @@ from app.services.report_service import (
     get_reports,
 )
 from app.services.vector_service import find_similar_reports
-
+from app.schemas.pattern import EmergingPatternsResponse
+from app.services.pattern_service import detect_emerging_patterns
 
 router = APIRouter(
     prefix="/reports",
@@ -203,6 +204,18 @@ def submit_feedback(
         status=analysis.status,
     )
 
+@router.get(
+    "/emerging-patterns",
+    response_model=EmergingPatternsResponse,
+)
+def get_emerging_patterns(
+    db: Session = Depends(get_db),
+):
+    patterns = detect_emerging_patterns(db)
+
+    return EmergingPatternsResponse(
+        patterns=patterns,
+    )
 
 @router.get(
     "/{report_id}",
