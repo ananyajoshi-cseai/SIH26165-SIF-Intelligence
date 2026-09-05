@@ -1,10 +1,10 @@
 from uuid import UUID
-from app.services.vector_service import find_similar_reports
+
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
-from app.services.csv_service import import_reports_from_csv
 from sqlalchemy.orm import Session
-from app.services.graph_service import build_causal_graph
+
 from app.db.database import get_db
+from app.schemas.analysis import FeedbackRequest, FeedbackResponse
 from app.schemas.graph import GraphResponse
 from app.schemas.report import (
     AnalyzeRequest,
@@ -13,12 +13,17 @@ from app.schemas.report import (
     ReportResponse,
 )
 from app.services.analysis_service import analyze_report
+from app.services.csv_service import import_reports_from_csv
+from app.services.feedback_service import validate_analysis
+from app.services.graph_service import build_causal_graph
 from app.services.report_service import (
     create_report,
     delete_report,
     get_report,
     get_reports,
 )
+from app.services.vector_service import find_similar_reports
+
 
 router = APIRouter(
     prefix="/reports",
@@ -52,6 +57,7 @@ def list_reports(
 ):
     return get_reports(db)
 
+
 @router.post(
     "/analyze",
     response_model=AnalyzeResponse,
@@ -80,6 +86,7 @@ def analyze_report_endpoint(
         confidence=analysis.confidence,
         extraction=analysis.extracted_data,
     )
+
 
 @router.post("/upload", status_code=status.HTTP_201_CREATED)
 async def upload_reports(
@@ -146,6 +153,7 @@ def get_similar_reports_endpoint(
         ],
     }
 
+
 @router.get(
     "/{report_id}/graph",
     response_model=GraphResponse,
@@ -164,6 +172,36 @@ def get_causal_graph(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(exc),
         ) from exc
+
+
+@router.put(
+    "/{report_id}/feedback",
+    response_model=FeedbackResponse,
+)
+def submit_feedback(
+    report_id: UUID,
+    payload: FeedbackRequest,
+    db: Session = Depends(get_db),
+):
+    try:
+        analysis = validate_analysis(
+            db=db,
+            report_id=report_id,
+            corrected_data=payload.extracted_data,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+
+    return FeedbackResponse(
+        report_id=analysis.report_id,
+        risk_score=analysis.risk_score,
+        risk_level=analysis.sif_level,
+        confidence=analysis.confidence,
+        status=analysis.status,
+    )
 
 
 @router.get(
