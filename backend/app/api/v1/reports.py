@@ -2,7 +2,8 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
-
+from app.schemas.dashboard import DashboardSummaryResponse
+from app.services.dashboard_service import get_dashboard_summary
 from app.db.database import get_db
 from app.schemas.analysis import FeedbackRequest, FeedbackResponse
 from app.schemas.graph import GraphResponse
@@ -232,6 +233,16 @@ def get_emerging_patterns(
     return EmergingPatternsResponse(
         patterns=patterns,
     )
+
+@router.get(
+    "/dashboard-summary",
+    response_model=DashboardSummaryResponse,
+)
+def get_dashboard_summary_endpoint(
+    db: Session = Depends(get_db),
+):
+    return get_dashboard_summary(db)
+
 
 @router.get(
     "/{report_id}",
