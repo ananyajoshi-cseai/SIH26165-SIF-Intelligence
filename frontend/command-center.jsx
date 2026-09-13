@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   FileText,
   ShieldAlert,
@@ -16,6 +16,7 @@ import {
   Cell,
 } from "recharts";
 import { IMG, UploadWidget } from "./oil-safety-portal.jsx";
+import { getDashboardSummary } from "../src/api.js";
 
 const C = {
   navy: "#0A2A43",
@@ -179,33 +180,6 @@ function CommandFooter() {
   );
 }
 
-const kpiData = [
-  {
-    label: "Total Reports",
-    value: "1,248",
-    subtext: "Across assigned sites",
-    icon: FileText,
-  },
-  {
-    label: "High SIF Precursors",
-    value: "37",
-    subtext: "Require immediate attention",
-    icon: ShieldAlert,
-  },
-  {
-    label: "Emerging Pattern Flag",
-    value: "4",
-    subtext: "New patterns detected",
-    icon: TrendingUp,
-  },
-  {
-    label: "Most Failed Barrier",
-    value: "Energy Isolation",
-    subtext: "Repeated barrier failure",
-    icon: ShieldCheck,
-  },
-];
-
 const siteRiskData = [
   {
     site: "Refinery A",
@@ -236,44 +210,6 @@ const siteRiskData = [
     risk: 27,
     level: "LOW",
     reports: 144,
-  },
-];
-
-const highSIFReports = [
-  {
-    id: "SIF-1024",
-    site: "Refinery A",
-    incident: "Loss of containment during maintenance",
-    date: "05 Sep 2026",
-    score: 92,
-  },
-  {
-    id: "SIF-1019",
-    site: "Offshore Platform B",
-    incident: "Energy isolation deviation",
-    date: "04 Sep 2026",
-    score: 88,
-  },
-  {
-    id: "SIF-1016",
-    site: "Refinery A",
-    incident: "Hydrocarbon leak near process unit",
-    date: "03 Sep 2026",
-    score: 85,
-  },
-  {
-    id: "SIF-1011",
-    site: "Terminal C",
-    incident: "Permit-to-work violation",
-    date: "02 Sep 2026",
-    score: 81,
-  },
-  {
-    id: "SIF-1007",
-    site: "Refinery D",
-    incident: "Unexpected equipment energization",
-    date: "01 Sep 2026",
-    score: 79,
   },
 ];
 
@@ -554,7 +490,7 @@ function SiteRiskComparison() {
   );
 }
 
-function HighSIFReports() {
+function HighSIFReports({ reports }) {
   return (
     <section
       style={{
@@ -645,9 +581,9 @@ function HighSIFReports() {
       </div>
 
       {/* Reports */}
-      {highSIFReports.map((report, index) => (
+      {reports.map((report, index) => (
         <div
-          key={report.id}
+          key={String(report.id).slice(0, 8)}
           style={{
             display: "grid",
             gridTemplateColumns: "90px 150px 1fr 110px 80px 85px",
@@ -656,7 +592,7 @@ function HighSIFReports() {
             padding: "15px 22px",
             background: index % 2 === 0 ? C.card : "#FAF9F5",
             borderBottom:
-              index !== highSIFReports.length - 1
+              index !== reports.length - 1
                 ? `1px solid ${C.line}`
                 : "none",
           }}
@@ -670,7 +606,7 @@ function HighSIFReports() {
               fontFamily: "'Inter', sans-serif",
             }}
           >
-            {report.id}
+            {String(report.id).slice(0, 8)}
           </div>
 
           {/* Site */}
@@ -718,7 +654,7 @@ function HighSIFReports() {
               fontFamily: "'Inter', sans-serif",
             }}
           >
-            {report.date}
+            {new Date(report.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
           </div>
 
           {/* Risk Score */}
@@ -831,6 +767,97 @@ backgroundPosition: "center",
 }
 
 export default function CommandCenter() {
+  const [dashboard, setDashboard] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadDashboard() {
+      try {
+        setLoading(true);
+        setError("");
+
+        const data = await getDashboardSummary();
+
+        if (!cancelled) {
+          setDashboard(data);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err.message || "Unable to load dashboard data.");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadDashboard();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const kpiData = dashboard
+    ? [
+        {
+          label: "Total Reports",
+          value: dashboard.total_reports.toLocaleString(),
+          subtext: "Across assigned sites",
+          icon: FileText,
+        },
+        {
+          label: "High SIF Precursors",
+          value: dashboard.high_sif_precursors.toLocaleString(),
+          subtext: "Require immediate attention",
+          icon: ShieldAlert,
+        },
+        {
+          label: "Emerging Pattern Flag",
+          value: dashboard.emerging_pattern_count.toLocaleString(),
+          subtext: "New patterns detected",
+          icon: TrendingUp,
+        },
+        {
+          label: "Most Failed Barrier",
+          value: dashboard.most_failed_barrier || "None detected",
+          subtext: "Repeated barrier failure",
+          icon: ShieldCheck,
+        },
+      ]
+    : [
+        {
+          label: "Total Reports",
+          value: "—",
+          subtext: "Loading dashboard data",
+          icon: FileText,
+        },
+        {
+          label: "High SIF Precursors",
+          value: "—",
+          subtext: "Loading dashboard data",
+          icon: ShieldAlert,
+        },
+        {
+          label: "Emerging Pattern Flag",
+          value: "—",
+          subtext: "Loading dashboard data",
+          icon: TrendingUp,
+        },
+        {
+          label: "Most Failed Barrier",
+          value: "—",
+          subtext: "Loading dashboard data",
+          icon: ShieldCheck,
+        },
+      ];
+
+  const highSIFReports = dashboard?.recent_high_sif_reports || [];
+
   return (
     <div
       style={{
@@ -895,7 +922,7 @@ export default function CommandCenter() {
           ))}
         </div>
         <SiteRiskComparison />
-        <HighSIFReports />
+        <HighSIFReports reports={highSIFReports} />
       </main>
 
       <CommandFooter />

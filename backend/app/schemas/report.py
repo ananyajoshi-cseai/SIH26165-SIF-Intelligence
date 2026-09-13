@@ -1,8 +1,8 @@
-from uuid import UUID
+﻿from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.schemas.analysis import ExtractionData, RiskBreakdown
+from app.schemas.analysis import AnalysisResponse, ExtractionData, RiskBreakdown
 
 
 class ReportCreate(BaseModel):
@@ -12,15 +12,12 @@ class ReportCreate(BaseModel):
 
 
 class ReportResponse(BaseModel):
-    model_config = ConfigDict(
-        from_attributes=True,
-        populate_by_name=True,
-    )
-
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
     id: UUID
     raw_text: str
     metadata: dict = Field(validation_alias="metadata_")
     is_synthetic: bool
+    analysis: AnalysisResponse | None = None
 
 
 class AnalyzeRequest(BaseModel):

