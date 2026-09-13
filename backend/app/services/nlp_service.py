@@ -52,7 +52,6 @@ class MockNLPService:
             "fall from ladder", "falls from ladder",
             "falling from", "fell from",
             "employee falls from", "worker falls from",
-            "employee falls into sink hole", "employee falls into sinkhole",
         ]):
             return ExtractionData(
                 activity="Work at height",
@@ -83,7 +82,9 @@ class MockNLPService:
             "toppled derrick", "rig mast collapsed", "collapsing rig mast",
             "mast collapsed", "collapsing mast", "structure collapsed",
             "structural collapse", "equipment collapsed", "equipment collapse",
-            "tower collapsed", "rig collapsed",
+            "tower collapsed", "rig collapsed", "derrick structure fails",
+            "structure fails", "structural failure", "equipment overturns",
+            "equipment overturn", "cooler overturns", "cooler overturn",
         ]):
             return ExtractionData(
                 activity="Equipment operation",
@@ -98,7 +99,7 @@ class MockNLPService:
         if any(p in text_lower for p in [
             "sink hole", "sinkhole", "trench collapse", "trench collapsed",
             "excavation collapse", "excavation collapsed", "cave-in", "cave in",
-            "soil collapse", "ground collapse", "without shoring", "missing shoring",
+            "soil collapse", "ground collapse", "ground failure", "without shoring", "missing shoring",
         ]):
             return ExtractionData(
                 activity="Excavation / earthwork",
@@ -128,7 +129,8 @@ class MockNLPService:
         if any(p in text_lower for p in [
             "hydrogen sulfide", "hydrogen sulphide", "h2s",
             "noxious fumes", "toxic fumes", "toxic gas", "toxic atmosphere",
-            "poisonous gas", "overcome by gas",
+            "poisonous gas", "hydrocarbon gas", "hydrocarbon gase",
+            "hydrocarbon fumes", "gas exposure", "overcome by gas",
             "overcome by hydrogen sulfide",
         ]):
             return ExtractionData(
@@ -174,7 +176,7 @@ class MockNLPService:
             "backed over by a truck", "backed over by truck", "backed over",
             "run over by", "struck by truck", "truck strikes",
             "vehicle strikes", "vehicle struck", "vehicle collision",
-            "vehicle rollover",
+            "vehicle rollover", "truck tipover", "truck rollover", "forklift tipover",
         ]):
             return ExtractionData(
                 activity="Vehicle / mobile equipment operation",
@@ -205,7 +207,10 @@ class MockNLPService:
             "caught in", "caught-in", "caught between", "caught-between",
             "trapped between", "crushes hand", "crushed hand", "crush injury",
             "crushed between", "hand under motor", "hand under machinery",
-            "between two pipes", "between pipes",
+            "between two pipes", "between pipes", "caught by rotating pipe",
+            "caught by cable winch", "caught by winch", "pinned between",
+            "trapped by", "trapped under", "crushed by", "crushed and killed",
+            "crushed when", "pinned under",
         ]):
             activity = (
                 "Drilling operation"
@@ -289,7 +294,7 @@ class MockNLPService:
             "mud hose sheared", "hose sheared", "pressure hose",
             "pressure release", "high pressure release",
             "high-pressure release", "pressure manifold",
-            "pressurized line", "pressurized equipment",
+            "pressurized line", "pressurized equipment", "pump casing fails",
         ]):
             return ExtractionData(
                 activity="High-pressure equipment operation",
@@ -333,7 +338,7 @@ class MockNLPService:
 
         # GAS / HYDROCARBON / FIRE
         if any(p in text_lower for p in [
-            "gas leak", "gas leakage", "natural gas", "hydrocarbon leak",
+            "gas leak", "gas leakage", "gas release", "natural gas", "hydrocarbon leak",
             "hydrocarbon release", "hydrocarbon vapors", "lpg", "naphtha",
             "kerosene", "flash fire", "explosion", "exploded", "ignition",
             "flammable vapour", "flammable vapor",
