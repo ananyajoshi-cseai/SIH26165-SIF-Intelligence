@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { uploadReports } from "../src/api.js";
 import {
   LineChart,
   Line,
@@ -351,45 +352,174 @@ function Panel({ title, icon: Icon, children, tone }) {
 /* ------------------------------------------------------------------ */
  export function UploadWidget({ compact, onIngest }) {
   const [fileName, setFileName] = useState(null);
-  const [status, setStatus] = useState("idle"); // idle | analyzing | done
+  const [status, setStatus] = useState("idle"); // idle | analyzing | done | error
+  const [message, setMessage] = useState("");
   const inputRef = React.useRef(null);
 
-  const handleFile = (f) => {
+  const handleFile = async (f) => {
     if (!f) return;
+
     setFileName(f.name);
     setStatus("analyzing");
-    setTimeout(() => {
+    setMessage("");
+
+    try {
+      const result = await uploadReports(f);
+
       setStatus("done");
-      onIngest && onIngest(f.name);
-    }, 1400);
+      setMessage(
+        `${result.analyzed ?? result.created ?? 0} report(s) analysed successfully`
+      );
+
+      onIngest && onIngest(f.name, result);
+    } catch (error) {
+      console.error("Report upload failed:", error);
+      setStatus("error");
+      setMessage(error.message || "Upload failed. Please try again.");
+    }
   };
+
+  const isBusy = status === "analyzing";
 
   return (
     <div style={{
-      border: `1.5px dashed ${status === "done" ? C.greenGood : C.line}`, borderRadius: 4,
-      padding: compact ? "12px 14px" : "18px 16px", background: status === "done" ? "#F1F8F3" : "#FBFAF6",
-      display: "flex", alignItems: "center", gap: 12,
+      border: `1.5px dashed ${
+        status === "done"
+          ? C.greenGood
+          : status === "error"
+            ? "#B42318"
+            : C.line
+      }`,
+      borderRadius: 4,
+      padding: compact ? "12px 14px" : "18px 16px",
+      background:
+        status === "done"
+          ? "#F1F8F3"
+          : status === "error"
+            ? "#FFF5F4"
+            : "#FBFAF6",
+      display: "flex",
+      alignItems: "center",
+      gap: 12,
     }}>
-      <input ref={inputRef} type="file" style={{ display: "none" }}
-        onChange={(e) => handleFile(e.target.files[0])} />
+      <input
+        ref={inputRef}
+        type="file"
+        accept=".csv"
+        style={{ display: "none" }}
+        onChange={(e) => {
+          handleFile(e.target.files[0]);
+          e.target.value = "";
+        }}
+      />
+
       <div style={{
-        width: 34, height: 34, borderRadius: 4, background: C.navy, display: "flex",
-        alignItems: "center", justifyContent: "center", flexShrink: 0,
+        width: 34,
+        height: 34,
+        borderRadius: 4,
+        background: status === "error" ? "#B42318" : C.navy,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0,
       }}>
-        {status === "analyzing" ? <Loader2 size={16} color="#fff" className="spin" /> :
-          status === "done" ? <CheckCircle2 size={16} color="#fff" /> : <Upload size={16} color="#fff" />}
+        {status === "analyzing" ? (
+          <Loader2 size={16} color="#fff" className="spin" />
+        ) : status === "done" ? (
+          <CheckCircle2 size={16} color="#fff" />
+        ) : status === "error" ? (
+          <XCircle size={16} color="#fff" />
+        ) : (
+          <Upload size={16} color="#fff" />
+        )}
       </div>
+
       <div style={{ flex: 1, fontFamily: "'Inter',sans-serif" }}>
-        {!fileName && <div style={{ fontSize: 13, color: C.ink, fontWeight: 600 }}>Upload another incident report</div>}
-        {fileName && status === "analyzing" && <div style={{ fontSize: 13, color: C.ink }}>Analysing <b>{fileName}</b>…</div>}
-        {fileName && status === "done" && <div style={{ fontSize: 13, color: C.greenGood, fontWeight: 600 }}>{fileName} ingested — added to Reports queue</div>}
-        {!fileName && <div style={{ fontSize: 12, color: C.inkSoft, marginTop: 1 }}>.csv, .xlsx, .pdf, .docx up to 20MB</div>}
+        {!fileName && (
+          <div style={{
+            fontSize: 13,
+            color: C.ink,
+            fontWeight: 600,
+          }}>
+            Upload another incident report
+          </div>
+        )}
+
+        {fileName && status === "analyzing" && (
+          <div style={{ fontSize: 13, color: C.ink }}>
+            Analysing <b>{fileName}</b>�
+          </div>
+        )}
+
+        {fileName && status === "done" && (
+          <>
+            <div style={{
+              fontSize: 13,
+              color: C.greenGood,
+              fontWeight: 600,
+            }}>
+              {fileName} uploaded successfully
+            </div>
+            <div style={{
+              fontSize: 11.5,
+              color: C.inkSoft,
+              marginTop: 2,
+            }}>
+              {message}
+            </div>
+          </>
+        )}
+
+        {fileName && status === "error" && (
+          <>
+            <div style={{
+              fontSize: 13,
+              color: "#B42318",
+              fontWeight: 600,
+            }}>
+              Upload failed
+            </div>
+            <div style={{
+              fontSize: 11.5,
+              color: C.inkSoft,
+              marginTop: 2,
+            }}>
+              {message}
+            </div>
+          </>
+        )}
+
+        {!fileName && (
+          <div style={{
+            fontSize: 12,
+            color: C.inkSoft,
+            marginTop: 1,
+          }}>
+            .csv up to 20MB
+          </div>
+        )}
       </div>
-      <button onClick={() => inputRef.current.click()} disabled={status === "analyzing"} style={{
-        background: "#fff", color: C.navy, border: `1px solid ${C.navy}`, borderRadius: 4,
-        padding: "8px 14px", fontFamily: "'Inter',sans-serif", fontWeight: 700, fontSize: 12.5,
-        cursor: status === "analyzing" ? "default" : "pointer", flexShrink: 0,
-      }}>{status === "done" ? "Upload another" : "Choose file"}</button>
+
+      <button
+        onClick={() => inputRef.current?.click()}
+        disabled={isBusy}
+        style={{
+          background: "#fff",
+          color: C.navy,
+          border: `1px solid ${C.navy}`,
+          borderRadius: 4,
+          padding: "8px 14px",
+          fontFamily: "'Inter',sans-serif",
+          fontWeight: 700,
+          fontSize: 12.5,
+          cursor: isBusy ? "default" : "pointer",
+          flexShrink: 0,
+        }}
+      >
+        {status === "done" || status === "error"
+          ? "Upload another"
+          : "Choose file"}
+      </button>
     </div>
   );
 }

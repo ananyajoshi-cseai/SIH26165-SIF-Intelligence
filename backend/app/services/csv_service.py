@@ -7,7 +7,7 @@ from app.models.report import Report
 from app.services.report_service import create_report
 
 
-REQUIRED_COLUMNS = {"site", "text"}
+REQUIRED_COLUMNS = {"site"}
 
 
 def parse_csv(content: bytes) -> list[dict]:
@@ -41,11 +41,23 @@ def parse_csv(content: bytes) -> list[dict]:
         missing = ", ".join(sorted(missing_columns))
         raise ValueError(f"Missing required columns: {missing}")
 
+    text_column = next(
+        (
+            column
+            for column in reader.fieldnames
+            if column and column.strip().lower() in {"text", "report_text"}
+        ),
+        None,
+    )
+
+    if text_column is None:
+        raise ValueError("Missing required columns: text")
+
     rows = []
 
     for row_number, row in enumerate(reader, start=2):
         site = (row.get("site") or "").strip()
-        report_text = (row.get("text") or "").strip()
+        report_text = (row.get(text_column) or "").strip()
 
         if not report_text:
             raise ValueError(
