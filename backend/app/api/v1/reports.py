@@ -112,6 +112,7 @@ async def upload_reports(
 
     try:
         reports = import_reports_from_csv(db, content)
+        analyses = [analyze_report(db, report) for report in reports]
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -122,12 +123,15 @@ async def upload_reports(
         "filename": file.filename,
         "total_rows": len(reports),
         "created": len(reports),
+        "analyzed": len(analyses),
         "reports": [
             {
                 "report_id": str(report.id),
                 "site": report.metadata_.get("site", "Unknown"),
+                "risk_score": analysis.risk_score,
+                "risk_level": analysis.sif_level,
             }
-            for report in reports
+            for report, analysis in zip(reports, analyses)
         ],
     }
 
