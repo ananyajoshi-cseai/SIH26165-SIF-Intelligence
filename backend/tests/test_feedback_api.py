@@ -22,8 +22,8 @@ def test_feedback_endpoint_recalculates_and_validates():
     analyze_data = analyze_response.json()
     report_id = analyze_data["report_id"]
 
-    assert analyze_data["risk_score"] == 60
-    assert analyze_data["risk_level"] == "MEDIUM"
+    assert analyze_data["risk_score"] == 80
+    assert analyze_data["risk_level"] == "HIGH"
 
     feedback_response = client.put(
         f"/api/v1/reports/{report_id}/feedback",

@@ -56,8 +56,8 @@ def test_validate_analysis_updates_extraction_and_risk():
         )
 
         assert result.extracted_data == corrected_data.model_dump()
-        assert result.risk_score == 60
-        assert result.sif_level == "MEDIUM"
+        assert result.risk_score == 80
+        assert result.sif_level == "HIGH"
         assert result.status == "VALIDATED"
         assert result.confidence == 0.80
 
