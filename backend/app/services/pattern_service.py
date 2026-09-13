@@ -19,22 +19,51 @@ def _get_precursor_value(
     return value.strip()
 
 
-def _count_precursors(
-    analyses: list[Analysis],
-    field: str,
-) -> dict[str, int]:
-    counts: dict[str, int] = {}
+def _severity_label(current_count: int) -> str:
+    if current_count >= 10:
+        return "CRITICAL"
+    if current_count >= 5:
+        return "HIGH"
+    return "MODERATE"
 
-    for analysis in analyses:
-        value = _get_precursor_value(
-            analysis.extracted_data,
-            field,
+
+def _build_precursor_summary(
+    rows: list[tuple[Report, Analysis]],
+    field: str,
+) -> dict[str, dict]:
+    """Group (report, analysis) rows by precursor value, tracking count,
+    contributing sites, report ids, and the most recent occurrence."""
+    summary: dict[str, dict] = {}
+
+    for report, analysis in rows:
+        value = _get_precursor_value(analysis.extracted_data, field)
+
+        if not value:
+            continue
+
+        entry = summary.setdefault(
+            value,
+            {
+                "count": 0,
+                "sites": {},
+                "report_ids": [],
+                "last_reported_at": None,
+            },
         )
 
-        if value:
-            counts[value] = counts.get(value, 0) + 1
+        entry["count"] += 1
 
-    return counts
+        site = report.metadata_.get("site", "Unknown")
+        entry["sites"][site] = entry["sites"].get(site, 0) + 1
+        entry["report_ids"].append(str(report.id))
+
+        if (
+            entry["last_reported_at"] is None
+            or report.created_at > entry["last_reported_at"]
+        ):
+            entry["last_reported_at"] = report.created_at
+
+    return summary
 
 
 def detect_emerging_patterns(
@@ -54,14 +83,14 @@ def detect_emerging_patterns(
 
     rows = db.execute(statement).all()
 
-    current_analyses = [
-        analysis
+    current_rows = [
+        (report, analysis)
         for report, analysis in rows
         if report.created_at >= current_start
     ]
 
-    previous_analyses = [
-        analysis
+    previous_rows = [
+        (report, analysis)
         for report, analysis in rows
         if previous_start <= report.created_at < current_start
     ]
@@ -72,32 +101,47 @@ def detect_emerging_patterns(
         ("hazard", "hazard"),
         ("barrier_failure", "barrier_failure"),
     ]:
-        current_counts = _count_precursors(
-            current_analyses,
-            field,
-        )
-        previous_counts = _count_precursors(
-            previous_analyses,
-            field,
-        )
+        current_summary = _build_precursor_summary(current_rows, field)
+        previous_summary = _build_precursor_summary(previous_rows, field)
 
-        for precursor, current_count in current_counts.items():
-            previous_count = previous_counts.get(
-                precursor,
-                0,
-            )
+        for precursor, current_info in current_summary.items():
+            current_count = current_info["count"]
+            previous_count = previous_summary.get(precursor, {}).get("count", 0)
 
-            if (
-                current_count >= 3
-                and current_count > previous_count * 2
-            ):
+            if current_count >= 3 and current_count > previous_count * 2:
+                increase = current_count - previous_count
+
+                percentage_increase = (
+                    round((increase / previous_count) * 100, 1)
+                    if previous_count > 0
+                    else None
+                )
+
+                top_sites = sorted(
+                    current_info["sites"].items(),
+                    key=lambda item: item[1],
+                    reverse=True,
+                )
+
                 patterns.append(
                     {
                         "precursor_type": precursor_type,
                         "precursor": precursor,
                         "current_count": current_count,
                         "previous_count": previous_count,
-                        "increase": current_count - previous_count,
+                        "increase": increase,
+                        "percentage_increase": percentage_increase,
+                        "severity": _severity_label(current_count),
+                        "top_sites": [
+                            {"site": site, "count": count}
+                            for site, count in top_sites[:3]
+                        ],
+                        "affected_report_ids": current_info["report_ids"][:5],
+                        "last_reported_at": (
+                            current_info["last_reported_at"].isoformat()
+                            if current_info["last_reported_at"]
+                            else None
+                        ),
                     }
                 )
 

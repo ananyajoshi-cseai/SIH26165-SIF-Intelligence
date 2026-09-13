@@ -161,6 +161,13 @@ def get_similar_reports_endpoint(
                 "similarity": round(float(similarity), 4),
                 "site": report.metadata_.get("site", "Unknown"),
                 "text": report.raw_text,
+                "hazard": (
+                    report.analysis.extracted_data.get("hazard", "Unknown")
+                    if report.analysis
+                    else "Unknown"
+                ),
+                "risk_level": report.analysis.sif_level if report.analysis else None,
+                "risk_score": report.analysis.risk_score if report.analysis else None,
             }
             for report, similarity in results
         ],
