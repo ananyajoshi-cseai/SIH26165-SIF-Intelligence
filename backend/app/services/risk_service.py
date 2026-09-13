@@ -85,6 +85,27 @@ def _match_weight(value: str | None, weights: dict[str, float]) -> float:
     return 0
 
 
+def get_risk_breakdown(extracted_data: dict) -> dict[str, float]:
+    return {
+        "hazard": _match_weight(
+            extracted_data.get("hazard"),
+            HAZARD_SEVERITY,
+        ),
+        "exposure": _match_weight(
+            extracted_data.get("exposure"),
+            EXPOSURE_SEVERITY,
+        ),
+        "barrier_failure": _match_weight(
+            extracted_data.get("barrier_failure"),
+            BARRIER_FAILURE_SEVERITY,
+        ),
+        "consequence": _match_weight(
+            extracted_data.get("potential_consequence"),
+            CONSEQUENCE_SEVERITY,
+        ),
+    }
+
+
 def calculate_risk_score(extracted_data: dict) -> int:
     """
     Deterministic SIF risk score.

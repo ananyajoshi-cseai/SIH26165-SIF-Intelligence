@@ -12,6 +12,13 @@ class ExtractionData(BaseModel):
     potential_consequence: str | None = None
 
 
+class RiskBreakdown(BaseModel):
+    hazard: float
+    exposure: float
+    barrier_failure: float
+    consequence: float
+
+
 class AnalysisResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -34,3 +41,4 @@ class FeedbackResponse(BaseModel):
     risk_level: str
     confidence: float
     status: str
+    risk_breakdown: RiskBreakdown
