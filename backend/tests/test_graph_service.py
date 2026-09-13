@@ -45,14 +45,15 @@ def test_build_causal_graph():
         )
 
         assert graph.report_id == report.id
-        assert len(graph.nodes) == 4
-        assert len(graph.edges) == 3
+        assert len(graph.nodes) == 5
+        assert len(graph.edges) == 4
 
         node_types = {node.type for node in graph.nodes}
 
         assert node_types == {
             "activity",
             "hazard",
+            "barrier",
             "barrier_failure",
             "consequence",
         }
@@ -60,20 +61,25 @@ def test_build_causal_graph():
         node_labels = {node.label for node in graph.nodes}
 
         assert node_labels == {
-            "Confined space entry",
-            "Confined space",
-            "Atmospheric testing not completed",
-            "Fatality",
-        }
+        "Confined space entry",
+        "Confined space",
+        "Atmospheric testing",
+        "Atmospheric testing not completed",
+        "Fatality",
+    }
 
         assert graph.edges[0].source == "activity"
         assert graph.edges[0].target == "hazard"
 
         assert graph.edges[1].source == "hazard"
-        assert graph.edges[1].target == "barrier_failure"
+        assert graph.edges[1].target == "barrier"
 
-        assert graph.edges[2].source == "barrier_failure"
-        assert graph.edges[2].target == "consequence"
+        assert graph.edges[2].source == "barrier"
+        assert graph.edges[2].target == "barrier_failure"
+
+        assert graph.edges[3].source == "barrier_failure"
+        assert graph.edges[3].target == "consequence"
+
 
     finally:
         db.delete(analysis)

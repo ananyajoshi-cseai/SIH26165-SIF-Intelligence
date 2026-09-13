@@ -1,4 +1,4 @@
-from uuid import UUID
+﻿from uuid import UUID
 
 from sqlalchemy.orm import Session
 
@@ -20,6 +20,7 @@ def build_causal_graph(db: Session, report_id: UUID) -> GraphResponse:
 
     activity = data.get("activity") or "Unknown"
     hazard = data.get("hazard") or "Unknown"
+    barrier = data.get("barrier") or "Unknown"
     barrier_failure = data.get("barrier_failure") or "Unknown"
     consequence = data.get("potential_consequence") or "Unknown"
 
@@ -33,6 +34,11 @@ def build_causal_graph(db: Session, report_id: UUID) -> GraphResponse:
             id="hazard",
             type="hazard",
             label=hazard,
+        ),
+        GraphNode(
+            id="barrier",
+            type="barrier",
+            label=barrier,
         ),
         GraphNode(
             id="barrier_failure",
@@ -53,6 +59,10 @@ def build_causal_graph(db: Session, report_id: UUID) -> GraphResponse:
         ),
         GraphEdge(
             source="hazard",
+            target="barrier",
+        ),
+        GraphEdge(
+            source="barrier",
             target="barrier_failure",
         ),
         GraphEdge(

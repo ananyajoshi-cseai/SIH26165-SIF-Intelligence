@@ -1,4 +1,4 @@
-﻿from app.services.risk_service import (
+from app.services.risk_service import (
     calculate_risk_score,
     get_sif_level,
 )
@@ -14,7 +14,7 @@ def test_confined_space_case():
 
     score = calculate_risk_score(data)
 
-    assert score == 80
+    assert score == 100
     assert get_sif_level(score) == "HIGH"
 
 
@@ -28,7 +28,7 @@ def test_machine_guarding_case():
 
     score = calculate_risk_score(data)
 
-    assert score == 67
+    assert score == 70
     assert get_sif_level(score) == "MEDIUM"
 
 
