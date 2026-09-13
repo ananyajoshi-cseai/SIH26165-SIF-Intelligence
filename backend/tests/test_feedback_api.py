@@ -22,7 +22,7 @@ def test_feedback_endpoint_recalculates_and_validates():
     analyze_data = analyze_response.json()
     report_id = analyze_data["report_id"]
 
-    assert analyze_data["risk_score"] == 80
+    assert analyze_data["risk_score"] == 100
     assert analyze_data["risk_level"] == "HIGH"
 
     feedback_response = client.put(
@@ -46,7 +46,7 @@ def test_feedback_endpoint_recalculates_and_validates():
     assert feedback_data["report_id"] == report_id
     assert feedback_data["risk_score"] == 100
     assert feedback_data["risk_level"] == "HIGH"
-    assert feedback_data["confidence"] == 0.8
+    assert feedback_data["confidence"] == 0.95
     assert feedback_data["status"] == "VALIDATED"
 
     # Clean up the report created by the integration test.

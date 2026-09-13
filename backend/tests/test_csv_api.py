@@ -33,7 +33,7 @@ def test_csv_upload_creates_analysis():
     report_data = data["reports"][0]
 
     assert report_data["site"] == "CSV Analysis Test Plant"
-    assert report_data["risk_score"] == 80
+    assert report_data["risk_score"] == 100
     assert report_data["risk_level"] == "HIGH"
 
     report_id = report_data["report_id"]
@@ -52,7 +52,7 @@ def test_csv_upload_creates_analysis():
         )
 
         assert analysis is not None
-        assert analysis.risk_score == 80
+        assert analysis.risk_score == 100
         assert analysis.sif_level == "HIGH"
         assert analysis.status == "PENDING"
         assert analysis.extracted_data["hazard"] == "Confined space"

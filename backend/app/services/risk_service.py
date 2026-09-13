@@ -89,19 +89,19 @@ def get_risk_breakdown(extracted_data: dict) -> dict[str, float]:
     return {
         "hazard": _match_weight(
             extracted_data.get("hazard"),
-            HAZARD_SEVERITY,
+            HAZARD_WEIGHTS,
         ),
         "exposure": _match_weight(
             extracted_data.get("exposure"),
-            EXPOSURE_SEVERITY,
+            EXPOSURE_WEIGHTS,
         ),
         "barrier_failure": _match_weight(
             extracted_data.get("barrier_failure"),
-            BARRIER_FAILURE_SEVERITY,
+            BARRIER_FAILURE_WEIGHTS,
         ),
         "consequence": _match_weight(
             extracted_data.get("potential_consequence"),
-            CONSEQUENCE_SEVERITY,
+            CONSEQUENCE_WEIGHTS,
         ),
     }
 
@@ -114,14 +114,23 @@ def calculate_risk_score(extracted_data: dict) -> int:
     """
     hazard_weight = _match_weight(extracted_data.get("hazard"), HAZARD_WEIGHTS)
     exposure_multiplier = _match_weight(extracted_data.get("exposure"), EXPOSURE_WEIGHTS)
-    barrier_failure_weight = _match_weight(extracted_data.get("barrier_failure"), BARRIER_FAILURE_WEIGHTS)
-    consequence_weight = _match_weight(extracted_data.get("potential_consequence"), CONSEQUENCE_WEIGHTS)
+    barrier_failure_weight = _match_weight(
+        extracted_data.get("barrier_failure"),
+        BARRIER_FAILURE_WEIGHTS,
+    )
+    consequence_weight = _match_weight(
+        extracted_data.get("potential_consequence"),
+        CONSEQUENCE_WEIGHTS,
+    )
 
-    # Default multiplier of 1.0 if exposure not matched (still score hazard + barriers)
     if exposure_multiplier == 0:
         exposure_multiplier = 1.0
 
-    score = (hazard_weight * exposure_multiplier) + barrier_failure_weight + consequence_weight
+    score = (
+        (hazard_weight * exposure_multiplier)
+        + barrier_failure_weight
+        + consequence_weight
+    )
     return min(round(score), 100)
 
 
@@ -147,9 +156,8 @@ def calculate_confidence(extracted_data: dict) -> float:
         extracted_data.get("barrier_failure"),
         extracted_data.get("potential_consequence"),
     ]
-    known = sum(1 for f in fields if f and f.strip().lower() != "unknown")
+    known = sum(
+        1 for f in fields
+        if f and f.strip().lower() != "unknown"
+    )
     return round((known / len(fields)) * 0.95, 2)
-
-
-
-

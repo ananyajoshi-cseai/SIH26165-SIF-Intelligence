@@ -1,10 +1,13 @@
-from uuid import UUID
+﻿from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.report import Report
 from app.services.embedding_service import embedding_service
+
+
+SIMILARITY_THRESHOLD = 0.75
 
 
 def generate_and_store_embedding(
@@ -26,7 +29,7 @@ def find_similar_reports(
     report_id: UUID,
     top_k: int = 3,
 ) -> list[tuple[Report, float]]:
-    """Find the most similar reports using pgvector cosine distance."""
+    """Find similar reports using pgvector cosine similarity."""
 
     report = db.get(Report, report_id)
 
@@ -37,12 +40,14 @@ def find_similar_reports(
         raise ValueError("Report does not have an embedding")
 
     distance = Report.embedding.cosine_distance(report.embedding)
+    similarity = 1 - distance
 
     statement = (
-        select(Report, distance)
+        select(Report, similarity)
         .where(
             Report.id != report_id,
             Report.embedding.is_not(None),
+            similarity >= SIMILARITY_THRESHOLD,
         )
         .order_by(distance)
         .limit(top_k)
@@ -51,6 +56,6 @@ def find_similar_reports(
     results = db.execute(statement).all()
 
     return [
-        (similar_report, 1 - float(similarity_distance))
-        for similar_report, similarity_distance in results
+        (similar_report, float(similarity_score))
+        for similar_report, similarity_score in results
     ]
