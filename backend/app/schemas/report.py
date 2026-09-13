@@ -2,7 +2,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.schemas.analysis import ExtractionData
+from app.schemas.analysis import ExtractionData, RiskBreakdown
 
 
 class ReportCreate(BaseModel):
@@ -34,3 +34,4 @@ class AnalyzeResponse(BaseModel):
     risk_level: str
     confidence: float
     extraction: ExtractionData
+    risk_breakdown: RiskBreakdown

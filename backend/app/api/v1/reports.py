@@ -2,11 +2,13 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
-from app.schemas.dashboard import DashboardSummaryResponse
-from app.services.dashboard_service import get_dashboard_summary
+
 from app.db.database import get_db
-from app.schemas.analysis import FeedbackRequest, FeedbackResponse
+from app.schemas.analysis import FeedbackRequest, FeedbackResponse, RiskBreakdown
+from app.schemas.barrier import BarrierIntelligenceResponse
+from app.schemas.dashboard import DashboardSummaryResponse
 from app.schemas.graph import GraphResponse
+from app.schemas.pattern import EmergingPatternsResponse
 from app.schemas.report import (
     AnalyzeRequest,
     AnalyzeResponse,
@@ -14,21 +16,20 @@ from app.schemas.report import (
     ReportResponse,
 )
 from app.services.analysis_service import analyze_report
+from app.services.barrier_service import get_barrier_failure_intelligence
 from app.services.csv_service import import_reports_from_csv
+from app.services.dashboard_service import get_dashboard_summary
 from app.services.feedback_service import validate_analysis
 from app.services.graph_service import build_causal_graph
+from app.services.pattern_service import detect_emerging_patterns
 from app.services.report_service import (
     create_report,
     delete_report,
     get_report,
     get_reports,
 )
+from app.services.risk_service import get_risk_breakdown
 from app.services.vector_service import find_similar_reports
-from app.schemas.pattern import EmergingPatternsResponse
-from app.services.pattern_service import detect_emerging_patterns
-
-from app.schemas.barrier import BarrierIntelligenceResponse
-from app.services.barrier_service import get_barrier_failure_intelligence
 
 router = APIRouter(
     prefix="/reports",
@@ -90,6 +91,9 @@ def analyze_report_endpoint(
         risk_level=analysis.sif_level,
         confidence=analysis.confidence,
         extraction=analysis.extracted_data,
+        risk_breakdown=RiskBreakdown(
+            **get_risk_breakdown(analysis.extracted_data)
+        ),
     )
 
 
@@ -206,7 +210,11 @@ def submit_feedback(
         risk_level=analysis.sif_level,
         confidence=analysis.confidence,
         status=analysis.status,
+        risk_breakdown=RiskBreakdown(
+            **get_risk_breakdown(analysis.extracted_data)
+        ),
     )
+
 
 @router.get(
     "/barrier-intelligence",
@@ -221,6 +229,7 @@ def get_barrier_intelligence(
         barrier_failures=barrier_failures,
     )
 
+
 @router.get(
     "/emerging-patterns",
     response_model=EmergingPatternsResponse,
@@ -233,6 +242,7 @@ def get_emerging_patterns(
     return EmergingPatternsResponse(
         patterns=patterns,
     )
+
 
 @router.get(
     "/dashboard-summary",
