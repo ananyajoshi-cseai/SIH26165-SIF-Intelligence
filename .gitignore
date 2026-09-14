@@ -216,3 +216,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+# Node
+node_modules/
+
+# Local install logs
+install_log.txt
