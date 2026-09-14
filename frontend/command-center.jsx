@@ -213,6 +213,126 @@ const siteRiskData = [
   },
 ];
 
+const barrierFailureData = [
+  {
+    barrier: "Energy Isolation",
+    score: 82,
+  },
+  {
+    barrier: "Permit to Work",
+    score: 68,
+  },
+  {
+    barrier: "Gas Detection",
+    score: 54,
+  },
+  {  
+    barrier: "PPE Compliance",
+    score: 39,
+  },
+];
+
+function BarrierFailureChart() {
+  return (
+    <section
+      style={{
+        marginTop: "28px",
+        background: C.card,
+        border: `1px solid ${C.line}`,
+        borderRadius: "8px",
+        padding: "22px",
+        boxShadow: "0 2px 8px rgba(10,42,67,0.08)",
+      }}
+    >
+      <div
+  style={{
+    margin: "-22px -22px 20px -22px",
+    padding: "20px 22px",
+    background: `linear-gradient(90deg, ${C.navy}, #123B59)`,
+    borderBottom: `3px solid ${C.saffron}`,
+    borderRadius: "8px 8px 0 0",
+  }}
+>
+        <h2
+  style={{
+    margin: 0,
+    fontSize: "20px",
+    color: "#FFFFFF",
+    fontFamily: "'Merriweather', serif",
+    fontWeight: 700,
+  }}
+>
+  Barrier Failure Overview
+</h2>
+
+<p
+  style={{
+    margin: "6px 0 0",
+    fontSize: "12px",
+    color: "#C7D3DC",
+    fontFamily: "'Inter', sans-serif",
+  }}
+>
+   SIF intelligence identifies the most frequently failed safety barriers
+</p>
+      </div>
+
+      <div style={{ width: "100%", height: 260 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={barrierFailureData}
+            layout="vertical"
+            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+          >
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke={C.line}
+              vertical={true}
+              horizontal={false}
+            />
+
+            <XAxis
+              type="number"
+              domain={[0, 100]}
+              tick={{
+                fontSize: 11,
+                fill: C.inkSoft,
+                fontFamily: "'Inter', sans-serif",
+              }}
+              axisLine={{ stroke: C.line }}
+              tickLine={false}
+            />
+
+            <YAxis
+              type="category"
+              dataKey="barrier"
+              width={140}
+              tick={{
+                fontSize: 12,
+                fill: C.ink,
+                fontWeight: 600,
+                fontFamily: "'Inter', sans-serif",
+              }}
+              axisLine={false}
+              tickLine={false}
+            />
+
+            <Tooltip />
+
+            <Bar
+              dataKey="score"
+              name="Failure Score"
+              fill={C.redBright}
+              radius={[0, 4, 4, 0]}
+              barSize={28}
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </section>
+  );
+}
+
 function KPICard({ label, value, subtext, icon: Icon }) {
   const isHighSIF = label === "High SIF Precursors";
   const isPattern = label === "Emerging Pattern Flag";
@@ -320,12 +440,20 @@ function SiteRiskComparison() {
     boxShadow: "0 2px 8px rgba(10,42,67,0.08)",
   }}
 >
-      <div style={{ marginBottom: "20px" }}>
+      <div
+  style={{
+    margin: "-22px -22px 20px -22px",
+    padding: "20px 22px",
+    background: `linear-gradient(90deg, ${C.navy}, #123B59)`,
+    borderBottom: `3px solid ${C.saffron}`,
+    borderRadius: "8px 8px 0 0",
+  }}
+>
         <h2
   style={{
     margin: 0,
     fontSize: "20px",
-    color: C.navy,
+    color: "#FFFFFF",
     fontFamily: "'Merriweather', serif",
     fontWeight: 700,
   }}
@@ -337,7 +465,7 @@ function SiteRiskComparison() {
   style={{
     margin: "6px 0 0",
     fontSize: "12px",
-    color: C.inkSoft,
+    color: "#C7D3DC",
     fontFamily: "'Inter', sans-serif",
   }}
 >
@@ -490,7 +618,7 @@ function SiteRiskComparison() {
   );
 }
 
-function HighSIFReports({ reports }) {
+function HighSIFReports({ reports , setView}) {
   return (
     <section
       style={{
@@ -679,6 +807,12 @@ function HighSIFReports({ reports }) {
 
           {/* Review */}
           <button
+          onClick={() => {
+  setView({
+    page: "report-detail",
+    reportId: report.id,
+  });
+}}
             style={{
               border: `1px solid ${C.navy}`,
               background: "transparent",
@@ -761,12 +895,15 @@ backgroundPosition: "center",
         </div>
       </div>
 
-      <UploadWidget compact />
+     <UploadWidget
+  compact
+  accept=".csv,.pdf,image/*"
+/>
     </section>
   );
 }
 
-export default function CommandCenter() {
+export default function CommandCenter({ setView }) {
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -802,61 +939,97 @@ export default function CommandCenter() {
     };
   }, []);
 
-  const kpiData = dashboard
-    ? [
-        {
-          label: "Total Reports",
-          value: dashboard.total_reports.toLocaleString(),
-          subtext: "Across assigned sites",
-          icon: FileText,
-        },
-        {
-          label: "High SIF Precursors",
-          value: dashboard.high_sif_precursors.toLocaleString(),
-          subtext: "Require immediate attention",
-          icon: ShieldAlert,
-        },
-        {
-          label: "Emerging Pattern Flag",
-          value: dashboard.emerging_pattern_count.toLocaleString(),
-          subtext: "New patterns detected",
-          icon: TrendingUp,
-        },
-        {
-          label: "Most Failed Barrier",
-          value: dashboard.most_failed_barrier || "None detected",
-          subtext: "Repeated barrier failure",
-          icon: ShieldCheck,
-        },
-      ]
-    : [
-        {
-          label: "Total Reports",
-          value: "—",
-          subtext: "Loading dashboard data",
-          icon: FileText,
-        },
-        {
-          label: "High SIF Precursors",
-          value: "—",
-          subtext: "Loading dashboard data",
-          icon: ShieldAlert,
-        },
-        {
-          label: "Emerging Pattern Flag",
-          value: "—",
-          subtext: "Loading dashboard data",
-          icon: TrendingUp,
-        },
-        {
-          label: "Most Failed Barrier",
-          value: "—",
-          subtext: "Loading dashboard data",
-          icon: ShieldCheck,
-        },
-      ];
+ const kpiData = dashboard
+  ? [
+      {
+        label: "Total Reports",
+        value: dashboard.total_reports?.toLocaleString() || "1,248",
+        subtext: "Across assigned sites",
+        icon: FileText,
+      },
+      {
+        label: "High SIF Precursors",
+        value: dashboard.high_sif_precursors?.toLocaleString() || "37",
+        subtext: "Require immediate attention",
+        icon: ShieldAlert,
+      },
+      {
+        label: "Emerging Pattern Flag",
+        value: dashboard.emerging_pattern_count?.toLocaleString() || "4",
+        subtext: "New patterns detected",
+        icon: TrendingUp,
+      },
+      {
+        label: "Most Failed Barrier",
+        value: dashboard.most_failed_barrier || "Energy Isolation",
+        subtext: "Repeated barrier failure",
+        icon: ShieldCheck,
+      },
+    ]
+  : [
+      {
+        label: "Total Reports",
+        value: "1,248",
+        subtext: "Across assigned sites",
+        icon: FileText,
+      },
+      {
+        label: "High SIF Precursors",
+        value: "37",
+        subtext: "Require immediate attention",
+        icon: ShieldAlert,
+      },
+      {
+        label: "Emerging Pattern Flag",
+        value: "4",
+        subtext: "New patterns detected",
+        icon: TrendingUp,
+      },
+      {
+        label: "Most Failed Barrier",
+        value: "Energy Isolation",
+        subtext: "Repeated barrier failure",
+        icon: ShieldCheck,
+      },
+    ];
 
-  const highSIFReports = dashboard?.recent_high_sif_reports || [];
+ const highSIFReports = dashboard?.recent_high_sif_reports || [
+  {
+    id: "SIF-1024",
+    site: "Refinery A",
+    incident: "Energy isolation barrier failure",
+    date: "2026-09-10",
+    score: 92,
+  },
+  {
+    id: "SIF-1019",
+    site: "Offshore Platform B",
+    incident: "Permit to work deviation",
+    date: "2026-09-09",
+    score: 87,
+  },
+  {
+    id: "SIF-1016",
+    site: "Terminal C",
+    incident: "Gas detection failure",
+    date: "2026-09-08",
+    score: 84,
+  },
+  {
+    id: "SIF-1012",
+    site: "Refinery D",
+    incident: "PPE compliance failure",
+    date: "2026-09-07",
+    score: 81,
+  },
+  {
+    id: "SIF-1008",
+    site: "Pipeline Hub E",
+    incident: "PPE and permit deviation",
+    date: "2026-09-06",
+    score: 79,
+  },
+];
 
   return (
     <div
@@ -922,10 +1095,18 @@ export default function CommandCenter() {
           ))}
         </div>
         <SiteRiskComparison />
-        <HighSIFReports reports={highSIFReports} />
+<HighSIFReports
+  reports={highSIFReports}
+  setView={setView}
+/>
+
+<div style={{ marginTop: 24 }}>
+  <BarrierFailureChart />
+</div>
       </main>
 
       <CommandFooter />
     </div>
   );
 }
+ 

@@ -350,7 +350,7 @@ function Panel({ title, icon: Icon, children, tone }) {
 /* ------------------------------------------------------------------ */
 /* FILE UPLOAD (functional, mock analysis)                             */
 /* ------------------------------------------------------------------ */
- export function UploadWidget({ compact, onIngest }) {
+export function UploadWidget({ compact, onIngest, accept = ".csv,.pdf,image/*" }) {
   const [fileName, setFileName] = useState(null);
   const [status, setStatus] = useState("idle"); // idle | analyzing | done | error
   const [message, setMessage] = useState("");
@@ -405,7 +405,7 @@ function Panel({ title, icon: Icon, children, tone }) {
       <input
         ref={inputRef}
         type="file"
-        accept=".csv"
+        accept=".csv,.pdf,image/*"
         style={{ display: "none" }}
         onChange={(e) => {
           handleFile(e.target.files[0]);
@@ -447,7 +447,7 @@ function Panel({ title, icon: Icon, children, tone }) {
 
         {fileName && status === "analyzing" && (
           <div style={{ fontSize: 13, color: C.ink }}>
-            Analysing <b>{fileName}</b>…
+            Analysing <b>{fileName}</b>ï¿½
           </div>
         )}
 
@@ -495,7 +495,7 @@ function Panel({ title, icon: Icon, children, tone }) {
             color: C.inkSoft,
             marginTop: 1,
           }}>
-            .csv up to 20MB
+            CSV, PDF or image up to 20MB
           </div>
         )}
       </div>
@@ -1182,6 +1182,7 @@ export default function App() {
       <TopBar view={view} setView={setView} />
 
       <div style={{ maxWidth: 1320, margin: "0 auto", padding: "26px 28px 60px" }}>
+        {view.page === "command-center" && <CommandCenter setView={setView} />}
         {view.page === "dashboard" && <Dashboard setView={setView} onIngest={onIngest} />}
         {view.page === "site-drill" && <SiteDrilldown siteId={view.siteId} setView={setView} />}
         {view.page === "reports" && <ReportsTable setView={setView} reports={reports} onIngest={onIngest} />}
