@@ -1,0 +1,251 @@
+report_id,date,site,department,report_text,is_synthetic
+7e198f57-fa56-4dd0-9a7c-a28d3b773889,2002-10-02,Oil Well Drilling Service,Drilling,"One Killed, One Injured When Track Drill Strikes Power Line",False
+bf409ed0-ac7a-4b7d-b438-0ae70ba05e18,2002-11-15,Oil Well Drilling Service,Drilling,Employee Killed When Struck By Crane Boom,False
+9d785164-e153-4be0-8f53-0c31e096bac7,2002-11-16,Drilling Rig,Drilling,Oil Rig Fire Kills One Employee And Injures Another,False
+e9575e13-be0d-4845-a00c-154b6eeec2d5,2002-11-17,Drilling Rig,Drilling,Employee Killed In Fall From Drilling Rig,False
+77ab826a-f664-4021-a6fc-b633cdac032d,2002-12-21,Oil Well Drilling Service,Drilling,Employee Struck In Leg By Broken Survey Line,False
+bad69b33-1b6b-4565-90f8-5e7bee3f0b8f,2003-01-31,Drilling Rig,Drilling,Employee Killed When Work-Over Rig Well Blow Up,False
+d992f4fc-96b1-43b0-9149-caf6a6088dd2,2003-04-01,Oil Well Drilling Service,Drilling,Employee Struck By Tongs,False
+403880ef-4c27-41ca-8af6-a9d2c90c34fd,2003-06-16,Oil Well Drilling Service,Drilling,Employee Struck In Head By Roller Guide,False
+303fb0a3-f97b-4c0f-ba4c-04b00a3ae66a,2003-08-07,Oil Well Drilling Service,Drilling,Counterweight Strikes And Kills Employee,False
+cd1d3369-dbea-487a-9883-7808d108781c,2003-08-15,Oil Well Drilling Service,Drilling,Two Employees Electrocuted When Drill Boom Strikes Power Lin,False
+26582e43-dcfa-430f-a3a5-d574c142a32d,2003-09-07,Oil Well Drilling Service,Drilling,Employee Killed By Natural Gas Ignition,False
+ae5e96ed-4798-4720-8cab-4372d0e89f54,2003-10-07,Oil Well Drilling Service,Drilling,Employee Amputates Finger,False
+951c8c67-7f88-494d-8c19-5892e57702b1,2003-11-26,Oil Well Drilling Service,Drilling,Employee Killed When Caught In An Auger,False
+d1efc5dc-126e-4f2a-be22-e9ba0a6207fa,2003-12-28,Oil Well Drilling Service,Drilling,Mussel Diver Drowns,False
+555fb797-7b04-4c40-a180-9441af196424,2004-02-08,Oil Well Drilling Service,Drilling,Employee Struck By Drilling Line And Killed,False
+c7cd8428-e57d-4d16-8817-7774e9133a8b,2004-05-31,Drilling Rig,Drilling,Employee Killed When Derrick Collapsed,False
+8a292f6b-ffb9-4eb5-b088-94e6f8d19912,2004-08-02,Oil Well Drilling Service,Drilling,Employee Is Killed When Equipment Collapses,False
+5e684d8c-2acd-4b00-998f-278704b97852,2004-08-31,Oil Well,Drilling,Burned Oil Well Employee Is Hospitalized,False
+0c2c2094-61d0-4589-9315-39e4c8eb6cd1,2004-09-16,Drilling Rig,Drilling,Employee Is Injured When Drill Rig Overturns,False
+c2f55532-c903-4007-a91b-251579084099,2004-10-05,Drilling Rig,Drilling,Employee Killed In Drilling Rig Accident,False
+2ce40b99-9029-4fec-85ba-f559972b76bc,2004-10-10,Oil Well Drilling Service,Drilling,"One Employee Is Killed, Other Is Paralyzed",False
+677def9c-2160-46ef-8739-9cd754e9a611,2004-12-22,Drilling Rig,Drilling,Employee Falls From Derrick,False
+bcb678b2-5f7c-4689-9d77-221e45c7e719,2005-01-23,Oil Well Drilling Service,Drilling,Falling Pipe Strikes And Kills Employee,False
+68ee74a8-8696-499c-8129-2cc559598297,2005-02-14,Oil Well Drilling Service,Drilling,Employee Is Killed When Struck In Chest By Drilling Pipe,False
+c1ec0e45-f6b8-481c-92d2-6d882b1f9a70,2005-02-21,Oil Well,Drilling,Employee Is Killed When Caught In Water Well Drive Line,False
+56dd2cb0-eb4d-4f56-a4a3-d891fa54cd7c,2005-02-24,Oil Well Drilling Service,Drilling,Shackle Fails And Amputates Employee'S Legs,False
+04f989a6-ad17-494b-a376-f148b2f782b4,2005-05-12,Oil Well,Drilling,Employee Is Burned At Oil Well,False
+76bcad5f-42ba-4832-8892-05fbec1873cd,2005-06-02,Oil Well,Drilling,Two Employees Are Killed In Well Explosion; One Is Injured,False
+0562e488-943d-487b-83e2-00f556ea7900,2005-06-23,Oil Well Drilling Service,Drilling,Employee Is Electrocuted By Power Line; Another Is Shocked,False
+ef9f2b9e-3d62-4b19-9f90-53df81e43b83,2005-07-20,Oil Well Drilling Service,Drilling,Employee Is Killed In Fall From Broken Ladder,False
+70b7340f-d84e-48ef-a4bc-675b253892f5,2005-08-17,Drilling Rig,Drilling,Employee Is Killed When Crushed By Drill Rig,False
+c40a2bd5-1396-4695-b65a-cdf6c45dee7d,2005-09-12,Oil Well Drilling Service,Drilling,Perforating Gun Kills Employee And Injures Another,False
+2219af3a-8afa-4423-bb91-ce1e0e0ef3a0,2005-11-07,Drilling Rig,Drilling,Employee Killed In Fall From Derrick,False
+facd9af2-c1d3-4ae0-8c20-1d9821adcfde,2006-02-24,Oil Well Drilling Service,Drilling,Employee Is Killed When Caught In Rotating Kelly,False
+55ae530e-c298-4a2a-a578-b86aadb62c1d,2006-02-27,Oil Well Drilling Service,Drilling,Employee Is Struck And Killed By Unspecified Object,False
+95dda6ce-1114-439f-b2f0-d6de5e1e50f2,2006-03-03,Oil Well Drilling Service,Drilling,Employee Is Killed When Struck In Head By Ring Block,False
+27f70cf4-f6d2-4e40-8bcb-4e343803582d,2006-03-28,Oil Well Drilling Service,Drilling,Employee Is Killed When Caught By Rotating Pipe,False
+e582ce54-d625-46a7-95de-d6e119302e99,2006-04-19,Oil Well Drilling Service,Drilling,"One Employee Is Killed, One Is Injured When Cooler Overturns",False
+66170bc6-025d-4095-a0cc-a167354e6b86,2006-05-15,Oil Well Drilling Service,Drilling,Employee Is Injured While Operating Rock Drill,False
+b3d93cd8-6a59-4282-9a15-8a62ada06cbf,2006-06-22,Oil Well Drilling Service,Drilling,Employee Is Killed When Struck By Drill Rod,False
+4363249a-4cfe-4dc2-aa76-4287d136d708,2006-08-17,Drilling Rig,Drilling,Employee Amputates Finger In Drill Rig,False
+6030e1dc-64d3-4bc9-a6dd-28f6b8193a4b,2006-09-06,Oil Well Drilling Service,Drilling,Employee Is Killed By Falling Blocks,False
+19076f38-0be6-4cae-8bcb-f84e8d09129a,2006-10-05,Drilling Rig,Drilling,Employee Dies After He Is Pinned Between Outrigger And Winch,False
+ccee9052-3e86-48aa-b921-b308ce5754d7,2006-10-19,Drilling Rig,Drilling,Employee Is Killed When Oil Rig Tips Over,False
+cd03ac0e-bcea-4e16-899f-b1bfe3d61124,2006-12-08,Oil Well Drilling Service,Drilling,Employee Working Alone Is Killed As Bucket Truck Boom Lowers,False
+9ae2adf6-f944-44e6-b533-421796d1fc21,2006-12-10,Oil Well Drilling Service,Drilling,Employee Is Injured When Struck By Unstable Object,False
+13588dae-e24c-43cb-9622-8149df9fdb2a,2006-12-21,Oil Well Drilling Service,Drilling,Employee Is Killed When Head Is Struck By Bar,False
+01f59ce7-3798-4641-aff0-612579fcc1a7,2006-12-25,Oil Well,Drilling,Employee Is Crushed During Oil Well Drilling,False
+4beb07bc-1512-459b-975e-365c699f12f4,2007-01-26,Oil Well Drilling Service,Drilling,Employee Is Killed When Clothing Is Caught In Auger,False
+4b3fbda6-aefc-432c-ac80-36dab80388eb,2007-01-26,Oil Well Drilling Service,Drilling,Employee Dies After Being Trapped By Lowered Forklift Boom,False
+c6a8de89-a281-498f-b8f6-4ac4e760c1f9,2007-02-13,Oil Well Drilling Service,Drilling,Employee Is Crushed Between Counterweight And Pump Frame,False
+4f81e12b-f0a1-415a-8f96-a9396cc21e4e,2007-06-14,Oil Well Drilling Service,Drilling,Employee Is Killed From Electric Shock,False
+3a2c0b43-d9f6-49f6-bcab-04bade2eda63,2007-08-04,Drilling Rig,Drilling,Employee'S Fingertip Amputated In Drill Rig Accident,False
+33b6c7c6-7869-45fb-bde7-316e077e91c6,2007-09-01,Oil Well Drilling Service,Drilling,Employee Is Killed When Caught By Cable Winch,False
+3acfdc34-a72b-45ee-87ea-23406b17383a,2007-09-10,Oil Well Drilling Service,Drilling,Employee Falls Into Sink Hole And Is Injured,False
+4a7fac57-9d84-48cd-bb7d-94d92b0ef83a,2007-09-17,Oil Well Drilling Service,Drilling,Employee Dies After Being Caught In Cat Line,False
+ae854245-ab3c-4cb0-87d8-cf0612e777d0,2007-10-26,Oil Well Drilling Service,Drilling,Three Employees Are Burned In Explosion When Heater Is Lit,False
+2c360f68-aee3-409c-a86e-816b594586f1,2007-10-26,Oil Well Drilling Service,Drilling,Employee Killed When Head Strikes Rebar,False
+bbb20064-0e4e-42c5-8649-ab90e56f0ab6,2007-11-02,Oil Well Drilling Service,Drilling,Employee Suffers Chemical Burns On Feet,False
+ee6c4d82-1d08-4a3d-8824-f69aa2e592a9,2007-11-17,Oil Well Drilling Service,Drilling,Employee Strikes Rod Basket And Is Killed,False
+4fb1aad0-5b3d-4969-874c-71c8130b7d8f,2007-12-29,Drilling Rig,Drilling,Drill Rig Worker Is Killed When Struck By Discharge Hose,False
+55a97282-0c00-4348-aaa4-641ed18b24ae,2008-04-17,Drilling Rig,Drilling,Two Employees Killed When Struck By Collapsing Derrick,False
+e21f885f-bca0-4f4d-a749-ffe47bf69ec2,2008-05-06,Oil Well Drilling Service,Drilling,"Employee'S Leg Is Struck By Falling Object, Later Amputated",False
+896239bc-f084-4005-94ee-ead23f6c39de,2008-06-04,Oil Well Drilling Service,Drilling,Employee'S Finger Is Caught In Machinery And Amputated,False
+f4736a3e-6509-4f87-9834-1db7d3f4be67,2008-06-06,Drilling Rig,Drilling,Employee Is Killed When Crushed By Drill Rig,False
+5988b1d0-9ef1-4874-b27f-f621697984d5,2008-06-18,Oil Well Drilling Service,Drilling,Employee Crushes Hand Under Motor Drive,False
+38939006-c088-4752-830b-701dca093dd4,2008-07-18,Oil Well Drilling Service,Drilling,Employee Is Struck By Drill Line And Is Killed,False
+6f22482b-01fc-4dbb-b976-efe6777333a8,2008-08-28,Oil Well Drilling Service,Drilling,Employee Amputates Arm While Restringing Boom Hoist Cable,False
+3bf597de-5a7a-474a-b619-73c95defa6a1,2008-09-03,Oil Well Drilling Service,Drilling,Employee Is Crushed And Killed In A Truck Tipover,False
+af663375-7c7d-4ed1-8a22-adef78ddf6f5,2008-09-24,Oil Well,Drilling,"Employee Is Burned When Oil Well Blows Out, Later Dies",False
+2f32307e-039f-471d-ae79-70f0c97bb7c7,2008-10-02,Oil Well Drilling Service,Drilling,"Employee Is Struck By Drill Auger, Injures Foot",False
+b34025dd-2373-45cd-8eba-2ce1cebb9b07,2008-11-20,Oil Well Drilling Service,Drilling,Employee Is Killed When Struck By A Pump Jack Horsehead,False
+92227eb5-37b2-4acf-9727-7e88f123c918,2008-11-21,Oil Well Drilling Service,Drilling,Employee Is Injured When Struck In Head By Wrench,False
+9e476d03-7026-4a93-8473-0b3257583283,2008-12-31,Oil Well,Drilling,Oil Well Worker Fractures Leg Descending Stairway,False
+fe0c76cf-2599-4640-b3e9-1608ec695800,2009-01-05,Oil Well Drilling Service,Drilling,"Employee Trips, Falls And Strikes Head, Later Dies",False
+1ddae966-ed8b-437c-a718-77aae8d1f32b,2009-02-25,Oil Well Drilling Service,Drilling,Employee'S Leg Is Pinned By Crane Drill And Is Amputated,False
+1aed6f5b-c76f-42da-ab9d-2587d6f737bf,2009-03-17,Oil Well Drilling Service,Drilling,"Employee Is Struck In The Head By Drill Pipe, Later Dies",False
+e36bb9a0-a145-418c-a9cd-a3f4c8501c5b,2009-04-13,Oil Well Drilling Service,Drilling,Worker Is Electrocuted After Cable Contacts Power Line,False
+81b8e3a7-1ad4-47e2-abbc-740242a2a27f,2009-05-09,Oil Well Drilling Service,Drilling,Employee Is Killed By Falling Vee Slide,False
+f67459e0-fca6-4a86-97bd-4f506a1374da,2009-05-20,Oil Well Drilling Service,Drilling,Five Employees Are Exposed To Noxious Fumes,False
+b461b88b-7c23-4095-b5bc-b986cc2ee148,2009-06-05,Oil Well Drilling Service,Drilling,Employee Fingers Are Crushed When Kelly Bar Drops,False
+434dba77-4742-4c06-b35b-3efd16fc3913,2009-10-04,Drilling Rig,Drilling,Oil Drilling Rig Hand Is Struck And Killed By Drill Pipe,False
+fee186c1-9e4d-4d05-b3bf-8c18e789e986,2010-09-21,Oil Well Drilling Service,Drilling,Employee Receives Bruises And Contusions Struck By Object,False
+6d716417-ee3a-43e6-a0af-ca72c7c3be23,2010-11-10,Drilling Rig,Drilling,Employee Is Injured When Assembling A Rat Hole Drilling Rig,False
+6c946967-2083-4cdb-9591-f59334b9a135,2010-12-01,Oil Well Drilling Service,Drilling,Three Employees Burned When Gas Release From Flange Ignites,False
+8dcf88d3-e35a-41fa-bbc4-0a29f20e8ab4,2011-01-04,Oil Well Drilling Service,Drilling,Employee Is Struck And Killed By Mud From Standpipe,False
+7807982c-ab28-404c-a3a4-178181e04bd5,2011-01-14,Oil Well Drilling Service,Drilling,Employee Dies After Being Struck By Pipe,False
+fe7aada1-d88b-4734-b5be-5adc85bcc107,2011-01-22,Oil Well Drilling Service,Drilling,Employee Is Struck And Killed By Mousehole Pipe,False
+8f629e39-ba67-4fc4-9c68-67993c818a35,2011-08-11,Oil Well Drilling Service,Drilling,Employee Is Caught In Rock Drilling Machine And Is Killed,False
+08200594-ba74-4b3f-acfe-80f759f35dfd,2011-08-29,Oil Well Drilling Service,Drilling,Employee Dies In Route To Hospital,False
+5df9b6d4-6b69-4cd8-be23-47f4bb0a5d35,2011-10-13,Oil Well Drilling Service,Drilling,Employee Is Killed When Struck By Block And Pipe,False
+ab84e5ec-64b5-430a-aaba-bf986dc1d91d,2011-10-28,Oil Well Drilling Service,Drilling,Employees Are Injured When Pump Casing Fails,False
+711e1082-480f-4270-ac09-3d5ed5004dc7,2011-12-08,Oil Well Drilling Service,Drilling,Employee Is Killed When Struck By Equipment,False
+40f4b177-b339-43a9-b782-46e6d6829dd0,2012-01-07,Oil Well Drilling Service,Storage & Logistics,Employee Gauging Oil Tank Died From Unknown Causes.,False
+a7d9d0e0-b436-4ee8-ae14-764c42fa69c4,2012-04-04,Drilling Rig,Drilling,Employee Is Killed In Fall From An Oil Derrick Rig,False
+d82a000e-60dd-4212-80ef-362b2763c033,2012-04-05,Drilling Rig,Drilling,Employee Is Crushed And Killed By Rigging Flow-Line,False
+2ee0f4bd-aaea-452c-833c-c89bc70a1c1e,2012-05-10,Drilling Rig,Drilling,Employee Dies In A Fall From Rig,False
+cfbd5da7-c1aa-4e0d-8771-201166bf2767,2012-06-05,Drilling Rig,Drilling,"Drill Rig Seat Breaks, Operator Falls, Dies From Concussion",False
+475ce233-566d-404f-9e72-b1b0c86bf7ac,2012-07-05,Oil Well Drilling Service,Drilling,One Employee Killed Two Injured During Hydraulic Fracturing,False
+8be64563-8949-418c-8f91-b381a66e6a59,2012-08-06,Drilling Rig,Drilling,Employee Is Killed In A Fall From A Rig On Oil/Gas Well Site,False
+a28d6523-dac3-4b02-90c2-46fc4e709890,2012-08-07,Oil Well Drilling Service,Drilling,Employee Goes Into Cardiac Arrest And Cannot Be Resuscitated,False
+ed9199b8-b4dc-40e1-b1b1-f7c495355ed8,2012-08-16,Oil Well Drilling Service,Drilling,Employee Is Electrocuted When In Contact With Power Line,False
+79f4fc7b-8a69-4ef6-bc01-9b5e9696a854,2012-09-21,Oil Well Drilling Service,Drilling,Employee Struck In Head By Wire Rope Fragments And Is Killed,False
+5a9d7cbf-c868-4f73-9768-2e4efd437844,2012-12-23,Drilling Rig,Drilling,Employee Falls From Derrick And Is Killed,False
+762ac56b-41a1-49b5-a285-4bc6a43b11e9,2013-01-10,Oil Well Drilling Service,Drilling,"Employee Is Struck By Falling Blocks, Falls And Is Killed",False
+429094c1-4f35-4376-81c0-639a961b5aae,2013-01-19,Oil Well Drilling Service,Drilling,Employee Is Struck By Pressurized Pipe And Is Killed,False
+1931e5c3-368c-43f4-b93d-122d94eb26e7,2013-02-20,Oil Well Drilling Service,Drilling,Employee Struck By Falling Object Is Killed,False
+99622504-07d4-4c62-bcfc-78b1b22d899e,2013-03-18,Oil Well Drilling Service,Drilling,Employee Is Struck By Falling Pipe And Is Killed,False
+67a2ccef-066f-4821-a24d-eecd425d77bc,2013-06-11,Drilling Rig,Offshore Operations,One Employee Falls From Derrick Platform And Is Killed; One,False
+9a0e5ce1-6203-420f-a889-793faadac404,2013-06-14,Drilling Rig,Drilling,Employee Falls From Oil Rig And Is Killed,False
+cf44eeac-f292-4e99-bf7a-262e7ca1ec3f,2013-06-20,Oil Well Drilling Service,Drilling,Worker Extracting Pipe Is Struck By Steel Chain Sling,False
+8c7bad0a-ba25-4924-beee-a62c27710d76,2013-06-20,Oil Well Drilling Service,Drilling,Employee Is Crushed Between Drill Line And Turn Back Roller,False
+6d3d8ae5-5bf6-44e1-8083-b2ffc4d0edc5,2013-06-24,Oil Well Drilling Service,Drilling,Employee Is Struck By Falling Work Basket And Coworker And,False
+a85bcf99-00c1-41af-b05d-8f8794212989,2013-07-18,Oil Well Drilling Service,Storage & Logistics,Employee Is Found Dead On Top Of Catwalk Of Crude Oil Tank B,False
+dcdd64af-c431-462e-a612-a28aaafda1cc,2013-08-15,Drilling Rig,Drilling,Employee Falls From Oil Rig And Is Killed,False
+267e61d8-be20-4b43-a477-92f624363e45,2013-08-29,Drilling Rig,Drilling,Employee'S Hand Is Crushed Between Wrench And Well Rig,False
+a252ab22-e197-44a9-9b48-cbd4bc211055,2013-10-09,Oil Well Drilling Service,Drilling,Employee Is Overcome By Hydrogen Sulfide Gas And Is Killed,False
+283e8122-46d2-49e1-9c63-2b60af489a35,2013-11-26,Oil Well,Drilling,Employee Is Trapped Between Equipment And Is Crushed By Well,False
+2605d30d-024c-4ec5-8cfb-d1cae77dd2d5,2013-12-04,Oil Well Drilling Service,Drilling,Driller'S Leg Is Fractured When Struck By Pipe Wrench,False
+fe615ef8-4229-4eeb-99b8-cf6a348d9f92,2014-02-26,Drilling Rig,Drilling,Employee Severely Injures Hand On Oil Rig,False
+cc923bd3-8cca-4d8f-bd1f-f5c28d0c13b4,2014-03-15,Oil Well Drilling Service,Drilling,One Employee Killed And One Seriously Burned In Flash Fire,False
+61feb60f-9c18-43cb-a633-7a630e7fbdce,2014-03-20,Drilling Rig,Drilling,Employee Struck By Rig Is Killed,False
+8459c836-1fae-4eb7-bd7c-c93a191f0fa6,2014-04-30,Oil Well Drilling Service,Drilling,Two Employees Are Struck By Metal From Exploding Sand Separa,False
+7321268b-0e8e-4052-9313-e718a7f28186,2014-05-05,Oil Well Drilling Service,Drilling,Employee Dies From Cardiac Arrest,False
+0fad8709-1de0-4a9f-8c9d-474dd0fc3600,2014-07-03,Drilling Rig,Drilling,Employee Falls From Derrick And Is Killed,False
+0a6b9824-800b-412c-9642-fa785a22b387,2014-07-10,Oil Well,Drilling,Employee Dies After Being Struck By Oil Well Casing Pipe,False
+12325701-8cc3-4ef6-b9bf-56c43514bddd,2014-07-13,Oil Well Drilling Service,Storage & Logistics,Employee Gauging Tank Dies From Exposure To Hydrocarbon Gase,False
+263f1ef9-cfb3-49c3-a336-98b581da6ebe,2014-07-24,Oil Well Drilling Service,Drilling,Employee Is Struck And Killed When Drilling Tongs Fail,False
+327e4d26-ac63-421f-a545-ad99b140f40f,2014-09-11,Oil Well Drilling Service,Drilling,Employee Is Struck By Failed Pump Jack And Is Killed,False
+0fff1700-3ccc-4a11-a0a4-bb24309ffd46,2014-10-06,Oil Well Drilling Service,Drilling,Employee Is Burned And Killed When Oil From Heater Ignites,False
+c869591a-6951-4fed-9487-90b30a38e6ba,2014-10-24,Oil Well,Drilling,Employee Is Burned During Bleeding Of A Gas Well And Is Kill,False
+2e00fdcd-8029-4067-b047-1b8043f8140e,2014-11-02,Oil Well Drilling Service,Drilling,Employee Struck By Drilling Tubular And Is Killed,False
+f00be6f2-a4e4-4670-8a15-aef627db0373,2014-11-13,Oil Well Drilling Service,Drilling,Employee Struck By Pipe Connection And Is Killed,False
+2dd98d48-d1cc-434d-9850-7bd58c307406,2014-12-09,Oil Well Drilling Service,Drilling,Employee Falls From Ladder And Is Killed,False
+082f5476-1ef9-49cc-8adc-77e83d2d4180,2015-01-08,Drilling Rig,Drilling,Employee Is Killed When Derrick Structure Fails,False
+f61106e1-f9a2-42ce-9c94-164e368f40d1,2015-06-22,Oil Well Drilling Service,Drilling,Employee Is Killed When Struck By A Falling Load,False
+8f3facc5-0efd-4f1a-9f32-a5ff245a865a,2015-06-30,Oil Well Drilling Service,Drilling,Employee Is Killed While Working Outside On A Hot Day In The,False
+ccbe5569-1bac-4672-9cbe-472457c4a09c,2015-07-17,Oil Well Drilling Service,Drilling,Employee Falls From Beam And Is Killed,False
+c19405a9-c08e-41af-8ff6-cdc30a6ae1c7,2015-07-23,Drilling Rig,Drilling,Employee Is Killed When Crushed By Falling Derrick,False
+97b3251e-0797-49f5-805b-fe699229e21c,2015-07-24,Oil Well Drilling Service,Drilling,Employee Is Killed When Struck By Truck,False
+b5900afa-faf3-4a0a-b68d-a628f9c6fbae,2015-08-11,Oil Well Drilling Service,Drilling,Employee Killed In Flash Fire,False
+0d5cda82-6273-45f2-a5db-0f2221343381,2016-01-04,Oil Well Drilling Service,Drilling,Worker Is Killed In Chemical Fire Explosion,False
+0b14a927-7e85-4e9e-ae0f-5f36c3bc6a99,2016-05-19,Oil Well Drilling Service,Drilling,Employee Is Killed In Fire Due To Flammable Vapors From Crud,False
+a0479b7f-27cc-4caa-ad89-3ddaaf09c617,2016-08-24,Oil Well Drilling Service,Drilling,Employee Was Killed When Struck By A Falling Object,False
+695fe332-689e-415a-91f4-9faa01ed658c,2016-09-01,Oil Well Drilling Service,Drilling,Employee Is Struck By Spinning Sucker Rod And Is Killed.,False
+80e4db38-5744-4681-a2c1-fab720bf6ce5,2016-12-13,Oil Well Drilling Service,Drilling,Employee Is Killed When Backed Over By A Truck,False
+528bad1b-62db-4105-b409-0805a2aa73db,2017-01-04,Oil Well Drilling Service,Drilling,Employee Is Burned To Death When Treater Shack Catches Fire.,False
+30485aec-2c9b-49a1-b8cc-12e5330b6e39,2017-01-20,Oil Well Drilling Service,Drilling,Three Employees Are Injured In Natural Gas Explosion,False
+48fe9fa9-ae2c-4e3f-a8dd-200578d38ea1,2017-01-30,Oil Well Drilling Service,Drilling,Employee'S Hip Is Fractured When Struck By Metal Pipe,False
+fa89bb61-fce6-49d4-80f8-78476b2fa1c7,2017-01-31,Oil Well Drilling Service,Drilling,"Employee Is Struck By Cable, Falls From Height And Is Killed",False
+a2e2aae1-c75e-4788-b841-e8b5783583f7,2017-03-08,Oil Well Drilling Service,Drilling,Employee Struck By Pump Jack Incurs Multiple Fractures,False
+7208ffb4-38f2-4b0f-8747-62f925ef03d8,2017-03-14,Drilling Rig,Drilling,Employee Is Struck And Killed By Falling Object On Derrick,False
+41be0981-93db-4569-99f3-b38b2d5a832d,2017-03-27,Oil Well Drilling Service,Drilling,Employee Falls From Trailer Bed And Breaks Leg,False
+734dd2c9-a4e8-41cb-b9ce-c131c3439a1e,2017-04-26,Oil Well Drilling Service,Drilling,Employee'S Finger Is Amputated When Struck By Elevator,False
+17662ed6-f461-4541-bcdc-88520d2996a4,2017-05-19,Oil Well Drilling Service,Drilling,Two Employees Are Caught In Fire From Combustible Vapors And,False
+3c90dd65-b902-442e-8430-195710453733,2017-05-30,Oil Well Drilling Service,Drilling,Employee Sustains Hand Fracture When Struck By A Sledgehamme,False
+ff0cf250-9fe8-4cf4-b0c4-7c0bb4fed63f,2017-06-01,Oil Well Drilling Service,Drilling,Employee Was Resetting A Mandrel Within A Tool And Amputates,False
+a3d97176-329d-417c-8453-acd7629ec39a,2017-06-09,Oil Well Drilling Service,Drilling,Employee Struck By Part And Is Killed,False
+f61ef70d-a196-4007-9335-afc29db6431a,2017-07-02,Oil Well Drilling Service,Offshore Operations,Employee Falls From Elevated Work Platform And Suffers Multi,False
+7d2f5485-af2a-4428-8311-37bdd4905f81,2017-09-15,Oil Well Drilling Service,Drilling,Employee Is Struck By Equipment And His Leg Is Crushed,False
+6a7f3c3f-f92a-4034-a9f8-b637dc52289a,2017-11-11,Oil Well Drilling Service,Drilling,Employee's Fingertip Is Amputated While Operating Drilling R,False
+b7384709-e346-48a3-a215-b02e48bf2ce2,2018-01-31,Oil Well Drilling Service,Drilling,Employee Is Trapped Between Two Pipes And Fractures Several,False
+b4719e86-d484-4a83-8585-396c260b63bf,2018-03-29,Rig 4 Duliajan Assam,Drilling & Exploration,Accumulator control line pinhole leak prevented rapid annular BOP seal closure.,False
+ad9a8ee4-4837-4997-84f6-63eab3fb52f5,2018-04-19,Oil Well Drilling Service,Drilling,Employee Cleaning Dredge Auger Cuts Foot,False
+07aab738-5a25-4113-9872-f3532bb2c902,2018-05-31,Oil Well Drilling Service,Drilling,Employee Pinches Index Finger With Machine Roller And Amputa,False
+e3f12e9b-d909-4ecf-831e-5c240965e51f,2018-07-02,Numaligarh Pipeline Sec 2,Pipeline Operations,Crane synthetic sling tore while lifting 18-inch coated steel pipe section.,False
+658a723a-c166-4061-85c6-51626026f2f3,2018-07-05,Oil Well Drilling Service,Drilling,Employee Partially Amputates Finger When Caught Between Auge,False
+816ac622-006c-4dd6-93f6-fbdae15f04ce,2018-08-04,Drilling Rig,Drilling,Oil Rig Employee Amputates Finger While Helping To Guide Cas,False
+ee5a3160-6389-4c22-8e29-241136e4e5e4,2018-09-15,Duliajan LPG Recovery Unit,Storage & Handling,Naphtha strain valve flange joint leaked during heat exchanger startup.,False
+8428b8f6-45de-40de-b9db-56df07854322,2018-09-27,Oil Well Drilling Service,Drilling,Employee Amputates Finger When Caught Between Jaws Of Clamp,False
+ea6f8c85-4023-4640-ac53-680da1246187,2018-11-01,Oil Well Drilling Service,Drilling,Employee Amputates Finger While Drilling Holes Into Slope,False
+0716a1ca-f75c-4be1-97f1-5204f48c5dca,2018-11-10,Digboi Refinery Assam,Refinery & Processing,Mechanical seal failed on heavy naphtha pump causing localized flash fire.,False
+32101dfc-9737-4cc9-a8cb-afb9bab8a730,2019-02-25,Oil Well Drilling Service,Drilling,Employee Amputates Finger While Removing Thread Protector Fr,False
+fa21c94a-aa06-419f-b535-9cb10d8a861d,2019-03-10,Oil Well Drilling Service,Drilling,"Employee Inhales Chemical, Later Dies",False
+23069ba0-0cbe-45b7-a349-cee9fd521285,2019-05-22,Hazira LPG Terminal,Storage & Handling,Over-fill prevention valve tripped late due to miscalibrated level transmitter.,False
+f546e998-105f-4f2b-bb3c-ded4414f4015,2019-07-22,Drilling Rig,Drilling,Employee Incurs Multiple Fractures In Fall From Derrick,False
+ce738ad1-e4b2-4c59-a6c7-6dcdd5c7437e,2019-07-29,Oil Well Drilling Service,Drilling,Employee Falls Into Auger And Amputates Legs,False
+498933ab-a7b2-412a-88db-ff9e126546d0,2019-08-03,Rig 3 Moran Assam,Drilling & Exploration,Derrickman slipped on oily platform; safety harness lanyard was anchored improperly.,False
+e28142f2-b607-4b28-a5b7-6f9d42c1d83e,2019-08-29,Oil Well Drilling Service,Drilling,Employee's Fingers Are Crushed Between Drill Components,False
+9ee9c03f-697a-4d3b-a40d-f607e97f764c,2019-08-30,Oil Well Drilling Service,Drilling,"Employee Amputates One Finger, Lacerates Another Finger When",False
+4874a9ff-49f3-4dd9-b1ab-45b8cfe5b6d0,2019-10-01,Oil Well Drilling Service,Drilling,Employee Fractures Leg When Drilling Machine Tips Over,False
+997cea81-8e9d-47ba-a4cb-fdbaa0f58bdf,2019-10-08,Barmer Basin Field,Drilling & Exploration,Floor hand struck by spinning tongs counterweight cable when safety latch failed.,False
+f3936633-41dc-47eb-be77-3ca3ccaa6a75,2019-11-12,Drilling Rig,Drilling,Employee's Fingers Are Amputated By Oil Rig,False
+f84fbb8c-b565-4e1c-9475-40f238ea322e,2019-12-14,Bongaigaon Refinery,Refinery & Processing,High-pressure steam trap bypass valve stuck open during boiler maintenance.,False
+cdacee0e-d420-415d-96ae-568596014773,2020-01-19,Oil Well Drilling Service,Drilling,Employee Fractures Ribs And Punctures Lung In Fall Into Oil,False
+ff6ac80e-bad5-4123-b05b-b31445b39031,2020-02-17,Oil Well Drilling Service,Drilling,Employee Lacerates And Fractures Fingers When Hand Is Caught,False
+1c48c850-b349-453e-8718-b471ee247cbd,2020-03-22,Bongaigaon Refinery,Refinery & Processing,High-pressure steam trap bypass valve stuck open during boiler tube maintenance.,False
+cbeb9319-7ec7-4944-a47c-4f76d98a5028,2020-04-03,Drilling Rig,Drilling,Two Employees Sustain Burns When Spark Starts Oil Rig Fire,False
+86fa7c7c-e722-4e93-888e-2b60c05452f8,2020-04-20,Oil Well Drilling Service,Drilling,Employee Fractures Leg In Fall Into Pier Hole,False
+cd7f7446-cdfe-4b93-bae9-91063e597250,2020-05-18,Guwahati-Siliguri Pipeline,Pipeline Operations,Grinding spark ignited residual kerosene vapor near pig launcher barrel.,False
+486a5ac3-deda-4eda-af58-2bfaecbf80ef,2020-07-01,Oil Well Drilling Service,Drilling,Employee On Road Crew Is Killed When Caught Between School B,False
+a8997adb-b997-4a62-bc38-6cbee03e224c,2020-07-10,Oil Well Drilling Service,Drilling,Employee's Hip Is Fractured When Struck By Falling Equipment,False
+98ea1f55-31e9-43e8-b145-4432afd277d3,2020-07-15,LPG Bottling Plant Hazira,Storage & Handling,LPG liquid leak from flange joint during tanker offloading ignited near pump room.,False
+b9de35cb-1f35-4af6-b84d-4118f1e503ee,2020-09-26,Oil Well Drilling Service,Drilling,Employee Fractures Leg And Back When Struck By Block And Fal,False
+ffdf73cd-a0a3-40aa-8435-1a71bc960b98,2020-10-05,Drilling Rig,Drilling,Employee Amputates Fingertip When Caught In Turbo Drill Rig,False
+d1e88cc0-74cb-4c39-9421-e6025bc79ee5,2020-10-05,Rig 1 Sibsagar Assam,Drilling & Exploration,Pulsation dampener connection thread stripped on mud pump discharge manifold.,False
+039862ca-5e3a-4101-a445-f2a9f7ac4533,2020-10-26,Drilling Rig,Drilling,Employee Suffers Partial Amputation Of Right Index Finger Wh,False
+2ac3320f-24c7-4a09-8a3e-00bd097dceab,2020-12-01,Mumbai High Offshore Platform,Offshore & Marine,Derrick crane wire rope snapped due to hidden internal corrosion past inspection due date.,False
+8be5b14e-3a45-45ef-9f65-6f83d91bbe57,2021-01-06,Oil Well Drilling Service,Drilling,"Employee Incurs Injuries When Caught In Rotating Auger, Late",False
+587c6b37-515e-4173-8c00-1988f7e327fb,2021-01-21,Drilling Rig,Drilling,Employee Is Killed When Caught Between Service Rig And Wellh,False
+ecd1e600-6892-4cda-a108-7d6bcb89ab5a,2021-02-15,Moran Oil Field Depot,Storage & Handling,Bowser moved away from loading bay before disconnecting vapor recovery hose.,False
+a6be0107-6244-41ee-80d7-b7ffe23b7219,2021-02-24,Oil Well Drilling Service,Drilling,Employee Fractures Cheek Bone When Struck By Ball Valve,False
+a1151aa4-4c2d-4e46-a9b2-55140917dd63,2021-04-10,Barauni-Kanpur Pipeline,Pipeline Operations,Maintenance started on pump without applying Lockout/Tagout (LOTO) key locks.,False
+6e0a1e30-3c13-4ee6-8b2d-8cfc99d6e3e3,2021-05-14,Oil Well Drilling Service,Drilling,Employee Burns Leg And Buttocks When Struck By Hot Water And,False
+b173fd15-6ef5-43e9-9c47-12a03d991c5d,2021-06-12,Numaligarh Pipeline Sec 2,Pipeline Operations,Crane synthetic sling tore while lifting 18-inch coated steel pipe section.,False
+b45b68d1-c6ec-493d-b9e7-b6840d302074,2021-07-21,Drilling Rig,Drilling,Employee Is Killed When Crushed By Rig Floor,False
+13855527-0c0d-4364-9fec-698b5c18baa2,2021-07-30,Guwahati Refinery,Refinery & Processing,Technician entered vessel without testing oxygen levels or posting standby observer.,False
+3fe3cf3e-e86f-4e06-809d-5aabca84daf1,2021-09-22,Guwahati Refinery,Refinery & Processing,H2S gas leak in stripper area; contractor entered without 4-gas monitor or SCBA.,False
+e045418a-2a76-4ab4-aa62-213217637373,2021-10-01,Oil Well Drilling Service,Drilling,Employee Is Struck On Chest By Rotating Tongs And Is Killed,False
+918448bd-d890-4ea8-9965-6f7a784c064e,2021-10-05,Rig 1 Sibsagar Assam,Drilling & Exploration,Pulsation dampener connection thread stripped on mud pump discharge manifold.,False
+d86c1192-3d62-4381-ab5e-f87b5cbe6ce8,2021-11-19,Rig 4 Duliajan Assam,Drilling & Exploration,Drilling fluid density dropped below safe threshold during tripping out activity.,False
+88fa0bc8-0649-4657-b51e-19e745ee0ae8,2022-01-03,Oil Well Drilling Service,Drilling,Employee Lacerates Liver When Caught Between St-80 And Mast,False
+1a035451-64cb-4660-be48-7da747af432f,2022-01-07,Oil Well Drilling Service,Drilling,Employee Killed When Struck In Head By Drilling Pipe,False
+5375ba04-0323-4baa-9661-cfed20217d5e,2022-01-14,Jorhat Field Rig 1,Drilling & Exploration,Annular BOP hydraulic control valve left in neutral position during drill pipe tripping.,False
+69c9f553-30cd-4fe8-a729-66da20b10d2d,2022-01-17,Oil Well Drilling Service,Drilling,Employee Incurs Nerve Damage When Struck By Conduit,False
+b38bdfc7-2063-479a-a57d-d5b91cf068b2,2022-02-28,Rig 3 Moran Assam,Drilling & Exploration,Derrickman slipped on oily platform; safety harness lanyard was anchored to non-rated pipe.,False
+381332cd-7064-4498-b3e8-4511fddd5ba6,2022-04-12,Assam Trunk Pipeline Sec 4,Pipeline Operations,Trench wall collapsed over pipeline technicians due to missing soil shoring shields.,False
+e60e21ea-ef1c-4087-af34-e81dc82c8fe1,2022-04-17,Oil Well Drilling Service,Drilling,Employee Is Killed When Struck By Tagline,False
+1778a440-c32b-492f-9cbe-042377c8e85e,2022-05-30,Moran Oil Field Depot,Storage & Handling,Static spark ignited fumes during tank lorry loading due to bypassed earthing relay.,False
+d125a890-6260-45c1-bff8-f88ea6375913,2022-06-29,Drilling Rig,Drilling,Employee Is Killed In Flash Fire Working On Workover Rig,False
+1a76dfdd-2d10-43e0-820d-d54c964d0e65,2022-07-03,Drilling Rig,Drilling,Employee Is Killed In Fall From Derrick Board,False
+32539d31-6487-4c76-a65a-502ea93e0ee5,2022-08-17,Oil Well Drilling Service,Drilling,Employee Is Killed When Crushed By Pump Jack Counterweights,False
+e5a5fb60-315a-4950-8171-9abb83a1665a,2022-08-22,Duliajan Gas Gathering Station,Storage & Handling,Welding spark ignited gas pockets near open drain separator pit.,False
+901b56a8-100f-4519-8699-efe023c7ab8d,2022-09-18,Guwahati Refinery,Refinery & Processing,H2S sensor alarmed during stripper pump maintenance; technician entered without SCBA set.,False
+4975b6ea-c7db-4a8d-a673-9156a63d6996,2022-11-03,Oil Well Drilling Service,Drilling,Employee Is Killed By Electrocution,False
+395db118-571d-4203-8a7f-f5fa2ce03eab,2022-11-04,KG Basin Offshore Rig,Offshore & Marine,10kg steel pin fell from derrick monkey board during heavy wind conditions.,False
+e9c188d6-6e6c-4a95-b9c7-2e6994b49bee,2022-11-22,Oil Well Drilling Service,Drilling,Employee Is Killed When Struck By Motor Vehicle On Roadway,False
+5b041eca-d452-47ae-9b80-6cc53f985a68,2022-12-16,Oil Well Drilling Service,Drilling,Employee Fracture Leg In Fall,False
+23265483-12c1-485d-9f27-982288d70be4,2023-03-11,Digboi Refinery Assam,Refinery & Processing,Electrician received mild shock from 415V MCC panel due to incomplete electrical LOTO.,False
+6333a0c7-ba1a-4b8a-baa4-c671213e7e51,2023-05-19,Oil Well Drilling Service,Drilling,Worker Electrocuted By Power Line,False
+547f60f9-d2d9-404c-9b97-c8a318fe7739,2023-06-20,Rig 2 Jorhat Assam,Drilling & Exploration,Floor hand stood in line-of-fire while making up drill collar using hydraulic tongs.,False
+e744a66c-c556-4096-9320-075a5993ac73,2023-07-04,Rig 1 Sibsagar Assam,Drilling & Exploration,Annular BOP hydraulic control valve left in neutral position during drill pipe tripping.,False
+205ba3b0-4965-4f3e-87d8-154c39423033,2023-07-14,Drilling Rig,Offshore Operations,Employee Is Killed When Knocked Off Rig Platform By Travelin,False
+e15583fe-be48-439f-bee7-38342cc1d620,2023-07-20,Oil Well Drilling Service,Drilling,Employee Is Killed In Fall Due To Rupture Of Pressurized Hos,False
+082c98f6-ebeb-4dbc-aae5-bf3ab4ad3757,2023-08-01,Drilling Rig,Drilling,Employee Is Killed When Struck By Swing Frame Of Drill Rig E,False
+4931f958-ce83-4d7a-ac18-75a116a86e5f,2023-08-18,Guwahati-Siliguri Pipeline,Pipeline Operations,Pig receiver door opened without verifying Double Block and Bleed (DBB) isolation.,False
+bbf7c757-9b44-4a57-b49b-92f6f162282a,2023-09-14,Naharkatia Pipeline Sec 1,Pipeline Operations,Pinhole leak detected on 8-inch gas trunkline during pigging inspection.,False
+f302749e-fd17-42da-81cd-eb9221d752f5,2023-10-22,Moran Crude Oil Terminal,Storage & Handling,Static spark ignited hydrocarbon vapors during tank lorry loading due to bypassed earthing jumper.,False
+c987cd62-2a46-4ebe-b198-3ff457116d6f,2023-11-05,Rig 4 Duliajan Assam,Drilling & Exploration,High pressure mud hose sheared due to worn whip-check clamp during deep drilling.,False
+cd50c938-93d8-4f5a-825d-436744ac01c3,2023-11-18,Oil Well Drilling Service,Drilling,Employee Fatally Crushed By Pipe,False
+cef04cb5-0833-4a62-865e-ce27b0e6bb6d,2023-12-01,Numaligarh Crude Depot,Storage & Handling,Tank bottom drain valve flange gasket ruptured during thermal expansion test.,False
+61d78c6a-e29c-4542-b29e-4264a8a5a521,2024-01-20,Guwahati-Siliguri Pipeline,Pipeline Operations,Pig receiver door opened without verifying Double Block and Bleed (DBB) isolation.,False
+03e5734b-bb16-499a-923c-8c1273bfcc07,2024-02-05,Oil Well Drilling Service,Drilling,Employee Is Killed When Pinned By Traveling Blocks,False
+9036e48e-24c4-45a9-a37b-cafbbb51ebe3,2024-02-10,Bongaigaon Refinery,Refinery & Processing,Caustic soda splash occurred during pump seal replacement without wearing full face shield.,False
+594af027-3c38-42e3-8d0d-bbfd015b0461,2024-02-14,Oil Well Drilling Service,Drilling,Worker Struck By Falling Object And Killed,False
+a86948aa-9666-4ea0-a3ce-9d9b279360c8,2024-03-12,Digboi Refinery Assam,Refinery & Processing,Flash fire occurred during hot work near drainage sump due to lack of gas testing.,False
+7540b0e5-8cfa-4c02-af4b-aea8417a8589,2024-05-18,Rig 3 Moran Assam,Drilling & Exploration,Travelling block wire rope slipped from drum sheaves during tripping operations.,False
+bbe483cb-df7c-4dc9-aec0-79968e81cdaf,2024-06-04,Drilling Rig,Drilling,Employee Dies After Fall And Crushed By Toppled Oil Derrick,False
+e00cdff2-8ba9-4729-bfa7-c0f50a478605,2024-06-15,Duliajan Field Rig 4,Drilling & Exploration,High pressure mud hose sheared due to worn whip-check clamp during deep drilling.,False
+c9ead7c7-c1e6-45b9-b020-4ec93f3824ce,2024-07-11,Oil Well Drilling Service,Drilling,Employee Killed In Blowout Event,False
