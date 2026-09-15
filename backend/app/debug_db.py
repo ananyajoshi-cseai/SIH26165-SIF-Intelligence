@@ -20,6 +20,7 @@ def database_debug():
         "port": parsed.port,
         "database": parsed.path.lstrip("/"),
         "connection": "not_tested",
+        "reports_table": "not_tested",
     }
 
     try:
@@ -30,5 +31,18 @@ def database_debug():
         result["connection"] = "FAILED"
         result["error_type"] = type(exc).__name__
         result["error"] = str(exc)
+        return result
+
+    try:
+        with engine.connect() as connection:
+            count = connection.execute(
+                text("SELECT COUNT(*) FROM reports")
+            ).scalar_one()
+        result["reports_table"] = "OK"
+        result["report_count"] = count
+    except Exception as exc:
+        result["reports_table"] = "FAILED"
+        result["table_error_type"] = type(exc).__name__
+        result["table_error"] = str(exc)
 
     return result
