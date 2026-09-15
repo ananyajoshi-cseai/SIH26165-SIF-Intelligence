@@ -11,10 +11,15 @@ def create_report(
     raw_text: str,
     site: str,
     is_synthetic: bool = True,
+    metadata: dict | None = None,
 ) -> Report:
+    report_metadata = {"site": site}
+    if metadata:
+        report_metadata.update(metadata)
+
     report = Report(
         raw_text=raw_text,
-        metadata_={"site": site},
+        metadata_=report_metadata,
         is_synthetic=is_synthetic,
     )
 

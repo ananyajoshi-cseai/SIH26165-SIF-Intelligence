@@ -1,5 +1,6 @@
 ﻿from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.core.config import settings
 
 from app.api.v1.reports import router as reports_router
 
@@ -17,6 +18,7 @@ app.add_middleware(
         "http://127.0.0.1:5173",
         "http://localhost:5174",
         "http://127.0.0.1:5174",
+        *settings.cors_origins,
     ],
     allow_credentials=True,
     allow_methods=["*"],

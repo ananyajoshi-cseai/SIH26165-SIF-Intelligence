@@ -33,6 +33,7 @@ class AnalysisResponse(BaseModel):
 
 class FeedbackRequest(BaseModel):
     extracted_data: ExtractionData
+    decision: str = "VALIDATED"
 
 
 class FeedbackResponse(BaseModel):

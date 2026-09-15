@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { getReports, uploadReports } from "../src/api.js";
+import { getReports, submitFeedback, uploadReports } from "../src/api.js";
 import {
   LineChart,
   Line,
@@ -147,7 +147,15 @@ function buildDashboardData(reports) {
     if (barrier !== "Unknown") barrierGroups.set(barrier, (barrierGroups.get(barrier) || 0) + 1);
   });
 
-  const siteNames = [...siteGroups.keys()];
+  const siteNames = [...siteGroups.keys()]
+    .sort((a, b) => {
+      const score = (name) => {
+        const group = siteGroups.get(name);
+        return group.reduce((sum, report) => sum + (report.analysis.risk_score || 0), 0) / group.length;
+      };
+      return score(b) - score(a);
+    })
+    .slice(0, 5);
   const siteIds = siteNames.reduce((ids, name, index) => ({ ...ids, [`S${index + 1}`]: name }), {});
   const sites = Object.entries(siteIds).map(([id, name]) => {
     const group = siteGroups.get(name);
@@ -418,8 +426,8 @@ function TopBar({ view, setView }) {
             Directorate General of<br />Mines &amp; Process Safety
           </div>
         </div>
-        <div style={{ maxWidth: 1320, margin: "0 auto", padding: "0 28px", display: "flex", gap: 4 }}>
-          {[["dashboard","Dashboard"],["reports","Reports"]].map(([k,label]) => (
+        <div style={{ maxWidth: 1320, margin: "0 auto", padding: "0 28px", display: "flex", justifyContent: "flex-end", gap: 4 }}>
+          {[["command-center","Main Dashboard"],["dashboard","Results"],["reports","Reports"]].map(([k,label]) => (
             <button key={k} onClick={() => setView({ page: k })}
               style={{
                 background: view.page === k || (k==="reports" && view.page==="report-detail") ? C.paper : "transparent",
@@ -894,13 +902,33 @@ function SiteDrilldown({ siteId, setView, data }) {
 }
 
 function Dashboard({ setView, onIngest, data }) {
+  const hasReports = data.reports.length > 0;
+
   return (
     <div>
       <ReportSummaryBanner onIngest={onIngest} setView={setView} reportCount={data.reports.length} />
-      <TopSites setView={setView} data={data} />
-      <Heatmap setView={setView} data={data} />
-      <TrendSection data={data} />
-      <Alerts data={data} />
+      {hasReports ? (
+        <>
+          <TopSites setView={setView} data={data} />
+          <Heatmap setView={setView} data={data} />
+          <TrendSection data={data} />
+          <Alerts data={data} />
+        </>
+      ) : (
+        <div style={{
+          background: C.card,
+          border: `1px solid ${C.line}`,
+          borderRadius: 6,
+          padding: "28px 24px",
+          color: C.inkSoft,
+          fontFamily: "'Inter',sans-serif",
+          fontSize: 14,
+          lineHeight: 1.6,
+        }}>
+          No analyzed reports yet. Upload a CSV above to generate live site,
+          hazard, trend, and risk intelligence.
+        </div>
+      )}
     </div>
   );
 }
@@ -930,10 +958,6 @@ function ReportsTable({ setView, reports, onIngest }) {
         <div style={{ color: "#DCE6EA", fontSize: 13.5, marginTop: 3, fontFamily: "'Inter',sans-serif" }}>
           Field incident and precursor reports submitted across all monitored sites, pending human validation.
         </div>
-      </div>
-
-      <div style={{ marginBottom: 16 }}>
-        <UploadWidget compact onIngest={onIngest} />
       </div>
 
       <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>
@@ -974,9 +998,9 @@ function ReportsTable({ setView, reports, onIngest }) {
                 <td style={{ padding: "10px 14px", fontSize: 12.5 }}>
                   <span style={{
                     display: "inline-flex", alignItems: "center", gap: 5, fontWeight: 600,
-                    color: r.status === "Validated" ? C.greenGood : C.orange,
+                    color: r.status === "Validated" ? C.greenGood : r.status === "Rejected" ? C.red : C.orange,
                   }}>
-                    {r.status === "Validated" ? <CheckCircle2 size={13} /> : <AlertTriangle size={13} />}
+                    {r.status === "Validated" ? <CheckCircle2 size={13} /> : r.status === "Rejected" ? <XCircle size={13} /> : <AlertTriangle size={13} />}
                     {r.status}
                   </span>
                 </td>
@@ -998,24 +1022,34 @@ function ReportsTable({ setView, reports, onIngest }) {
 /* ------------------------------------------------------------------ */
 function CausalGraph({ data }) {
   const kindColor = { cause: C.orange, event: C.yellow, incident: C.redBright, outcome: C.navy };
+  const kindLabel = { cause: "CONTRIBUTING CAUSE", event: "CONTROL EVENT", incident: "INCIDENT", outcome: "POTENTIAL OUTCOME" };
+  const nodeWidth = 142;
+  const nodeHeight = 62;
   const find = (id) => data.nodes.find((n) => n.id === id);
   return (
-    <svg viewBox="0 0 800 240" width="100%" height="230">
+    <svg viewBox="0 0 900 300" width="100%" height="330" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Causal pathway graph">
       <defs>
-        <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
-          <path d="M0,0 L8,4 L0,8 Z" fill={C.inkSoft} />
+        <marker id="causal-arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+          <path d="M0,0 L10,5 L0,10 Z" fill={C.inkSoft} />
         </marker>
       </defs>
+      <rect x="0" y="0" width="900" height="300" rx="8" fill="#F8F9F7" stroke={C.line} />
+      <text x="22" y="24" fontFamily="Inter" fontSize="11" fontWeight="700" fill={C.inkSoft} letterSpacing="1">
+        READ LEFT TO RIGHT · CONTRIBUTING FACTORS LEAD TO THE POTENTIAL OUTCOME
+      </text>
       {data.edges.map(([from, to], i) => {
         const a = find(from), b = find(to);
-        return <line key={i} x1={a.x + 55} y1={a.y + 20} x2={b.x - 5} y2={b.y + 20} stroke={C.inkSoft} strokeWidth="1.4" markerEnd="url(#arrow)" />;
+        return <line key={i} x1={a.x + nodeWidth} y1={a.y + nodeHeight / 2} x2={b.x - 8} y2={b.y + nodeHeight / 2} stroke={C.inkSoft} strokeWidth="2" strokeLinecap="round" markerEnd="url(#causal-arrow)" />;
       })}
-      {data.nodes.map((n) => (
+      {data.nodes.map((n, index) => (
         <g key={n.id} transform={`translate(${n.x},${n.y})`}>
-          <rect width="110" height="46" rx="5" fill="#fff" stroke={kindColor[n.kind]} strokeWidth="1.6" />
-          <rect width="110" height="6" rx="3" fill={kindColor[n.kind]} />
-          {n.label.split("\n").map((line, i) => (
-            <text key={i} x="55" y={20 + i * 13} textAnchor="middle" fontFamily="Inter" fontSize="10.5" fontWeight="600" fill={C.ink}>{line}</text>
+          <rect width={nodeWidth} height={nodeHeight} rx="8" fill="#FFFFFF" stroke={kindColor[n.kind]} strokeWidth="2" />
+          <rect width={nodeWidth} height="8" rx="7" fill={kindColor[n.kind]} />
+          <text x="12" y="25" fontFamily="Inter" fontSize="9" fontWeight="800" fill={kindColor[n.kind]} letterSpacing="0.5">
+            {index + 1} · {kindLabel[n.kind]}
+          </text>
+          {n.label.split("\n").map((line, lineIndex) => (
+            <text key={lineIndex} x={nodeWidth / 2} y={42 + lineIndex * 13} textAnchor="middle" fontFamily="Inter" fontSize="11" fontWeight="700" fill={C.ink}>{line}</text>
           ))}
         </g>
       ))}
@@ -1040,14 +1074,33 @@ function CausalChainStrip({ chain }) {
   );
 }
 
-function ReportDetail({ reportId, setView, reports }) {
+function ReportDetail({ reportId, setView, reports, onIngest }) {
   const meta = reports.find((r) => r.id === reportId) || reports[0];
   const detail = REPORT_DETAIL[meta.id] || defaultDetail(meta);
   const [fields, setFields] = useState(detail.fields);
   const [status, setStatus] = useState(meta.status);
   const [feedback, setFeedback] = useState("");
+  const [validationError, setValidationError] = useState("");
 
   const setF = (k, v) => setFields((f) => ({ ...f, [k]: v }));
+  const saveValidation = async (decision) => {
+    try {
+      setValidationError("");
+      const extractedData = meta.extractedData || {
+        activity: fields.activity || "Unknown",
+        hazard: fields.hazard || meta.hazard,
+        exposure: fields.exposure || "Unknown",
+        barrier: fields.barrier || "Unknown",
+        barrier_failure: fields.barrier_failure || detail.barrier,
+        potential_consequence: fields.potential_consequence || detail.sif.consequence,
+      };
+      const result = await submitFeedback(meta.id, extractedData, decision);
+      setStatus(result.status === "VALIDATED" ? "Validated" : "Rejected");
+      await onIngest?.();
+    } catch (error) {
+      setValidationError(error.message || "Unable to save validation.");
+    }
+  };
 
   return (
     <div>
@@ -1061,7 +1114,7 @@ function ReportDetail({ reportId, setView, reports }) {
         {meta.site} &nbsp;·&nbsp; {meta.hazard} &nbsp;·&nbsp; {meta.date}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))", gap: 20 }}>
         {/* LEFT PANE — DATA */}
         <div>
           <Panel title="Original Report Text">
@@ -1137,12 +1190,12 @@ function ReportDetail({ reportId, setView, reports }) {
               {detail.sif.classification} — recommend {status === "Validated" ? "closure per corrective actions above" : "HSE review before closure"}.
             </div>
             <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
-              <button onClick={() => setStatus("Validated")} style={{
+              <button onClick={() => saveValidation("VALIDATED")} style={{
                 flex: 1, background: status === "Validated" ? C.greenGood : "#fff", color: status === "Validated" ? "#fff" : C.greenGood,
                 border: `1px solid ${C.greenGood}`, borderRadius: 4, padding: "9px 0", fontFamily: "'Inter',sans-serif",
                 fontWeight: 700, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
               }}><CheckCircle2 size={15} /> Approve</button>
-              <button onClick={() => setStatus("Rejected")} style={{
+              <button onClick={() => saveValidation("REJECTED")} style={{
                 flex: 1, background: status === "Rejected" ? C.red : "#fff", color: status === "Rejected" ? "#fff" : C.red,
                 border: `1px solid ${C.red}`, borderRadius: 4, padding: "9px 0", fontFamily: "'Inter',sans-serif",
                 fontWeight: 700, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
@@ -1151,6 +1204,7 @@ function ReportDetail({ reportId, setView, reports }) {
             <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, color: C.inkSoft, marginBottom: 10 }}>
               HSE expert decision: <b style={{ color: C.ink }}>{status}</b>
             </div>
+            {validationError && <div style={{ color: C.redBright, fontSize: 12, marginBottom: 10 }}>{validationError}</div>}
             <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5, color: C.inkSoft, marginBottom: 4, fontWeight: 700, display: "flex", alignItems: "center", gap: 5 }}>
               <MessageSquare size={13} /> Feedback / correction
             </div>
@@ -1182,8 +1236,11 @@ function ReportDetail({ reportId, setView, reports }) {
 
         {/* RIGHT PANE — INTELLIGENCE */}
         <div>
-          <Panel title="Causal Graph — Activity → Hazard → Exposure → Failed Barrier → Consequence → SIF Risk">
+          <Panel title="Causal pathway — what led to the potential SIF outcome">
             <CausalChainStrip chain={detail.causalChain} />
+            <div style={{ color: C.inkSoft, fontFamily: "'Inter',sans-serif", fontSize: 12, margin: "0 0 10px" }}>
+              Follow the arrows from the contributing causes through the control event to the incident and potential outcomes.
+            </div>
             <div style={{ overflowX: "auto" }}>
               <CausalGraph data={detail.causal} />
             </div>
@@ -1271,7 +1328,7 @@ export default function App() {
   const [view, setView] = useState(() => {
     try {
       const savedView = window.localStorage.getItem("oil-sentinel-view");
-      return savedView ? JSON.parse(savedView) : { page: "command-center" };
+      return { page: "command-center" };
     } catch {
       return { page: "command-center" };
     }
@@ -1290,15 +1347,18 @@ export default function App() {
         date: report.created_at?.slice(0, 10) || "",
         site: report.metadata?.site || "Unknown",
         hazard: report.analysis?.extracted_data?.hazard || "Unknown",
+        extractedData: report.analysis?.extracted_data || null,
         risk: toRiskLevel(report.analysis?.risk_score || 0),
-        status: report.analysis?.status || "Analyzed",
+        status: report.analysis?.status === "VALIDATED"
+          ? "Validated"
+          : report.analysis?.status === "REJECTED"
+            ? "Rejected"
+            : "Pending",
       })));
     } catch (error) {
       console.error("Unable to load analyzed reports:", error);
     }
   };
-
-  useEffect(() => { refreshReports(); }, []);
 
   const onIngest = async () => {
     await refreshReports();
@@ -1322,11 +1382,11 @@ export default function App() {
       {!isCommandCenter && <TopBar view={view} setView={setView} />}
 
       <div style={{ maxWidth: 1320, margin: "0 auto", padding: isCommandCenter ? 0 : "26px 28px 60px" }}>
-        {view.page === "command-center" && <CommandCenter setView={setView} />}
+        {view.page === "command-center" && <CommandCenter setView={setView} onIngest={onIngest} />}
         {view.page === "dashboard" && <Dashboard setView={setView} onIngest={onIngest} data={dashboardData} />}
         {view.page === "site-drill" && <SiteDrilldown siteId={view.siteId} setView={setView} data={dashboardData} />}
         {view.page === "reports" && <ReportsTable setView={setView} reports={reports} onIngest={onIngest} />}
-        {view.page === "report-detail" && <ReportDetail reportId={view.reportId} setView={setView} reports={reports} />}
+        {view.page === "report-detail" && <ReportDetail reportId={view.reportId} setView={setView} reports={reports} onIngest={onIngest} />}
       </div>
 
       {!isCommandCenter && <div style={{
@@ -1334,7 +1394,7 @@ export default function App() {
         backgroundSize: "cover", backgroundPosition: "center",
         color: "#9FB0BB", textAlign: "center", padding: "16px 0", fontFamily: "'Inter',sans-serif", fontSize: 12,
       }}>
-        Oil Safety Intelligence Portal — Prototype for demonstration purposes · Data shown is illustrative
+        Oil Safety Intelligence Portal · Live analysis from submitted reports
       </div>}
     </div>
   );

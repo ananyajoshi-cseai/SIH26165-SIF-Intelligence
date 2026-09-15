@@ -1,4 +1,6 @@
 import csv
+import hashlib
+from uuid import uuid4
 from io import StringIO
 
 from sqlalchemy.orm import Session
@@ -81,11 +83,22 @@ def parse_csv(content: bytes) -> list[dict]:
     return rows
 
 
-def import_reports_from_csv(db: Session, content: bytes) -> list[Report]:
+def import_reports_from_csv(db: Session, content: bytes) -> tuple[list[Report], bool]:
     """
     Parse a CSV file and create Report records in the database.
     """
     rows = parse_csv(content)
+    upload_hash = hashlib.sha256(content).hexdigest()
+
+    existing = [
+        report
+        for report in db.query(Report).all()
+        if report.metadata_.get("upload_hash") == upload_hash
+    ]
+    if existing:
+        return existing, True
+
+    upload_batch_id = str(uuid4())
 
     reports = []
 
@@ -95,7 +108,11 @@ def import_reports_from_csv(db: Session, content: bytes) -> list[Report]:
             raw_text=row["text"],
             site=row["site"],
             is_synthetic=row["is_synthetic"],
+            metadata={
+                "upload_batch_id": upload_batch_id,
+                "upload_hash": upload_hash,
+            },
         )
         reports.append(report)
 
-    return reports
+    return reports, False

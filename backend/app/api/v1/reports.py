@@ -111,8 +111,11 @@ async def upload_reports(
     content = await file.read()
 
     try:
-        reports = import_reports_from_csv(db, content)
-        analyses = [analyze_report(db, report) for report in reports]
+        reports, duplicate = import_reports_from_csv(db, content)
+        analyses = [
+            report.analysis or analyze_report(db, report)
+            for report in reports
+        ]
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -122,8 +125,9 @@ async def upload_reports(
     return {
         "filename": file.filename,
         "total_rows": len(reports),
-        "created": len(reports),
+            "created": 0 if duplicate else len(reports),
         "analyzed": len(analyses),
+            "duplicate": duplicate,
         "reports": [
             {
                 "report_id": str(report.id),
@@ -208,6 +212,7 @@ def submit_feedback(
             db=db,
             report_id=report_id,
             corrected_data=payload.extracted_data,
+            decision=payload.decision,
         )
     except ValueError as exc:
         raise HTTPException(

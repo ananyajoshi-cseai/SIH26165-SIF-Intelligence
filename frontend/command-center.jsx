@@ -174,65 +174,12 @@ function CommandFooter() {
         marginTop: 40,
       }}
     >
-      Oil Safety Intelligence Portal — Prototype for demonstration purposes ·
-      Data shown is illustrative
+      Oil Safety Intelligence Portal · Live analysis from submitted reports
     </div>
   );
 }
 
-const siteRiskData = [
-  {
-    site: "Refinery A",
-    risk: 82,
-    level: "HIGH",
-    reports: 342,
-  },
-  {
-    site: "Offshore Platform B",
-    risk: 68,
-    level: "MEDIUM",
-    reports: 287,
-  },
-  {
-    site: "Terminal C",
-    risk: 54,
-    level: "MEDIUM",
-    reports: 264,
-  },
-  {
-    site: "Refinery D",
-    risk: 39,
-    level: "LOW",
-    reports: 211,
-  },
-  {
-    site: "Pipeline Hub E",
-    risk: 27,
-    level: "LOW",
-    reports: 144,
-  },
-];
-
-const barrierFailureData = [
-  {
-    barrier: "Energy Isolation",
-    score: 82,
-  },
-  {
-    barrier: "Permit to Work",
-    score: 68,
-  },
-  {
-    barrier: "Gas Detection",
-    score: 54,
-  },
-  {
-    barrier: "PPE Compliance",
-    score: 39,
-  },
-];
-
-function BarrierFailureChart() {
+function BarrierFailureChart({ data }) {
   return (
     <section
       style={{
@@ -280,7 +227,7 @@ function BarrierFailureChart() {
       <div style={{ width: "100%", height: 260 }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
-            data={barrierFailureData}
+            data={data}
             layout="vertical"
             margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
           >
@@ -305,7 +252,7 @@ function BarrierFailureChart() {
 
             <YAxis
               type="category"
-              dataKey="barrier"
+              dataKey="label"
               width={140}
               tick={{
                 fontSize: 12,
@@ -427,7 +374,7 @@ function KPICard({ label, value, subtext, icon: Icon }) {
   );
 }
 
-function SiteRiskComparison() {
+function SiteRiskComparison({ data }) {
   return (
     <section
       style={{
@@ -475,7 +422,7 @@ function SiteRiskComparison() {
       <div style={{ width: "100%", height: 320 }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
-            data={siteRiskData}
+            data={data}
             layout="vertical"
             margin={{
               top: 5,
@@ -545,7 +492,7 @@ function SiteRiskComparison() {
               radius={[0, 4, 4, 0]}
               barSize={26}
             >
-              {siteRiskData.map((entry, index) => {
+              {data.map((entry, index) => {
                 const barColor =
                   entry.level === "HIGH"
                     ? C.redBright
@@ -833,8 +780,9 @@ function HighSIFReports({ reports, setView }) {
   );
 }
 
-function CommandUpload({ setView }) {
-  const handleUploadDone = () => {
+function CommandUpload({ setView, onIngest }) {
+  const handleUploadDone = async () => {
+    await onIngest?.();
     setView({ page: "dashboard" });
   };
 
@@ -846,23 +794,180 @@ function CommandUpload({ setView }) {
       border: `1px solid ${C.line}`, borderRadius: "6px",
       padding: "20px 22px",
     }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
-        <div style={{ width: "4px", height: "24px", background: C.saffron, borderRadius: "2px" }} />
-        <div>
-          <h2 style={{ margin: 0, fontFamily: "'Merriweather', serif", fontSize: "18px", fontWeight: 700, color: "#FFFFFF" }}>
-            Upload Incident Report
-          </h2>
-          <p style={{ margin: "4px 0 0", fontFamily: "'Inter', sans-serif", fontSize: "12px", color: "#FFFFFF" }}>
-            Submit a new incident report for SIF intelligence analysis
-          </p>
-        </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
+                <div style={{ width: "4px", height: "24px", background: C.saffron, borderRadius: "2px" }} />
+                <div>
+                  <h2 style={{ margin: 0, fontFamily: "'Merriweather', serif", fontSize: "18px", fontWeight: 700, color: "#FFFFFF" }}>
+                    Upload Incident Report
+                  </h2>
+                  <p style={{ margin: "4px 0 0", fontFamily: "'Inter', sans-serif", fontSize: "12px", color: "#FFFFFF" }}>
+                    Submit a new incident report for SIF intelligence analysis
+                  </p>
+                </div>
       </div>
       <UploadWidget compact accept=".csv,.pdf,image/*" onIngest={handleUploadDone} />
     </section>
   );
 }
 
-export default function CommandCenter({ setView }) {
+function LiveHighlights({ dashboard }) {
+  const trend = dashboard.trends?.[0];
+  const trendText = trend?.percentage_change === null
+    ? `${trend.current_count} this month; no previous-month baseline`
+    : `${trend.direction} ${Math.abs(trend.percentage_change)}% this month (${trend.current_count} vs ${trend.previous_count})`;
+
+  return (
+    <section
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+        gap: "18px",
+        marginTop: "28px",
+      }}
+    >
+      <div style={highlightCardStyle}>
+        <h2 style={highlightHeadingStyle}>Top hazards</h2>
+        {dashboard.top_hazards.length ? dashboard.top_hazards.map((item, index) => (
+          <div key={item.label} style={highlightRowStyle}>
+            <strong>{["🥇", "🥈", "🥉"][index] || "•"}</strong>
+            <span>{item.label}</span>
+            <small>{item.count}</small>
+          </div>
+        )) : <p style={emptyTextStyle}>No hazard data for today.</p>}
+      </div>
+
+      <div style={highlightCardStyle}>
+        <h2 style={highlightHeadingStyle}>Highest-risk locations</h2>
+        {dashboard.highest_risk_locations.length ? dashboard.highest_risk_locations.slice(0, 3).map((item) => (
+          <div key={item.site} style={highlightRowStyle}>
+            <span>📍 {item.site}</span>
+            <strong style={{ color: riskColor(item.level) }}>{item.level}</strong>
+          </div>
+        )) : <p style={emptyTextStyle}>No location data for today.</p>}
+      </div>
+
+      <div style={highlightCardStyle}>
+        <h2 style={highlightHeadingStyle}>Trends</h2>
+        <p style={{ ...emptyTextStyle, color: C.ink, lineHeight: 1.6 }}>
+          ⚠️ {trend?.label || "Safety precursors"} {trendText}.
+        </p>
+      </div>
+    </section>
+  );
+}
+
+function AboutOilSentinel() {
+  return (
+    <section
+      style={{
+        margin: "48px -28px -40px",
+        padding: "42px 28px 46px",
+        background: `linear-gradient(120deg, ${C.navyDeep}, ${C.navy})`,
+        borderTop: `4px solid ${C.saffron}`,
+        color: "#FFFFFF",
+      }}
+    >
+      <div style={{ maxWidth: 1264, margin: "0 auto" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "28px", alignItems: "start" }}>
+          <div>
+        <p style={{
+          margin: "0 0 8px",
+          color: "#F4C982",
+          fontSize: "11px",
+          fontWeight: 800,
+          letterSpacing: "1.4px",
+          textTransform: "uppercase",
+        }}>
+            SIF Precursor Intelligence Engine
+        </p>
+        <h2 style={{
+          margin: "0 0 10px",
+          fontFamily: "'Merriweather', serif",
+          fontSize: "24px",
+        }}>
+          From report analysis to proactive safety action.
+        </h2>
+        <p style={{
+          margin: 0,
+          color: "#C7D3DC",
+          fontSize: "13px",
+          lineHeight: 1.7,
+        }}>
+          SIF Precursor Intelligence Engine is an AI-powered safety intelligence
+          platform designed for OIL Unsafe Act/Unsafe Condition, Near-Miss, and
+          Incident reports. It goes beyond identifying SIF and PSIF potential by
+          explaining risk, identifying failed barriers, and surfacing the signals
+          that need attention first.
+        </p>
+          </div>
+          <div style={{ borderLeft: "1px solid rgba(255,255,255,0.18)", paddingLeft: "24px" }}>
+            <h3 style={{ margin: "0 0 10px", color: "#FFFFFF", fontSize: "14px" }}>Key capabilities</h3>
+            <ul style={{ margin: 0, paddingLeft: "18px", color: "#C7D3DC", fontSize: "12.5px", lineHeight: 1.8 }}>
+              <li>AI/NLP-based report analysis</li>
+              <li>SIF/PSIF precursor identification</li>
+              <li>Explainable risk assessment</li>
+              <li>Critical barrier failure detection</li>
+              <li>Life-Saving Rule mapping</li>
+              <li>Historical similar-report discovery</li>
+            </ul>
+          </div>
+          <div style={{ borderLeft: "1px solid rgba(255,255,255,0.18)", paddingLeft: "24px" }}>
+            <h3 style={{ margin: "0 0 10px", color: "#FFFFFF", fontSize: "14px" }}>Early warning by design</h3>
+            <ul style={{ margin: 0, paddingLeft: "18px", color: "#C7D3DC", fontSize: "12.5px", lineHeight: 1.8 }}>
+              <li>Recurring and emerging risk detection</li>
+              <li>Site × Hazard risk heatmap</li>
+              <li>High-risk site ranking</li>
+              <li>Early-warning alerts</li>
+              <li>HSE human validation and feedback</li>
+            </ul>
+            <p style={{ margin: "14px 0 0", color: "#F4C982", fontSize: "12.5px", lineHeight: 1.6 }}>
+              <strong>Goal:</strong> Transform safety reports into proactive,
+              actionable intelligence that helps HSE teams intervene before
+              potential SIF events occur.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+const highlightCardStyle = {
+  background: C.card,
+  border: `1px solid ${C.line}`,
+  borderRadius: "8px",
+  padding: "18px",
+  boxShadow: "0 2px 8px rgba(10,42,67,0.08)",
+};
+
+const highlightHeadingStyle = {
+  margin: "0 0 14px",
+  color: C.navy,
+  fontFamily: "'Merriweather', serif",
+  fontSize: "17px",
+};
+
+const highlightRowStyle = {
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+  padding: "9px 0",
+  borderBottom: `1px solid ${C.line}`,
+  color: C.ink,
+  fontSize: "13px",
+};
+
+const emptyTextStyle = {
+  margin: 0,
+  color: C.inkSoft,
+  fontSize: "12px",
+};
+
+function riskColor(level) {
+  return level === "HIGH" ? C.redBright : level === "MEDIUM" ? C.yellow : C.greenGood;
+}
+
+export default function CommandCenter({ setView, onIngest }) {
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -898,97 +1003,18 @@ export default function CommandCenter({ setView }) {
     };
   }, []);
 
-  const kpiData = dashboard
-    ? [
-      {
-        label: "Total Reports",
-        value: dashboard.total_reports?.toLocaleString() || "1,248",
-        subtext: "Across assigned sites",
-        icon: FileText,
-      },
-      {
-        label: "High SIF Precursors",
-        value: dashboard.high_sif_precursors?.toLocaleString() || "37",
-        subtext: "Require immediate attention",
-        icon: ShieldAlert,
-      },
-      {
-        label: "Emerging Pattern Flag",
-        value: dashboard.emerging_pattern_count?.toLocaleString() || "4",
-        subtext: "New patterns detected",
-        icon: TrendingUp,
-      },
-      {
-        label: "Most Failed Barrier",
-        value: dashboard.most_failed_barrier || "Energy Isolation",
-        subtext: "Repeated barrier failure",
-        icon: ShieldCheck,
-      },
-    ]
-    : [
-      {
-        label: "Total Reports",
-        value: "1,248",
-        subtext: "Across assigned sites",
-        icon: FileText,
-      },
-      {
-        label: "High SIF Precursors",
-        value: "37",
-        subtext: "Require immediate attention",
-        icon: ShieldAlert,
-      },
-      {
-        label: "Emerging Pattern Flag",
-        value: "4",
-        subtext: "New patterns detected",
-        icon: TrendingUp,
-      },
-      {
-        label: "Most Failed Barrier",
-        value: "Energy Isolation",
-        subtext: "Repeated barrier failure",
-        icon: ShieldCheck,
-      },
-    ];
+  const severity = Object.fromEntries(
+    (dashboard?.sif_breakdown || []).map((item) => [item.label, item.count]),
+  );
+  const kpiData = dashboard ? [
+    { label: "Total Reports Today", value: dashboard.total_reports.toLocaleString(), subtext: `${dashboard.period_label} · uploaded files`, icon: FileText },
+    { label: "High SIF", value: (severity.HIGH || 0).toLocaleString(), subtext: "Today's high-risk precursors", icon: ShieldAlert },
+    { label: "Medium SIF", value: (severity.MEDIUM || 0).toLocaleString(), subtext: "Today's medium-risk precursors", icon: TrendingUp },
+    { label: "Low SIF", value: (severity.LOW || 0).toLocaleString(), subtext: "Today's low-risk precursors", icon: ShieldCheck },
+  ] : [];
 
-  const highSIFReports = dashboard?.recent_high_sif_reports || [
-    {
-      id: "SIF-1024",
-      site: "Refinery A",
-      incident: "Energy isolation barrier failure",
-      date: "2026-09-10",
-      score: 92,
-    },
-    {
-      id: "SIF-1019",
-      site: "Offshore Platform B",
-      incident: "Permit to work deviation",
-      date: "2026-09-09",
-      score: 87,
-    },
-    {
-      id: "SIF-1016",
-      site: "Terminal C",
-      incident: "Gas detection failure",
-      date: "2026-09-08",
-      score: 84,
-    },
-    {
-      id: "SIF-1012",
-      site: "Refinery D",
-      incident: "PPE compliance failure",
-      date: "2026-09-07",
-      score: 81,
-    },
-    {
-      id: "SIF-1008",
-      site: "Pipeline Hub E",
-      incident: "PPE and permit deviation",
-      date: "2026-09-06",
-      score: 79,
-    },
-  ];
+  const highSIFReports = dashboard?.recent_high_sif_reports || [];
+  const siteRiskData = dashboard?.highest_risk_locations || [];
 
   return (
     <div
@@ -1038,7 +1064,7 @@ export default function CommandCenter({ setView }) {
             </p>
           </div>
 
-          <CommandUpload setView={setView} />
+          <CommandUpload setView={setView} onIngest={onIngest} />
 
         </div>
 
@@ -1053,15 +1079,17 @@ export default function CommandCenter({ setView }) {
             <KPICard key={item.label} {...item} />
           ))}
         </div>
-        <SiteRiskComparison />
-        <HighSIFReports
-          reports={highSIFReports}
-          setView={setView}
-        />
-
-        <div style={{ marginTop: 24 }}>
-          <BarrierFailureChart />
-        </div>
+        {loading && <p style={emptyTextStyle}>Loading live dashboard data...</p>}
+        {error && <p style={{ ...emptyTextStyle, color: C.redBright }}>{error}</p>}
+        {dashboard && <LiveHighlights dashboard={dashboard} />}
+        {siteRiskData.length > 0 && <SiteRiskComparison data={siteRiskData} />}
+        {highSIFReports.length > 0 && (
+          <HighSIFReports
+            reports={highSIFReports}
+            setView={setView}
+          />
+        )}
+        <AboutOilSentinel />
       </main>
 
       <CommandFooter />

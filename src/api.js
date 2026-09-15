@@ -1,5 +1,6 @@
+const API_HOST = window.location.hostname || "127.0.0.1";
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api/v1";
+  import.meta.env.VITE_API_BASE_URL || `http://${API_HOST}:8000/api/v1`;
 
 async function request(path, options = {}) {
   const response = await fetch(`${API_BASE_URL}${path}`, options);
@@ -75,7 +76,7 @@ export async function getEmergingPatterns() {
   return request("/reports/emerging-patterns");
 }
 
-export async function submitFeedback(reportId, extractedData) {
+export async function submitFeedback(reportId, extractedData, decision = "VALIDATED") {
   return request(`/reports/${reportId}/feedback`, {
     method: "PUT",
     headers: {
@@ -83,6 +84,7 @@ export async function submitFeedback(reportId, extractedData) {
     },
     body: JSON.stringify({
       extracted_data: extractedData,
+      decision,
     }),
   });
 }

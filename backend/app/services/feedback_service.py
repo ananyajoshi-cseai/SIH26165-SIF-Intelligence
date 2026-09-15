@@ -11,6 +11,7 @@ def validate_analysis(
     db: Session,
     report_id: UUID,
     corrected_data: ExtractionData,
+    decision: str = "VALIDATED",
 ) -> Analysis:
     analysis = (
         db.query(Analysis)
@@ -29,7 +30,7 @@ def validate_analysis(
     analysis.extracted_data = extracted_dict
     analysis.risk_score = risk_score
     analysis.sif_level = sif_level
-    analysis.status = "VALIDATED"
+    analysis.status = decision if decision in {"VALIDATED", "REJECTED"} else "VALIDATED"
 
     db.commit()
     db.refresh(analysis)
