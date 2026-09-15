@@ -1,8 +1,9 @@
-﻿from fastapi import FastAPI
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 
 from app.api.v1.reports import router as reports_router
+from app.debug_db import router as debug_router
 
 
 app = FastAPI(
@@ -26,6 +27,7 @@ app.add_middleware(
 )
 
 app.include_router(reports_router, prefix="/api/v1")
+app.include_router(debug_router, prefix="/api/v1")
 
 
 @app.get("/api/v1/health")
