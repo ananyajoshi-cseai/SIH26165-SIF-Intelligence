@@ -1,4 +1,5 @@
-﻿from uuid import UUID
+﻿from datetime import datetime
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -14,6 +15,7 @@ class ReportCreate(BaseModel):
 class ReportResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
     id: UUID
+    created_at: datetime
     raw_text: str
     metadata: dict = Field(validation_alias="metadata_")
     is_synthetic: bool

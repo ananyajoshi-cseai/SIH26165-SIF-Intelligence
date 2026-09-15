@@ -94,17 +94,17 @@ function CommandHeader() {
 
       {/* Main header */}
       <div
-  style={{
-    background: `linear-gradient(
+        style={{
+          background: `linear-gradient(
       100deg,
       rgba(7,29,48,0.94),
       rgba(10,42,67,0.90)
     ), url(${IMG.aerial})`,
-    backgroundSize: "cover",
-    backgroundPosition: "center 65%",
-    borderBottom: `3px solid ${C.saffron}`,
-  }}
->
+          backgroundSize: "cover",
+          backgroundPosition: "center 65%",
+          borderBottom: `3px solid ${C.saffron}`,
+        }}
+      >
         <div
           style={{
             maxWidth: 1320,
@@ -226,7 +226,7 @@ const barrierFailureData = [
     barrier: "Gas Detection",
     score: 54,
   },
-  {  
+  {
     barrier: "PPE Compliance",
     score: 39,
   },
@@ -245,36 +245,36 @@ function BarrierFailureChart() {
       }}
     >
       <div
-  style={{
-    margin: "-22px -22px 20px -22px",
-    padding: "20px 22px",
-    background: `linear-gradient(90deg, ${C.navy}, #123B59)`,
-    borderBottom: `3px solid ${C.saffron}`,
-    borderRadius: "8px 8px 0 0",
-  }}
->
+        style={{
+          margin: "-22px -22px 20px -22px",
+          padding: "20px 22px",
+          background: `linear-gradient(90deg, ${C.navy}, #123B59)`,
+          borderBottom: `3px solid ${C.saffron}`,
+          borderRadius: "8px 8px 0 0",
+        }}
+      >
         <h2
-  style={{
-    margin: 0,
-    fontSize: "20px",
-    color: "#FFFFFF",
-    fontFamily: "'Merriweather', serif",
-    fontWeight: 700,
-  }}
->
-  Barrier Failure Overview
-</h2>
+          style={{
+            margin: 0,
+            fontSize: "20px",
+            color: "#FFFFFF",
+            fontFamily: "'Merriweather', serif",
+            fontWeight: 700,
+          }}
+        >
+          Barrier Failure Overview
+        </h2>
 
-<p
-  style={{
-    margin: "6px 0 0",
-    fontSize: "12px",
-    color: "#C7D3DC",
-    fontFamily: "'Inter', sans-serif",
-  }}
->
-   SIF intelligence identifies the most frequently failed safety barriers
-</p>
+        <p
+          style={{
+            margin: "6px 0 0",
+            fontSize: "12px",
+            color: "#C7D3DC",
+            fontFamily: "'Inter', sans-serif",
+          }}
+        >
+          SIF intelligence identifies the most frequently failed safety barriers
+        </p>
       </div>
 
       <div style={{ width: "100%", height: 260 }}>
@@ -345,13 +345,12 @@ function KPICard({ label, value, subtext, icon: Icon }) {
         borderRadius: "8px",
         padding: "20px",
         boxShadow: "0 2px 8px rgba(10,42,67,0.08)",
-        borderTop: `4px solid ${
-          isHighSIF
+        borderTop: `4px solid ${isHighSIF
             ? C.redBright
             : isPattern
-            ? C.orange
-            : C.navy
-        }`,
+              ? C.orange
+              : C.navy
+          }`,
       }}
     >
       <div
@@ -393,8 +392,8 @@ function KPICard({ label, value, subtext, icon: Icon }) {
               isHighSIF
                 ? C.redBright
                 : isPattern
-                ? C.orange
-                : C.navy
+                  ? C.orange
+                  : C.navy
             }
           />
         </div>
@@ -424,53 +423,53 @@ function KPICard({ label, value, subtext, icon: Icon }) {
         {subtext}
       </p>
     </div>
-    
+
   );
 }
 
 function SiteRiskComparison() {
   return (
     <section
-  style={{
-    marginTop: "28px",
-    background: C.card,
-    border: `1px solid ${C.line}`,
-    borderRadius: "8px",
-    padding: "22px",
-    boxShadow: "0 2px 8px rgba(10,42,67,0.08)",
-  }}
->
+      style={{
+        marginTop: "28px",
+        background: C.card,
+        border: `1px solid ${C.line}`,
+        borderRadius: "8px",
+        padding: "22px",
+        boxShadow: "0 2px 8px rgba(10,42,67,0.08)",
+      }}
+    >
       <div
-  style={{
-    margin: "-22px -22px 20px -22px",
-    padding: "20px 22px",
-    background: `linear-gradient(90deg, ${C.navy}, #123B59)`,
-    borderBottom: `3px solid ${C.saffron}`,
-    borderRadius: "8px 8px 0 0",
-  }}
->
+        style={{
+          margin: "-22px -22px 20px -22px",
+          padding: "20px 22px",
+          background: `linear-gradient(90deg, ${C.navy}, #123B59)`,
+          borderBottom: `3px solid ${C.saffron}`,
+          borderRadius: "8px 8px 0 0",
+        }}
+      >
         <h2
-  style={{
-    margin: 0,
-    fontSize: "20px",
-    color: "#FFFFFF",
-    fontFamily: "'Merriweather', serif",
-    fontWeight: 700,
-  }}
->
-  Site Risk Comparison
-</h2>
+          style={{
+            margin: 0,
+            fontSize: "20px",
+            color: "#FFFFFF",
+            fontFamily: "'Merriweather', serif",
+            fontWeight: 700,
+          }}
+        >
+          Site Risk Comparison
+        </h2>
 
-<p
-  style={{
-    margin: "6px 0 0",
-    fontSize: "12px",
-    color: "#C7D3DC",
-    fontFamily: "'Inter', sans-serif",
-  }}
->
-  Relative SIF precursor risk across assigned sites
-</p>
+        <p
+          style={{
+            margin: "6px 0 0",
+            fontSize: "12px",
+            color: "#C7D3DC",
+            fontFamily: "'Inter', sans-serif",
+          }}
+        >
+          Relative SIF precursor risk across assigned sites
+        </p>
       </div>
 
       <div style={{ width: "100%", height: 320 }}>
@@ -485,83 +484,83 @@ function SiteRiskComparison() {
               bottom: 5,
             }}
           >
-           <CartesianGrid
-  strokeDasharray="3 3"
-  stroke={C.line}
-  vertical={true}
-  horizontal={false}
-/>
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke={C.line}
+              vertical={true}
+              horizontal={false}
+            />
 
-<XAxis
-  type="number"
-  domain={[0, 100]}
-  tick={{
-    fontSize: 11,
-    fill: C.inkSoft,
-    fontFamily: "'Inter', sans-serif",
-  }}
-  axisLine={{
-    stroke: C.line,
-  }}
-  tickLine={false}
-/>
+            <XAxis
+              type="number"
+              domain={[0, 100]}
+              tick={{
+                fontSize: 11,
+                fill: C.inkSoft,
+                fontFamily: "'Inter', sans-serif",
+              }}
+              axisLine={{
+                stroke: C.line,
+              }}
+              tickLine={false}
+            />
 
-<YAxis
-  type="category"
-  dataKey="site"
-  width={145}
-  tick={{
-    fontSize: 12,
-    fill: C.ink,
-    fontWeight: 600,
-    fontFamily: "'Inter', sans-serif",
-  }}
-  axisLine={false}
-  tickLine={false}
-/>
+            <YAxis
+              type="category"
+              dataKey="site"
+              width={145}
+              tick={{
+                fontSize: 12,
+                fill: C.ink,
+                fontWeight: 600,
+                fontFamily: "'Inter', sans-serif",
+              }}
+              axisLine={false}
+              tickLine={false}
+            />
 
-           <Tooltip
-  cursor={{
-    fill: "rgba(10,42,67,0.04)",
-  }}
-  contentStyle={{
-    background: C.card,
-    border: `1px solid ${C.line}`,
-    borderRadius: "6px",
-    boxShadow: "0 2px 8px rgba(10,42,67,0.10)",
-    fontFamily: "'Inter', sans-serif",
-    fontSize: "12px",
-    color: C.ink,
-  }}
-  labelStyle={{
-    color: C.navy,
-    fontWeight: 700,
-    fontFamily: "'Inter', sans-serif",
-  }}
-  formatter={(value) => [`${value}`, "Risk Score"]}
-/>
+            <Tooltip
+              cursor={{
+                fill: "rgba(10,42,67,0.04)",
+              }}
+              contentStyle={{
+                background: C.card,
+                border: `1px solid ${C.line}`,
+                borderRadius: "6px",
+                boxShadow: "0 2px 8px rgba(10,42,67,0.10)",
+                fontFamily: "'Inter', sans-serif",
+                fontSize: "12px",
+                color: C.ink,
+              }}
+              labelStyle={{
+                color: C.navy,
+                fontWeight: 700,
+                fontFamily: "'Inter', sans-serif",
+              }}
+              formatter={(value) => [`${value}`, "Risk Score"]}
+            />
 
             <Bar
-  dataKey="risk"
-  radius={[0, 4, 4, 0]}
-  barSize={26}
->
-  {siteRiskData.map((entry, index) => {
-    const barColor =
-  entry.level === "HIGH"
-    ? C.redBright
-    : entry.level === "MEDIUM"
-    ? "#F4C430"
-    : C.greenGood;
+              dataKey="risk"
+              radius={[0, 4, 4, 0]}
+              barSize={26}
+            >
+              {siteRiskData.map((entry, index) => {
+                const barColor =
+                  entry.level === "HIGH"
+                    ? C.redBright
+                    : entry.level === "MEDIUM"
+                      ? "#F4C430"
+                      : C.greenGood;
 
-    return (
-      <Cell
-        key={`cell-${index}`}
-        fill={barColor}
-      />
-    );
-  })}
-</Bar>
+                return (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={barColor}
+                  />
+                );
+              })}
+            </Bar>
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -618,7 +617,7 @@ function SiteRiskComparison() {
   );
 }
 
-function HighSIFReports({ reports , setView}) {
+function HighSIFReports({ reports, setView }) {
   return (
     <section
       style={{
@@ -807,12 +806,12 @@ function HighSIFReports({ reports , setView}) {
 
           {/* Review */}
           <button
-          onClick={() => {
-  setView({
-    page: "report-detail",
-    reportId: report.id,
-  });
-}}
+            onClick={() => {
+              setView({
+                page: "report-detail",
+                reportId: report.id,
+              });
+            }}
             style={{
               border: `1px solid ${C.navy}`,
               background: "transparent",
@@ -834,71 +833,31 @@ function HighSIFReports({ reports , setView}) {
   );
 }
 
-function CommandUpload() {
-  return (
-    <section
-      style={{
-        marginBottom: "28px",
-        background: `linear-gradient(
-  120deg,
-  rgba(10,42,67,0.92),
-  rgba(10,42,67,0.75)
-), url(${IMG.plant})`,
-backgroundSize: "cover",
-backgroundPosition: "center",
-        border: `1px solid ${C.line}`,
-        borderRadius: "6px",
-        padding: "20px 22px",
-        boxShadow: "0 2px 8px rgba(10,42,67,0.08)",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "10px",
-          marginBottom: "14px",
-        }}
-      >
-        <div
-          style={{
-            width: "4px",
-            height: "24px",
-            background: C.saffron,
-            borderRadius: "2px",
-          }}
-        />
+function CommandUpload({ setView }) {
+  const handleUploadDone = () => {
+    setView({ page: "dashboard" });
+  };
 
+  return (
+    <section style={{
+      marginBottom: "28px",
+      background: `linear-gradient(120deg, rgba(10,42,67,0.92), rgba(10,42,67,0.75)), url(${IMG.plant})`,
+      backgroundSize: "cover", backgroundPosition: "center",
+      border: `1px solid ${C.line}`, borderRadius: "6px",
+      padding: "20px 22px",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
+        <div style={{ width: "4px", height: "24px", background: C.saffron, borderRadius: "2px" }} />
         <div>
-          <h2
-            style={{
-              margin: 0,
-              fontFamily: "'Merriweather', serif",
-              fontSize: "18px",
-              fontWeight: 700,
-              color: "#FFFFFF",
-            }}
-          >
+          <h2 style={{ margin: 0, fontFamily: "'Merriweather', serif", fontSize: "18px", fontWeight: 700, color: "#FFFFFF" }}>
             Upload Incident Report
           </h2>
-
-          <p
-            style={{
-              margin: "4px 0 0",
-              fontFamily: "'Inter', sans-serif",
-              fontSize: "12px",
-              color: "#FFFFFF",
-            }}
-          >
+          <p style={{ margin: "4px 0 0", fontFamily: "'Inter', sans-serif", fontSize: "12px", color: "#FFFFFF" }}>
             Submit a new incident report for SIF intelligence analysis
           </p>
         </div>
       </div>
-
-     <UploadWidget
-  compact
-  accept=".csv,.pdf,image/*"
-/>
+      <UploadWidget compact accept=".csv,.pdf,image/*" onIngest={handleUploadDone} />
     </section>
   );
 }
@@ -939,8 +898,8 @@ export default function CommandCenter({ setView }) {
     };
   }, []);
 
- const kpiData = dashboard
-  ? [
+  const kpiData = dashboard
+    ? [
       {
         label: "Total Reports",
         value: dashboard.total_reports?.toLocaleString() || "1,248",
@@ -966,7 +925,7 @@ export default function CommandCenter({ setView }) {
         icon: ShieldCheck,
       },
     ]
-  : [
+    : [
       {
         label: "Total Reports",
         value: "1,248",
@@ -993,43 +952,43 @@ export default function CommandCenter({ setView }) {
       },
     ];
 
- const highSIFReports = dashboard?.recent_high_sif_reports || [
-  {
-    id: "SIF-1024",
-    site: "Refinery A",
-    incident: "Energy isolation barrier failure",
-    date: "2026-09-10",
-    score: 92,
-  },
-  {
-    id: "SIF-1019",
-    site: "Offshore Platform B",
-    incident: "Permit to work deviation",
-    date: "2026-09-09",
-    score: 87,
-  },
-  {
-    id: "SIF-1016",
-    site: "Terminal C",
-    incident: "Gas detection failure",
-    date: "2026-09-08",
-    score: 84,
-  },
-  {
-    id: "SIF-1012",
-    site: "Refinery D",
-    incident: "PPE compliance failure",
-    date: "2026-09-07",
-    score: 81,
-  },
-  {
-    id: "SIF-1008",
-    site: "Pipeline Hub E",
-    incident: "PPE and permit deviation",
-    date: "2026-09-06",
-    score: 79,
-  },
-];
+  const highSIFReports = dashboard?.recent_high_sif_reports || [
+    {
+      id: "SIF-1024",
+      site: "Refinery A",
+      incident: "Energy isolation barrier failure",
+      date: "2026-09-10",
+      score: 92,
+    },
+    {
+      id: "SIF-1019",
+      site: "Offshore Platform B",
+      incident: "Permit to work deviation",
+      date: "2026-09-09",
+      score: 87,
+    },
+    {
+      id: "SIF-1016",
+      site: "Terminal C",
+      incident: "Gas detection failure",
+      date: "2026-09-08",
+      score: 84,
+    },
+    {
+      id: "SIF-1012",
+      site: "Refinery D",
+      incident: "PPE compliance failure",
+      date: "2026-09-07",
+      score: 81,
+    },
+    {
+      id: "SIF-1008",
+      site: "Pipeline Hub E",
+      incident: "PPE and permit deviation",
+      date: "2026-09-06",
+      score: 79,
+    },
+  ];
 
   return (
     <div
@@ -1054,33 +1013,33 @@ export default function CommandCenter({ setView }) {
       >
         <div style={{ marginBottom: "28px" }}>
           <div style={{ marginBottom: "28px" }}>
-  <h1
-    style={{
-      margin: 0,
-      fontSize: "30px",
-      color: C.navy,
-      fontFamily: "'Merriweather', serif",
-      fontWeight: 700,
-    }}
-  >
-    Safety Intelligence Command Center
-  </h1>
+            <h1
+              style={{
+                margin: 0,
+                fontSize: "30px",
+                color: C.navy,
+                fontFamily: "'Merriweather', serif",
+                fontWeight: 700,
+              }}
+            >
+              Safety Intelligence Command Center
+            </h1>
 
-  <p
-  style={{
-    margin: "6px 0 0",
-    fontSize: "13px",
-    color: C.inkSoft,
-    fontFamily: "'Inter', sans-serif",
-  }}
->
-  Monitor high-risk safety signals, emerging SIF precursors, and critical
-  barrier failures across sites.
-</p>
-</div>
+            <p
+              style={{
+                margin: "6px 0 0",
+                fontSize: "13px",
+                color: C.inkSoft,
+                fontFamily: "'Inter', sans-serif",
+              }}
+            >
+              Monitor high-risk safety signals, emerging SIF precursors, and critical
+              barrier failures across sites.
+            </p>
+          </div>
 
-<CommandUpload />
-          
+          <CommandUpload setView={setView} />
+
         </div>
 
         <div
@@ -1095,18 +1054,17 @@ export default function CommandCenter({ setView }) {
           ))}
         </div>
         <SiteRiskComparison />
-<HighSIFReports
-  reports={highSIFReports}
-  setView={setView}
-/>
+        <HighSIFReports
+          reports={highSIFReports}
+          setView={setView}
+        />
 
-<div style={{ marginTop: 24 }}>
-  <BarrierFailureChart />
-</div>
+        <div style={{ marginTop: 24 }}>
+          <BarrierFailureChart />
+        </div>
       </main>
 
       <CommandFooter />
     </div>
   );
 }
- 

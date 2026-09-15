@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from "react";
-import { uploadReports } from "../src/api.js";
+import React, { useEffect, useState, useMemo } from "react";
+import { getReports, uploadReports } from "../src/api.js";
 import {
   LineChart,
   Line,
@@ -126,6 +126,119 @@ const psifData = MONTHS.map((m, i) => {
   return row;
 });
 const SITE_COLORS = { A: C.saffron, B: "#C79A1E", C: C.greenGood, D: C.redBright, E: "#8B4A9C", F: C.inkSoft };
+
+const toRiskLevel = (score) => score >= 81 ? "Critical" : score >= 61 ? "High" : score >= 31 ? "Medium" : "Low";
+
+function buildDashboardData(reports) {
+  const analyzed = reports.filter((report) => report.analysis);
+  const siteGroups = new Map();
+  const hazardGroups = new Map();
+  const barrierGroups = new Map();
+
+  analyzed.forEach((report) => {
+    const site = report.metadata?.site || "Unknown";
+    const extraction = report.analysis.extracted_data || {};
+    const hazard = extraction.hazard || "Unknown";
+    const barrier = extraction.barrier_failure || "Unknown";
+    if (!siteGroups.has(site)) siteGroups.set(site, []);
+    siteGroups.get(site).push(report);
+    if (!hazardGroups.has(hazard)) hazardGroups.set(hazard, new Map());
+    hazardGroups.get(hazard).set(site, (hazardGroups.get(hazard).get(site) || 0) + 1);
+    if (barrier !== "Unknown") barrierGroups.set(barrier, (barrierGroups.get(barrier) || 0) + 1);
+  });
+
+  const siteNames = [...siteGroups.keys()];
+  const siteIds = siteNames.reduce((ids, name, index) => ({ ...ids, [`S${index + 1}`]: name }), {});
+  const sites = Object.entries(siteIds).map(([id, name]) => {
+    const group = siteGroups.get(name);
+    const risk = Math.round(group.reduce((sum, report) => sum + (report.analysis.risk_score || 0), 0) / group.length);
+    const hazardCounts = {};
+    group.forEach((report) => {
+      const hazard = report.analysis.extracted_data?.hazard || "Unknown";
+      hazardCounts[hazard] = (hazardCounts[hazard] || 0) + 1;
+    });
+    const datedGroup = [...group].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    const latest = datedGroup.at(-1);
+    const midpoint = Math.max(1, Math.floor(datedGroup.length / 2));
+    const earlier = datedGroup.slice(0, midpoint);
+    const later = datedGroup.slice(midpoint);
+    const earlierRate = earlier.filter((report) => report.analysis.sif_level === "HIGH").length / earlier.length;
+    const laterRate = later.length
+      ? later.filter((report) => report.analysis.sif_level === "HIGH").length / later.length
+      : earlierRate;
+    const trend = earlierRate ? Math.round(((laterRate - earlierRate) / earlierRate) * 100) : laterRate ? 100 : 0;
+    return {
+      id, name, risk, sif: group.filter((report) => report.analysis.sif_level === "HIGH").length,
+      psif: group.length, trend,
+      hazard: Object.entries(hazardCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || "Unknown",
+      barrier: latest.analysis.extracted_data?.barrier_failure || "No barrier failure identified", lsr: "ML classified",
+    };
+  }).sort((a, b) => b.risk - a.risk);
+
+  const hazards = [...hazardGroups.keys()].sort();
+  const heat = Object.fromEntries(hazards.map((hazard) => [hazard, Object.fromEntries(Object.entries(siteIds).map(([id, name]) => {
+    const count = hazardGroups.get(hazard).get(name) || 0;
+    return [id, Math.round((count / siteGroups.get(name).length) * 100)];
+  }))]));
+  const monthKeys = [...new Set(analyzed.map((report) => {
+    const date = new Date(report.created_at);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+  }))].sort();
+  const monthlyTrendData = monthKeys.map((monthKey) => {
+    const [year, month] = monthKey.split("-").map(Number);
+    const label = new Date(year, month - 1, 1).toLocaleString("en-US", { month: "short", year: "numeric" });
+    const row = { month: label };
+    Object.entries(siteIds).forEach(([id, name]) => {
+      row[id] = siteGroups.get(name).filter((report) => {
+        const date = new Date(report.created_at);
+        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+        return key === monthKey && report.analysis.sif_level === "HIGH";
+      }).length;
+    });
+    return row;
+  });
+  const monthlyPsifData = monthKeys.map((monthKey) => {
+    const [year, month] = monthKey.split("-").map(Number);
+    const label = new Date(year, month - 1, 1).toLocaleString("en-US", { month: "short", year: "numeric" });
+    const row = { month: label };
+    Object.entries(siteIds).forEach(([id, name]) => {
+      row[id] = siteGroups.get(name).filter((report) => {
+        const date = new Date(report.created_at);
+        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+        return key === monthKey;
+      }).length;
+    });
+    return row;
+  });
+  const sequenceReports = [...analyzed].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+  const bucketCount = Math.min(6, Math.max(2, sequenceReports.length));
+  const sequenceTrendData = Array.from({ length: bucketCount }, (_, bucketIndex) => {
+    const start = Math.floor((bucketIndex * sequenceReports.length) / bucketCount);
+    const end = Math.floor(((bucketIndex + 1) * sequenceReports.length) / bucketCount);
+    const bucketReports = sequenceReports.slice(start, end);
+    const row = { month: `Period ${bucketIndex + 1}` };
+    Object.entries(siteIds).forEach(([id, name]) => {
+      row[id] = bucketReports.filter((item) => item.metadata?.site === name && item.analysis.sif_level === "HIGH").length;
+    });
+    return row;
+  });
+  const sequencePsifData = Array.from({ length: bucketCount }, (_, bucketIndex) => {
+    const start = Math.floor((bucketIndex * sequenceReports.length) / bucketCount);
+    const end = Math.floor(((bucketIndex + 1) * sequenceReports.length) / bucketCount);
+    const bucketReports = sequenceReports.slice(start, end);
+    const row = { month: `Period ${bucketIndex + 1}` };
+    Object.entries(siteIds).forEach(([id, name]) => {
+      row[id] = bucketReports.filter((item) => item.metadata?.site === name).length;
+    });
+    return row;
+  });
+  const trendData = monthKeys.length > 1 ? monthlyTrendData : sequenceTrendData;
+  const psifData = monthKeys.length > 1 ? monthlyPsifData : sequencePsifData;
+  const alerts = [...barrierGroups.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([barrier, count]) => ({
+    title: "Recurring Barrier Failure", body: `${barrier} was identified in ${count} analyzed report${count === 1 ? "" : "s"}.`, sev: count >= 3 ? "Critical" : count >= 2 ? "High" : "Medium",
+  }));
+  return { reports, sites, hazards, siteIds, heat, trendData, psifData, siteColors: Object.fromEntries(Object.keys(siteIds).map((id, index) => [id, Object.values(SITE_COLORS)[index % Object.values(SITE_COLORS).length]])), alerts };
+}
 
 const alerts = [
   { title: "Emerging Pattern Detected", body: "Confined-space precursors increased 38% over the last 3 months at Sites B, D and E.", sev: "High" },
@@ -371,7 +484,7 @@ export function UploadWidget({ compact, onIngest, accept = ".csv,.pdf,image/*" }
         `${result.analyzed ?? result.created ?? 0} report(s) analysed successfully`
       );
 
-      onIngest && onIngest(f.name, result);
+      if (onIngest) onIngest(f.name, result);
     } catch (error) {
       console.error("Report upload failed:", error);
       setStatus("error");
@@ -527,7 +640,7 @@ export function UploadWidget({ compact, onIngest, accept = ".csv,.pdf,image/*" }
 /* ------------------------------------------------------------------ */
 /* DASHBOARD                                                           */
 /* ------------------------------------------------------------------ */
-function ReportSummaryBanner({ onIngest }) {
+function ReportSummaryBanner({ onIngest, setView, reportCount }) {
   return (
     <div style={{
       background: `linear-gradient(120deg, rgba(10,42,67,0.92), rgba(10,42,67,0.75)), url(${IMG.plant})`,
@@ -540,32 +653,30 @@ function ReportSummaryBanner({ onIngest }) {
         Here's the summary of your report
       </div>
       <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13.5, color: "#DCE6EA", lineHeight: 1.6, maxWidth: 760, marginBottom: 16 }}>
-        Your uploaded incident logs were parsed across 6 sites and 7 hazard categories. Site A carries the highest
-        composite risk this cycle, driven by a rising oil-spilling trend and a repeated leak-detection barrier failure.
-        Two emerging patterns were flagged for HSE review below.
+        {reportCount ? `${reportCount} uploaded incident report${reportCount === 1 ? " was" : "s were"} parsed by the ML pipeline. The dashboard below is calculated from the stored extractions and risk scores.` : "Upload a CSV report to populate the ML-derived site, hazard, trend and barrier intelligence below."}
       </div>
       <div style={{ maxWidth: 520 }}>
-        <UploadWidget onIngest={onIngest} />
+        <UploadWidget onIngest={() => { onIngest && onIngest(); setView({ page: "dashboard" }); }} />
       </div>
     </div>
   );
 }
 
-function TopSites({ setView }) {
+function TopSites({ setView, data }) {
   return (
     <div style={{ marginBottom: 34 }}>
       <SectionLabel sub="Ranked by composite Site Risk Score — SIF/PSIF potential, severity, recurrence, failed barriers and trend, normalised by report volume.">
         Top High-Risk Sites
       </SectionLabel>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
-        {SITES.map((s, i) => {
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14, alignItems: "stretch" }}>
+        {data.sites.map((s, i) => {
           const Icon = hazardIcon(s.hazard);
           const level = s.risk >= 61 ? "Critical" : s.risk >= 41 ? "High" : s.risk >= 21 ? "Medium" : "Low";
           return (
             <div key={s.id} onClick={() => setView({ page: "site-drill", siteId: s.id })}
               style={{
                 background: C.card, border: `1px solid ${C.line}`, borderLeft: `5px solid ${riskColor(level)}`,
-                borderRadius: 4, padding: "16px 18px", cursor: "pointer", position: "relative",
+                borderRadius: 4, padding: "16px 18px", cursor: "pointer", position: "relative", minHeight: 184,
               }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <div style={{ color: C.inkSoft, fontSize: 12, fontWeight: 700, fontFamily: "'Inter',sans-serif" }}>#{i + 1} RANK</div>
@@ -594,7 +705,7 @@ function TopSites({ setView }) {
   );
 }
 
-function Heatmap({ setView }) {
+function Heatmap({ setView, data }) {
   return (
     <div style={{ marginBottom: 34 }}>
       <SectionLabel sub="Rows show hazards, columns show sites. Each cell is the SIF/PSIF precursor risk probability derived from field reports.">
@@ -605,7 +716,7 @@ function Heatmap({ setView }) {
           <thead>
             <tr style={{ background: "#051220" }}>
               <th style={{ textAlign: "left", padding: "10px 16px", color: "#EFE6C8", fontSize: 12.5, fontWeight: 600 }}>Hazard</th>
-              {SITE_IDS.map((sid) => (
+              {Object.keys(data.siteIds).map((sid) => (
                 <th key={sid} onClick={() => setView({ page: "site-drill", siteId: sid })}
                   style={{ padding: "10px 8px", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
                   Site {sid}
@@ -614,15 +725,15 @@ function Heatmap({ setView }) {
             </tr>
           </thead>
           <tbody>
-            {HAZARDS.map((h, ri) => {
+            {data.hazards.map((h) => {
               const Icon = hazardIcon(h);
               return (
                 <tr key={h}>
                   <td style={{ padding: "9px 16px", fontSize: 13, color: "#E7EEF2", display: "flex", alignItems: "center", gap: 7, whiteSpace: "nowrap" }}>
                     <Icon size={14} color={C.saffron} /> {h}
                   </td>
-                  {SITE_IDS.map((sid) => {
-                    const v = heat[h][sid];
+                  {Object.keys(data.siteIds).map((sid) => {
+                    const v = data.heat[h][sid];
                     const level = heatLevel(v);
                     const cs = heatCellStyle(level);
                     return (
@@ -644,9 +755,9 @@ function Heatmap({ setView }) {
   );
 }
 
-function TrendSection() {
+function TrendSection({ data }) {
   const [metric, setMetric] = useState("sif");
-  const data = metric === "sif" ? trendData : psifData;
+  const chartData = metric === "sif" ? data.trendData : data.psifData;
   return (
     <div style={{ marginBottom: 34 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 10 }}>
@@ -663,16 +774,16 @@ function TrendSection() {
           ))}
         </div>
       </div>
-      <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 4, padding: "18px 14px 6px" }}>
+      <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 4, padding: "18px 14px 6px", minWidth: 0 }}>
         <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={data} margin={{ top: 5, right: 20, left: -10, bottom: 0 }}>
+          <LineChart data={chartData} margin={{ top: 5, right: 20, left: -10, bottom: 0 }}>
             <CartesianGrid stroke="#EEEAE0" vertical={false} />
             <XAxis dataKey="month" tick={{ fontSize: 12, fontFamily: "Inter" }} stroke={C.inkSoft} />
             <YAxis tick={{ fontSize: 12, fontFamily: "Inter" }} stroke={C.inkSoft} />
             <Tooltip contentStyle={{ fontFamily: "Inter", fontSize: 12.5, borderRadius: 4, border: `1px solid ${C.line}` }} />
             <Legend wrapperStyle={{ fontFamily: "Inter", fontSize: 12.5 }} formatter={(v) => `Site ${v}`} />
-            {SITE_IDS.map((sid) => (
-              <Line key={sid} type="monotone" dataKey={sid} stroke={SITE_COLORS[sid]} strokeWidth={2.2} dot={{ r: 2.5 }} activeDot={{ r: 5 }} />
+            {Object.keys(data.siteIds).map((sid) => (
+              <Line key={sid} type="monotone" dataKey={sid} name={data.siteIds[sid]} stroke={data.siteColors[sid]} strokeWidth={2.2} dot={{ r: 2.5 }} activeDot={{ r: 5 }} />
             ))}
           </LineChart>
         </ResponsiveContainer>
@@ -681,14 +792,14 @@ function TrendSection() {
   );
 }
 
-function Alerts() {
+function Alerts({ data }) {
   return (
     <div style={{ marginBottom: 34 }}>
       <SectionLabel sub="Cross-site pattern detection surfaced automatically from recurring precursor and barrier-failure signals.">
         Emerging Risk Alerts
       </SectionLabel>
       <div style={{ display: "grid", gap: 10 }}>
-        {alerts.map((a, i) => (
+        {data.alerts.length ? data.alerts.map((a, i) => (
           <div key={i} style={{
             background: riskColor(a.sev), backgroundImage: `linear-gradient(90deg, ${riskColor(a.sev)}, ${riskColor(a.sev)}CC)`,
             borderRadius: 4, padding: "13px 16px",
@@ -702,16 +813,17 @@ function Alerts() {
               <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13.5, color: "#FFF3E9", marginTop: 3, lineHeight: 1.5 }}>{a.body}</div>
             </div>
           </div>
-        ))}
+        )) : <div style={{ color: C.inkSoft, fontFamily: "'Inter',sans-serif", fontSize: 13.5 }}>No recurring barrier failures detected in the uploaded reports.</div>}
       </div>
     </div>
   );
 }
 
-function SiteDrilldown({ siteId, setView }) {
-  const s = SITES.find((x) => x.id === siteId) || SITES[0];
+function SiteDrilldown({ siteId, setView, data }) {
+  const s = data.sites.find((x) => x.id === siteId) || data.sites[0];
+  if (!s) return <div>No analyzed site data is available yet.</div>;
   const level = s.risk >= 61 ? "Critical" : s.risk >= 41 ? "High" : s.risk >= 21 ? "Medium" : "Low";
-  const hazardsAtSite = HAZARDS.map((h) => ({ h, v: heat[h][s.id] })).sort((a, b) => b.v - a.v);
+  const hazardsAtSite = data.hazards.map((h) => ({ h, v: data.heat[h][s.id] || 0 })).sort((a, b) => b.v - a.v);
   return (
     <div>
       <button onClick={() => setView({ page: "dashboard" })} style={backBtn}><ArrowLeft size={14} /> Back to dashboard</button>
@@ -781,14 +893,14 @@ function SiteDrilldown({ siteId, setView }) {
   );
 }
 
-function Dashboard({ setView, onIngest }) {
+function Dashboard({ setView, onIngest, data }) {
   return (
     <div>
-      <ReportSummaryBanner onIngest={onIngest} />
-      <TopSites setView={setView} />
-      <Heatmap setView={setView} />
-      <TrendSection />
-      <Alerts />
+      <ReportSummaryBanner onIngest={onIngest} setView={setView} reportCount={data.reports.length} />
+      <TopSites setView={setView} data={data} />
+      <Heatmap setView={setView} data={data} />
+      <TrendSection data={data} />
+      <Alerts data={data} />
     </div>
   );
 }
@@ -1156,16 +1268,44 @@ function ReportDetail({ reportId, setView, reports }) {
 /* ROOT                                                                 */
 /* ------------------------------------------------------------------ */
 export default function App() {
-  const [view, setView] = useState({ page: "command-center" });
-  const [reports, setReports] = useState(REPORTS_INITIAL);
+  const [view, setView] = useState(() => {
+    try {
+      const savedView = window.localStorage.getItem("oil-sentinel-view");
+      return savedView ? JSON.parse(savedView) : { page: "command-center" };
+    } catch {
+      return { page: "command-center" };
+    }
+  });
+  const [reports, setReports] = useState([]);
 
-  const onIngest = (fileName) => {
-    const id = `OSR-2026-${1043 + reports.length - 10}`;
-    const newReport = {
-      id, date: "2026-09-04", site: "Site A", hazard: "Oil Spilling", risk: "Medium", status: "Pending",
-    };
-    setReports((r) => [newReport, ...r]);
+  useEffect(() => {
+    window.localStorage.setItem("oil-sentinel-view", JSON.stringify(view));
+  }, [view]);
+
+  const refreshReports = async () => {
+    try {
+      const response = await getReports();
+      setReports(response.map((report) => ({
+        ...report,
+        date: report.created_at?.slice(0, 10) || "",
+        site: report.metadata?.site || "Unknown",
+        hazard: report.analysis?.extracted_data?.hazard || "Unknown",
+        risk: toRiskLevel(report.analysis?.risk_score || 0),
+        status: report.analysis?.status || "Analyzed",
+      })));
+    } catch (error) {
+      console.error("Unable to load analyzed reports:", error);
+    }
   };
+
+  useEffect(() => { refreshReports(); }, []);
+
+  const onIngest = async () => {
+    await refreshReports();
+  };
+
+  const dashboardData = useMemo(() => buildDashboardData(reports), [reports]);
+  const isCommandCenter = view.page === "command-center";
 
   return (
     <div style={{ minHeight: "100vh", background: C.paper }}>
@@ -1179,23 +1319,23 @@ export default function App() {
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       `}</style>
 
-      <TopBar view={view} setView={setView} />
+      {!isCommandCenter && <TopBar view={view} setView={setView} />}
 
-      <div style={{ maxWidth: 1320, margin: "0 auto", padding: "26px 28px 60px" }}>
+      <div style={{ maxWidth: 1320, margin: "0 auto", padding: isCommandCenter ? 0 : "26px 28px 60px" }}>
         {view.page === "command-center" && <CommandCenter setView={setView} />}
-        {view.page === "dashboard" && <Dashboard setView={setView} onIngest={onIngest} />}
-        {view.page === "site-drill" && <SiteDrilldown siteId={view.siteId} setView={setView} />}
+        {view.page === "dashboard" && <Dashboard setView={setView} onIngest={onIngest} data={dashboardData} />}
+        {view.page === "site-drill" && <SiteDrilldown siteId={view.siteId} setView={setView} data={dashboardData} />}
         {view.page === "reports" && <ReportsTable setView={setView} reports={reports} onIngest={onIngest} />}
         {view.page === "report-detail" && <ReportDetail reportId={view.reportId} setView={setView} reports={reports} />}
       </div>
 
-      <div style={{
+      {!isCommandCenter && <div style={{
         background: `linear-gradient(90deg, rgba(5,15,25,0.94), rgba(5,15,25,0.94)), url(${IMG.bottles})`,
         backgroundSize: "cover", backgroundPosition: "center",
         color: "#9FB0BB", textAlign: "center", padding: "16px 0", fontFamily: "'Inter',sans-serif", fontSize: 12,
       }}>
         Oil Safety Intelligence Portal — Prototype for demonstration purposes · Data shown is illustrative
-      </div>
+      </div>}
     </div>
   );
 }

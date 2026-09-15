@@ -1,10 +1,9 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-
-import CommandCenter from "../frontend/command-center.jsx";
+import App from "../frontend/oil-safety-portal.jsx";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <CommandCenter />
+    <App />
   </React.StrictMode>
 );

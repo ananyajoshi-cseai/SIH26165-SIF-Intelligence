@@ -43,9 +43,9 @@ class Report(Base):
     )
 
     embedding: Mapped[list[float] | None] = mapped_column(
-        Vector(384),
-        nullable=True,
-    )
+    JSONB,
+    nullable=True,
+)
     analysis: Mapped["Analysis | None"] = relationship(
         back_populates="report",
         uselist=False,
