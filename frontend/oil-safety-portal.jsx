@@ -154,8 +154,7 @@ function buildDashboardData(reports) {
         return group.reduce((sum, report) => sum + (report.analysis.risk_score || 0), 0) / group.length;
       };
       return score(b) - score(a);
-    })
-    .slice(0, 5);
+    });
   const siteIds = siteNames.reduce((ids, name, index) => ({ ...ids, [`S${index + 1}`]: name }), {});
   const sites = Object.entries(siteIds).map(([id, name]) => {
     const group = siteGroups.get(name);
@@ -674,7 +673,7 @@ function TopSites({ setView, data }) {
   return (
     <div style={{ marginBottom: 34 }}>
       <SectionLabel sub="Ranked by composite Site Risk Score — SIF/PSIF potential, severity, recurrence, failed barriers and trend, normalised by report volume.">
-        Top High-Risk Sites
+        All Sites by Risk
       </SectionLabel>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14, alignItems: "stretch" }}>
         {data.sites.map((s, i) => {
@@ -714,48 +713,108 @@ function TopSites({ setView, data }) {
 }
 
 function Heatmap({ setView, data }) {
+  const [riskScope, setRiskScope] = useState("Critical + High");
+  const [hoveredCell, setHoveredCell] = useState(null);
+  const highRiskLevels = new Set(["Critical", "High"]);
+  const heatmapData = useMemo(() => {
+    const reports = data.reports.map((report) => ({
+      ...report,
+      riskGroup: highRiskLevels.has(report.risk) ? "Critical + High" : "All",
+    }));
+    const scopedReports = riskScope === "All"
+      ? reports
+      : reports.filter((report) => report.riskGroup === riskScope);
+    const hazardTotals = new Map();
+    scopedReports.forEach((report) => hazardTotals.set(report.hazard, (hazardTotals.get(report.hazard) || 0) + 1));
+    const hazards = [...hazardTotals.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .slice(0, 7)
+      .map(([hazard]) => hazard);
+    const sites = [...new Set(reports.map((report) => report.site))]
+      .map((site) => ({
+        site,
+        total: scopedReports.filter((report) => report.site === site).length,
+      }))
+      .sort((a, b) => b.total - a.total || a.site.localeCompare(b.site));
+    const cells = Object.fromEntries(sites.map(({ site }) => [site, Object.fromEntries(hazards.map((hazard) => {
+      const matching = reports.filter((report) => report.site === site && report.hazard === hazard);
+      return [hazard, {
+        total: matching.length,
+        highCritical: matching.filter((report) => highRiskLevels.has(report.risk)).length,
+        count: matching.filter((report) => riskScope === "All" || highRiskLevels.has(report.risk)).length,
+      }];
+    }))]));
+    const maxCount = Math.max(1, ...sites.flatMap(({ site }) => hazards.map((hazard) => cells[site][hazard].count)));
+    return { hazards, sites, cells, maxCount };
+  }, [data.reports, riskScope]);
+
+  const cellColor = (count, maxCount) => {
+    if (!count) return { background: "#F5F3ED", color: C.inkSoft, border: C.line };
+    const intensity = count / maxCount;
+    const palette = ["#FFF4D6", "#FDD49E", "#FC8D59", "#E34A33", "#B30000"];
+    const paletteIndex = Math.min(palette.length - 1, Math.ceil(intensity * palette.length) - 1);
+    const background = palette[paletteIndex];
+    return {
+      background,
+      color: paletteIndex >= 2 ? "#fff" : C.red,
+      border: `1px solid ${paletteIndex >= 2 ? background : "#E6B36A"}`,
+    };
+  };
+
   return (
     <div style={{ marginBottom: 34 }}>
-      <SectionLabel sub="Rows show hazards, columns show sites. Each cell is the SIF/PSIF precursor risk probability derived from field reports.">
-        Site × Hazard Precursor Heatmap
-      </SectionLabel>
-      <div style={{ background: C.navyDeep, border: `1px solid ${C.line}`, borderRadius: 4, overflow: "hidden" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 12, flexWrap: "wrap" }}>
+        <SectionLabel sub="Rows show sites and columns show the seven most concentrated hazards. Cell values are report counts.">
+          Site × Hazard Risk Heatmap
+        </SectionLabel>
+        <select value={riskScope} onChange={(e) => setRiskScope(e.target.value)} aria-label="Heatmap risk filter"
+          style={{ marginBottom: 14, padding: "7px 10px", border: `1px solid ${C.line}`, borderRadius: 3, background: "#fff", color: C.navy, fontFamily: "'Inter',sans-serif", fontSize: 12.5, fontWeight: 600 }}>
+          <option>Critical + High</option>
+          <option>All</option>
+        </select>
+      </div>
+      <div style={{ background: C.navyDeep, border: `1px solid ${C.line}`, borderRadius: 4, overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "'Inter',sans-serif" }}>
           <thead>
             <tr style={{ background: "#051220" }}>
-              <th style={{ textAlign: "left", padding: "10px 16px", color: "#EFE6C8", fontSize: 12.5, fontWeight: 600 }}>Hazard</th>
-              {Object.keys(data.siteIds).map((sid) => (
-                <th key={sid} onClick={() => setView({ page: "site-drill", siteId: sid })}
-                  style={{ padding: "10px 8px", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
-                  Site {sid}
+              <th style={{ textAlign: "left", padding: "10px 16px", color: "#EFE6C8", fontSize: 12.5, fontWeight: 600 }}>Site</th>
+              {heatmapData.hazards.map((hazard) => (
+                <th key={hazard} style={{ padding: "10px 8px", color: "#fff", fontSize: 12.5, fontWeight: 700, minWidth: 96 }}>
+                  {hazard}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {data.hazards.map((h) => {
-              const Icon = hazardIcon(h);
+            {heatmapData.sites.map(({ site }) => {
+              const siteId = Object.entries(data.siteIds).find(([, name]) => name === site)?.[0];
               return (
-                <tr key={h}>
-                  <td style={{ padding: "9px 16px", fontSize: 13, color: "#E7EEF2", display: "flex", alignItems: "center", gap: 7, whiteSpace: "nowrap" }}>
-                    <Icon size={14} color={C.saffron} /> {h}
+                <tr key={site}>
+                  <td onClick={() => siteId && setView({ page: "site-drill", siteId })}
+                    style={{ padding: "9px 16px", fontSize: 13, color: "#E7EEF2", whiteSpace: "nowrap", cursor: siteId ? "pointer" : "default", fontWeight: 700 }}>
+                    {site}
                   </td>
-                  {Object.keys(data.siteIds).map((sid) => {
-                    const v = data.heat[h][sid];
-                    const level = heatLevel(v);
-                    const cs = heatCellStyle(level);
+                  {heatmapData.hazards.map((hazard) => {
+                    const cell = heatmapData.cells[site][hazard];
+                    const cs = cellColor(cell.count, heatmapData.maxCount);
+                    const cellKey = `${site}-${hazard}`;
                     return (
-                      <td key={sid} style={{ textAlign: "center", padding: 5 }}>
-                        <div style={{
-                          background: cs.bg, color: cs.fg, border: `1px solid ${cs.bd}`, borderRadius: 3,
-                          padding: "7px 0", fontSize: 13, fontWeight: 800, letterSpacing: 0.2,
-                        }}>{v}%</div>
+                      <td key={hazard} style={{ textAlign: "center", padding: 5, position: "relative" }}>
+                        <button type="button" disabled={!cell.count} onClick={() => setView({ page: "reports", siteFilter: site, hazardFilter: hazard, riskFilter: "All" })}
+                          onMouseEnter={() => setHoveredCell(cellKey)} onMouseLeave={() => setHoveredCell(null)}
+                          aria-label={`${site}, ${hazard}, ${cell.count} reports`} style={{ width: "100%", minHeight: 36, background: cs.background, color: cs.color, border: cs.border, borderRadius: 3, padding: "7px 0", fontSize: 13, fontWeight: 800, cursor: cell.count ? "pointer" : "default" }}>
+                          {cell.count}
+                        </button>
+                        {hoveredCell === cellKey && <div style={{ position: "absolute", zIndex: 3, left: "50%", bottom: "calc(100% - 2px)", transform: "translateX(-50%)", width: 190, padding: "8px 10px", background: C.navy, color: "#fff", borderRadius: 3, textAlign: "left", fontSize: 12, lineHeight: 1.45, pointerEvents: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.2)" }}>
+                          <b>{site}</b><br />{hazard}<br />Total reports: <b>{cell.total}</b><br />Critical + High: <b>{cell.highCritical}</b>
+                        </div>}
                       </td>
                     );
                   })}
                 </tr>
               );
             })}
+            {!heatmapData.sites.length && <tr><td colSpan={heatmapData.hazards.length + 1} style={{ padding: 18, textAlign: "center", color: "#E7EEF2" }}>No reports match this risk filter.</td></tr>}
           </tbody>
         </table>
       </div>
@@ -936,17 +995,19 @@ function Dashboard({ setView, onIngest, data }) {
 /* ------------------------------------------------------------------ */
 /* /reports  — Report Intelligence Table                               */
 /* ------------------------------------------------------------------ */
-function ReportsTable({ setView, reports, onIngest }) {
+function ReportsTable({ setView, reports, onIngest, siteFilter, hazardFilter, initialRiskFilter = "All" }) {
   const [q, setQ] = useState("");
-  const [riskFilter, setRiskFilter] = useState("All");
+  const [riskFilter, setRiskFilter] = useState(initialRiskFilter);
 
   const filtered = useMemo(() => {
     return reports.filter((r) => {
       const matchesQ = !q || [r.id, r.site, r.hazard].join(" ").toLowerCase().includes(q.toLowerCase());
-      const matchesRisk = riskFilter === "All" || r.risk === riskFilter;
-      return matchesQ && matchesRisk;
+      const matchesSite = !siteFilter || r.site === siteFilter;
+      const matchesHazard = !hazardFilter || r.hazard === hazardFilter;
+      const matchesRisk = riskFilter === "All" || (riskFilter === "Critical + High" ? ["Critical", "High"].includes(r.risk) : r.risk === riskFilter);
+      return matchesQ && matchesSite && matchesHazard && matchesRisk;
     });
-  }, [q, riskFilter, reports]);
+  }, [q, riskFilter, reports, siteFilter, hazardFilter]);
 
   return (
     <div>
@@ -971,7 +1032,7 @@ function ReportsTable({ setView, reports, onIngest }) {
         </div>
         <select value={riskFilter} onChange={(e) => setRiskFilter(e.target.value)}
           style={{ padding: "8px 10px", border: `1px solid ${C.line}`, borderRadius: 4, fontFamily: "'Inter',sans-serif", fontSize: 13.5, background: "#fff" }}>
-          {["All", "Critical", "High", "Medium", "Low"].map((l) => <option key={l}>{l}</option>)}
+          {["All", "Critical + High", "Critical", "High", "Medium", "Low"].map((l) => <option key={l}>{l}</option>)}
         </select>
       </div>
 
@@ -1385,7 +1446,7 @@ export default function App() {
         {view.page === "command-center" && <CommandCenter setView={setView} onIngest={onIngest} />}
         {view.page === "dashboard" && <Dashboard setView={setView} onIngest={onIngest} data={dashboardData} />}
         {view.page === "site-drill" && <SiteDrilldown siteId={view.siteId} setView={setView} data={dashboardData} />}
-        {view.page === "reports" && <ReportsTable setView={setView} reports={reports} onIngest={onIngest} />}
+        {view.page === "reports" && <ReportsTable setView={setView} reports={reports} onIngest={onIngest} siteFilter={view.siteFilter} hazardFilter={view.hazardFilter} initialRiskFilter={view.riskFilter} />}
         {view.page === "report-detail" && <ReportDetail reportId={view.reportId} setView={setView} reports={reports} onIngest={onIngest} />}
       </div>
 
