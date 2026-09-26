@@ -1199,9 +1199,43 @@ function ReportDetail({ reportId, setView, reports, onIngest }) {
           </Panel>
 
           <Panel title="SIF Explainability" icon={AlertTriangle} tone={C.redBright}>
-            <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: C.ink, marginBottom: 8 }}>
-              <b>{detail.sif.classification}</b>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
+              <div style={{ border: `1px solid ${C.line}`, borderRadius: 4, padding: "10px 12px", background: "#FAFBFA" }}>
+                <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, color: C.inkSoft, fontWeight: 700, marginBottom: 4 }}>
+                  REPORT TYPE
+                </div>
+                <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, color: C.navy, fontWeight: 700 }}>
+                  {meta.extractedData?.report_type || "Unknown"}
+                </div>
+                <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11.5, color: C.inkSoft, marginTop: 3 }}>
+                  Confidence: {meta.extractedData?.report_type_confidence != null
+                    ? `${Math.round(meta.extractedData.report_type_confidence * 100)}%`
+                    : "?"}
+                </div>
+              </div>
+
+              <div style={{ border: `1px solid ${C.line}`, borderRadius: 4, padding: "10px 12px", background: "#FAFBFA" }}>
+                <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, color: C.inkSoft, fontWeight: 700, marginBottom: 4 }}>
+                  SIF POTENTIAL
+                </div>
+                <div style={{
+                  fontFamily: "'Inter',sans-serif",
+                  fontSize: 14,
+                  color: (meta.extractedData?.sif_potential || "").toLowerCase().includes("non-sif")
+                    ? C.greenGood
+                    : C.redBright,
+                  fontWeight: 700
+                }}>
+                  {meta.extractedData?.sif_potential || detail.sif.classification || "Unknown"}
+                </div>
+                <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11.5, color: C.inkSoft, marginTop: 3 }}>
+                  Confidence: {meta.extractedData?.sif_confidence != null
+                    ? `${Math.round(meta.extractedData.sif_confidence * 100)}%`
+                    : "?"}
+                </div>
+              </div>
             </div>
+
             <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5, color: C.inkSoft, marginBottom: 4, fontWeight: 700 }}>Why this classification</div>
             <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: C.ink, lineHeight: 1.55, marginBottom: 10 }}>{detail.sif.why}</div>
             <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5, color: C.inkSoft, marginBottom: 4, fontWeight: 700 }}>Potential consequence</div>
