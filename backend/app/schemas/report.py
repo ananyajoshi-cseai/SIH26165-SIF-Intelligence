@@ -1,4 +1,4 @@
-﻿from datetime import datetime
+from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -14,6 +14,7 @@ class ReportCreate(BaseModel):
 
 class ReportResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
     id: UUID
     created_at: datetime
     raw_text: str
@@ -29,6 +30,10 @@ class AnalyzeRequest(BaseModel):
 
 class AnalyzeResponse(BaseModel):
     report_id: UUID
+    report_type: str
+    report_type_confidence: float
+    sif_potential: str
+    sif_confidence: float
     risk_score: int
     risk_level: str
     confidence: float

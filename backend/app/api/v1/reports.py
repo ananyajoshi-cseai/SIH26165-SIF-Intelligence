@@ -85,14 +85,29 @@ def analyze_report_endpoint(
         report=report,
     )
 
+    extracted = analysis.extracted_data
+
     return AnalyzeResponse(
         report_id=report.id,
+        report_type=extracted.get("report_type", "Unknown"),
+        report_type_confidence=extracted.get(
+            "report_type_confidence",
+            0.0,
+        ),
+        sif_potential=extracted.get(
+            "sif_potential",
+            "Unknown",
+        ),
+        sif_confidence=extracted.get(
+            "sif_confidence",
+            0.0,
+        ),
         risk_score=analysis.risk_score,
         risk_level=analysis.sif_level,
         confidence=analysis.confidence,
-        extraction=analysis.extracted_data,
+        extraction=extracted,
         risk_breakdown=RiskBreakdown(
-            **get_risk_breakdown(analysis.extracted_data)
+            **get_risk_breakdown(extracted)
         ),
     )
 
@@ -132,6 +147,22 @@ async def upload_reports(
             {
                 "report_id": str(report.id),
                 "site": report.metadata_.get("site", "Unknown"),
+                "report_type": analysis.extracted_data.get(
+                    "report_type",
+                    "Unknown",
+                ),
+                "report_type_confidence": analysis.extracted_data.get(
+                    "report_type_confidence",
+                    0.0,
+                ),
+                "sif_potential": analysis.extracted_data.get(
+                    "sif_potential",
+                    "Unknown",
+                ),
+                "sif_confidence": analysis.extracted_data.get(
+                    "sif_confidence",
+                    0.0,
+                ),
                 "risk_score": analysis.risk_score,
                 "risk_level": analysis.sif_level,
             }

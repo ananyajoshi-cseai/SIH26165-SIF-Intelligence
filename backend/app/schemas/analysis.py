@@ -25,6 +25,10 @@ class AnalysisResponse(BaseModel):
     id: UUID
     report_id: UUID
     extracted_data: ExtractionData
+    report_type: str = "Unknown"
+    report_type_confidence: float = 0.0
+    sif_potential: str = "Unknown"
+    sif_confidence: float = 0.0
     risk_score: int
     sif_level: str
     confidence: float
