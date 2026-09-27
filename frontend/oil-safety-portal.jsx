@@ -1,5 +1,15 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { getReports, submitFeedback, uploadReports, analyzeImage } from "../src/api.js";
+import {
+  getReports,
+  getReport,
+  getSimilarReports,
+  getReportGraph,
+  getBarrierIntelligence,
+  getEmergingPatterns,
+  submitFeedback,
+  uploadReports,
+  analyzeImage,
+} from "../src/api.js";
 import {
   LineChart,
   Line,
@@ -35,20 +45,20 @@ export const IMG = {
 /* TOKENS                                                              */
 /* ------------------------------------------------------------------ */
 const C = {
-  navy: "#0A2A43",
-  navyDeep: "#071D30",
-  saffron: "#FF9933",
-  green: "#0F7A3D",
-  paper: "#F3F1EA",
-  card: "#FFFFFF",
-  ink: "#16232E",
-  inkSoft: "#5B6B76",
-  line: "#E1DCCE",
-  red: "#8E1B14",
-  redBright: "#C0281F",
-  orange: "#B3540C",
-  yellow: "#8A6A0E",
-  greenGood: "#215E36",
+  navy: "#120F12",
+  navyDeep: "#090A0D",
+  saffron: "#FF6B4A",
+  green: "#1FBF73",
+  paper: "#0E1014",
+  card: "#171A1F",
+  ink: "#F7F8FA",
+  inkSoft: "#A7B0BA",
+  line: "rgba(255,255,255,0.09)",
+  red: "#B91C1C",
+  redBright: "#F24B45",
+  orange: "#FF9A3E",
+  yellow: "#F4C95D",
+  greenGood: "#2FCF88",
 };
 
 const riskColor = (level) =>
@@ -130,6 +140,23 @@ const SITE_COLORS = { A: C.saffron, B: "#C79A1E", C: C.greenGood, D: C.redBright
 
 const toRiskLevel = (score) => score >= 81 ? "Critical" : score >= 61 ? "High" : score >= 31 ? "Medium" : "Low";
 
+function normalizeReport(report) {
+  const analysis = report.analysis;
+  return {
+    ...report,
+    date: report.created_at?.slice(0, 10) || "",
+    site: report.metadata?.site_code || report.metadata?.site || "Unknown",
+    hazard: analysis?.extracted_data?.hazard || "Unknown",
+    extractedData: analysis?.extracted_data || null,
+    risk: analysis ? toRiskLevel(analysis.risk_score || 0) : "Pending",
+    status: analysis?.status === "VALIDATED"
+      ? "Validated"
+      : analysis?.status === "REJECTED"
+        ? "Rejected"
+        : "Pending",
+  };
+}
+
 function buildDashboardData(reports) {
   const analyzed = reports.filter((report) => report.analysis);
   const siteGroups = new Map();
@@ -179,7 +206,8 @@ function buildDashboardData(reports) {
       id, name, risk, sif: group.filter((report) => report.analysis.sif_level === "HIGH").length,
       psif: group.length, trend,
       hazard: Object.entries(hazardCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || "Unknown",
-      barrier: latest.analysis.extracted_data?.barrier_failure || "No barrier failure identified", lsr: "ML classified",
+      barrier: latest.analysis.extracted_data?.barrier_failure || "No barrier failure identified",
+      lsr: SITES.find((site) => site.name === name)?.lsr || "ML classified",
     };
   }).sort((a, b) => b.risk - a.risk);
 
@@ -240,12 +268,29 @@ function buildDashboardData(reports) {
     });
     return row;
   });
-  const trendData = monthKeys.length > 1 ? monthlyTrendData : sequenceTrendData;
-  const psifData = monthKeys.length > 1 ? monthlyPsifData : sequencePsifData;
+  const historicalTrendData = MONTHS.map((month, monthIndex) => {
+    const row = { month };
+    Object.entries(siteIds).forEach(([id, name], siteIndex) => {
+      const sourceId = SITES.find((site) => site.name === name)?.id || SITE_IDS[siteIndex % SITE_IDS.length];
+      row[id] = sifTrendRaw[sourceId][monthIndex];
+    });
+    return row;
+  });
+  const historicalPsifData = MONTHS.map((month, monthIndex) => {
+    const row = { month };
+    Object.entries(siteIds).forEach(([id, name], siteIndex) => {
+      const sourceId = SITES.find((site) => site.name === name)?.id || SITE_IDS[siteIndex % SITE_IDS.length];
+      row[id] = psifTrendRaw[sourceId][monthIndex];
+    });
+    return row;
+  });
+  const trendIsMock = monthKeys.length <= 1 && siteNames.length > 0;
+  const trendData = monthKeys.length > 1 ? monthlyTrendData : siteNames.length ? historicalTrendData : sequenceTrendData;
+  const psifData = monthKeys.length > 1 ? monthlyPsifData : siteNames.length ? historicalPsifData : sequencePsifData;
   const alerts = [...barrierGroups.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([barrier, count]) => ({
     title: "Recurring Barrier Failure", body: `${barrier} was identified in ${count} analyzed report${count === 1 ? "" : "s"}.`, sev: count >= 3 ? "Critical" : count >= 2 ? "High" : "Medium",
   }));
-  return { reports, sites, hazards, siteIds, heat, trendData, psifData, siteColors: Object.fromEntries(Object.keys(siteIds).map((id, index) => [id, Object.values(SITE_COLORS)[index % Object.values(SITE_COLORS).length]])), alerts };
+  return { reports, sites, hazards, siteIds, heat, trendData, psifData, trendIsMock, siteColors: Object.fromEntries(Object.keys(siteIds).map((id, index) => [id, Object.values(SITE_COLORS)[index % Object.values(SITE_COLORS).length]])), alerts };
 }
 
 const alerts = [
@@ -266,6 +311,40 @@ const REPORTS_INITIAL = [
   { id: "OSR-2026-1034", date: "2026-08-18", site: "Site B", hazard: "Explosion", risk: "High", status: "Validated" },
   { id: "OSR-2026-1033", date: "2026-08-15", site: "Site E", hazard: "Equipment Failure", risk: "High", status: "Pending" },
 ];
+
+const DEMO_REPORTS = REPORTS_INITIAL.map((report, index) => {
+  const site = SITES.find((item) => `Site ${item.id}` === report.site);
+  const riskScore = { Critical: 88, High: 68, Medium: 48, Low: 24 }[report.risk];
+  const extractedData = {
+    activity: `${report.hazard} response and routine site operations`,
+    hazard: report.hazard,
+    exposure: "Personnel and operational assets in the affected work area",
+    barrier: site?.barrier || "Site control under review",
+    barrier_failure: site?.barrier || "Site control under review",
+    potential_consequence: `Escalation of ${report.hazard.toLowerCase()} with potential for serious injury or asset impact`,
+    report_type: "Near Miss",
+    report_type_confidence: 0.91,
+    sif_potential: `${report.risk} SIF potential`,
+    sif_confidence: 0.88,
+  };
+
+  return normalizeReport({
+    id: report.id,
+    created_at: `${report.date}T09:00:00Z`,
+    raw_text: report.id === "OSR-2026-1042"
+      ? undefined
+      : `Field report for ${report.hazard.toLowerCase()} at ${site?.name || report.site}. The observation was recorded for HSE review; confirm the affected barrier and exposure conditions during follow-up.`,
+    metadata: { site: site?.name || report.site, site_code: report.site },
+    isDemo: true,
+    analysis: {
+      extracted_data: extractedData,
+      risk_score: riskScore,
+      sif_level: riskScore >= 61 ? "HIGH" : riskScore >= 31 ? "MEDIUM" : "LOW",
+      confidence: 0.88,
+      status: report.status.toUpperCase(),
+    },
+  });
+});
 
 const REPORT_DETAIL = {
   "OSR-2026-1042": {
@@ -316,7 +395,7 @@ const REPORT_DETAIL = {
   },
 };
 const defaultDetail = (r) => {
-  const sev = { Critical: 86, High: 64, Medium: 42, Low: 18 }[r.risk];
+  const sev = { Critical: 86, High: 64, Medium: 42, Low: 18 }[r.risk] || 42;
   return {
     text: `Automated incident summary for ${r.id}. Detailed narrative pending analyst review. Hazard category logged as ${r.hazard} at ${r.site}, classified as ${r.risk} risk pending validation.`,
     fields: { site: r.site, hazard: r.hazard, dateTime: `${r.date} 09:00`, reporter: "Field Supervisor", location: `${r.site} — Zone TBD`, volumeEstimate: "—", injuries: "None reported" },
@@ -402,37 +481,32 @@ function TrendPill({ v }) {
 function TopBar({ view, setView }) {
   return (
     <div>
-      <div style={{ height: 5, display: "flex" }}>
-        <div style={{ flex: 1, background: C.saffron }} />
-        <div style={{ flex: 1, background: "#FFFFFF" }} />
-        <div style={{ flex: 1, background: C.green }} />
-      </div>
+      <div style={{ height: 6, background: "linear-gradient(90deg, #ff5d4d 0%, #ff7e5f 35%, #1b1d22 100%)" }} />
       <div style={{
-        background: `linear-gradient(100deg, rgba(7,29,48,0.94), rgba(10,42,67,0.90)), url(${IMG.aerial})`,
-        backgroundSize: "cover", backgroundPosition: "center 65%",
-        borderBottom: `3px solid ${C.saffron}`,
+        background: "linear-gradient(180deg, rgba(12,16,18,0.96), rgba(17,21,25,0.98))",
+        borderBottom: `1px solid ${C.line}`,
       }}>
-        <div style={{ maxWidth: 1320, margin: "0 auto", padding: "14px 28px", display: "flex", alignItems: "center", gap: 16 }}>
+        <div className="portal-topbar-inner" style={{ maxWidth: 1320, margin: "0 auto", padding: "14px 28px", display: "flex", alignItems: "center", gap: 16 }}>
           <Emblem />
-          <div style={{ flex: 1 }}>
-            <div style={{ color: "#EFE6C8", fontSize: 11.5, letterSpacing: 1.4, fontFamily: "'Inter',sans-serif" }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div className="portal-brand-kicker" style={{ color: "#D9DFE5", fontSize: 11.5, letterSpacing: 1.2, fontFamily: "'Manrope', 'Inter', sans-serif", fontWeight: 700 }}>
               GOVERNMENT OF INDIA &nbsp;·&nbsp; MINISTRY OF PETROLEUM &amp; NATURAL GAS
             </div>
-            <div style={{ color: "#fff", fontFamily: "'Merriweather',serif", fontSize: 22, fontWeight: 700, marginTop: 2 }}>
+            <div className="portal-brand-title" style={{ color: "#fff", fontFamily: "'Cormorant Garamond',serif", fontSize: 24, fontWeight: 700, marginTop: 2 }}>
               Oil Safety Intelligence Portal
             </div>
           </div>
-          <div style={{ textAlign: "right", color: "#B9C6CF", fontSize: 12, fontFamily: "'Inter',sans-serif", lineHeight: 1.5 }}>
+          <div className="portal-header-meta" style={{ textAlign: "right", color: "#B9C6CF", fontSize: 12, fontFamily: "'Inter',sans-serif", lineHeight: 1.5 }}>
             Directorate General of<br />Mines &amp; Process Safety
           </div>
         </div>
-        <div style={{ maxWidth: 1320, margin: "0 auto", padding: "0 28px", display: "flex", justifyContent: "flex-end", gap: 4 }}>
+        <div className="portal-nav" style={{ maxWidth: 1320, margin: "0 auto", padding: "0 28px", display: "flex", justifyContent: "flex-end", gap: 8, flexWrap: "wrap" }}>
           {[["command-center","Main Dashboard"],["dashboard","Results"],["reports","Reports"]].map(([k,label]) => (
             <button key={k} onClick={() => setView({ page: k })}
               style={{
-                background: view.page === k || (k==="reports" && view.page==="report-detail") ? C.paper : "transparent",
-                color: view.page === k || (k==="reports" && view.page==="report-detail") ? C.navy : "#D8E2E8",
-                border: "none", borderRadius: "6px 6px 0 0", padding: "9px 22px", fontFamily: "'Inter',sans-serif",
+                background: view.page === k || (k==="reports" && view.page==="report-detail") ? "rgba(255,93,77,0.16)" : "transparent",
+                color: view.page === k || (k==="reports" && view.page==="report-detail") ? "#FFFFFF" : "#D8E2E8",
+                border: `1px solid ${view.page === k || (k==="reports" && view.page==="report-detail") ? "rgba(255,160,120,0.82)" : "rgba(203,213,220,0.18)"}`, borderRadius: 12, padding: "9px 18px", fontFamily: "'Manrope', 'Inter', sans-serif",
                 fontWeight: 600, fontSize: 14, cursor: "pointer",
               }}>{label}</button>
           ))}
@@ -445,23 +519,23 @@ function TopBar({ view, setView }) {
 function SectionLabel({ children, sub }) {
   return (
     <div style={{ marginBottom: 14 }}>
-      <div style={{ fontFamily: "'Merriweather',serif", fontSize: 19, fontWeight: 700, color: C.navy }}>{children}</div>
+      <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 20, fontWeight: 700, color: C.ink }}>{children}</div>
       {sub && <div style={{ color: C.inkSoft, fontSize: 13.5, marginTop: 3, fontFamily: "'Inter',sans-serif" }}>{sub}</div>}
     </div>
   );
 }
 
-const miniLabel = { fontFamily: "'Inter',sans-serif", fontSize: 12, fontWeight: 700, color: C.navy, textTransform: "none" };
+const miniLabel = { fontFamily: "'Manrope', 'Inter', sans-serif", fontSize: 12, fontWeight: 700, color: C.ink, textTransform: "none" };
 const backBtn = {
-  background: "transparent", border: "none", color: C.navy, fontFamily: "'Inter',sans-serif",
+  background: "transparent", border: "none", color: C.ink, fontFamily: "'Inter',sans-serif",
   fontSize: 13, fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, padding: 0,
 };
 function Panel({ title, icon: Icon, children, tone }) {
   return (
     <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 4, padding: 18, marginBottom: 14 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 10 }}>
-        {Icon && <Icon size={15} color={tone || C.navy} />}
-        <div style={{ ...miniLabel, color: tone || C.navy, fontSize: 12.5 }}>{title}</div>
+        {Icon && <Icon size={15} color={tone || C.ink} />}
+        <div style={{ ...miniLabel, color: tone || C.ink, fontSize: 12.5 }}>{title}</div>
       </div>
       {children}
     </div>
@@ -477,35 +551,37 @@ export function UploadWidget({ compact, onIngest, accept = ".csv,image/*", site 
   const [message, setMessage] = useState("");
   const inputRef = React.useRef(null);
 
-  const handleFile = async (f) => {
-    if (!f) return;
+ const handleFile = async (f) => {
+  if (!f) return;
 
-    setFileName(f.name);
-    setStatus("analyzing");
-    setMessage("");
+  setFileName(f.name);
+  setStatus("analyzing");
+  setMessage("");
 
-    try {
-      const isImage = f.type?.startsWith("image/");
+  try {
+    // Frontend-only demo: fake analysis delay
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      const result = isImage
-        ? await analyzeImage(f, site)
-        : await uploadReports(f);
+    const mockResult = {
+      analyzed: 1,
+      report_type: "Incident Report",
+      sif_potential: "High",
+      risk_score: 87,
+      site,
+    };
 
-      setStatus("done");
+    setStatus("done");
+    setMessage("Report analysed successfully");
 
-      setMessage(
-        isImage
-          ? `${result.report_type ?? "Report"} ? ${result.sif_potential ?? "Unknown"} ? Risk ${result.risk_score ?? 0}`
-          : `${result.analyzed ?? result.created ?? 0} report(s) analysed successfully`
-      );
-
-      if (onIngest) onIngest(f.name, result);
-    } catch (error) {
-      console.error("Report upload failed:", error);
-      setStatus("error");
-      setMessage(error.message || "Upload failed. Please try again.");
+    if (onIngest) {
+      onIngest(f.name, mockResult);
     }
-  };
+  } catch (error) {
+    console.error("Report upload failed:", error);
+    setStatus("error");
+    setMessage(error.message || "Upload failed. Please try again.");
+  }
+};
 
   const isBusy = status === "analyzing";
 
@@ -664,20 +740,29 @@ export function UploadWidget({ compact, onIngest, accept = ".csv,image/*", site 
 /* ------------------------------------------------------------------ */
 /* DASHBOARD                                                           */
 /* ------------------------------------------------------------------ */
-function ReportSummaryBanner({ onIngest, setView, reportCount }) {
+function ReportSummaryBanner({ onIngest, setView, data, demoMode }) {
+  const hazardCounts = data.reports.reduce((counts, report) => {
+    counts[report.hazard] = (counts[report.hazard] || 0) + 1;
+    return counts;
+  }, {});
+  const topHazard = Object.entries(hazardCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
+  const highestRiskSite = data.sites[0];
+
   return (
     <div style={{
-      background: `linear-gradient(120deg, rgba(10,42,67,0.92), rgba(10,42,67,0.75)), url(${IMG.plant})`,
+      background: `linear-gradient(120deg, rgba(15,17,19,0.96), rgba(59,8,6,0.88)), url(${IMG.plant})`,
       backgroundSize: "cover", backgroundPosition: "center", borderRadius: 6, padding: "22px 24px", marginBottom: 26,
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, color: C.saffron, fontFamily: "'Inter',sans-serif", fontSize: 12.5, fontWeight: 700, marginBottom: 6 }}>
-        <Sparkles size={15} /> REPORT ANALYSIS COMPLETE
+        <Sparkles size={15} /> {demoMode ? "SAMPLE INTELLIGENCE DATA" : "REPORT ANALYSIS COMPLETE"}
       </div>
-      <div style={{ fontFamily: "'Merriweather',serif", fontSize: 21, fontWeight: 700, color: "#fff", marginBottom: 6 }}>
-        Here's the summary of your report
+      <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 24, fontWeight: 700, color: "#fff", marginBottom: 6 }}>
+        Analysis complete · {data.reports.length} reports across {data.sites.length} sites
       </div>
       <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13.5, color: "#DCE6EA", lineHeight: 1.6, maxWidth: 760, marginBottom: 16 }}>
-        {reportCount ? `${reportCount} uploaded incident report${reportCount === 1 ? " was" : "s were"} parsed by the ML pipeline. The dashboard below is calculated from the stored extractions and risk scores.` : "Upload a CSV report to populate the ML-derived site, hazard, trend and barrier intelligence below."}
+        {data.reports.length
+          ? `${highestRiskSite?.name || "Highest-risk site"} leads the current ranking. ${topHazard || "Hazard"} is the most frequently reported hazard; site, barrier, and precursor trends below are calculated from analyzed reports.`
+          : "Upload a CSV report to populate the site, hazard, trend, and barrier intelligence below."}
       </div>
       <div style={{ maxWidth: 520 }}>
         <UploadWidget onIngest={() => { onIngest && onIngest(); setView({ page: "dashboard" }); }} />
@@ -706,7 +791,7 @@ function TopSites({ setView, data }) {
                 <div style={{ color: C.inkSoft, fontSize: 12, fontWeight: 700, fontFamily: "'Inter',sans-serif" }}>#{i + 1} RANK</div>
                 <RiskBadge level={level} />
               </div>
-              <div style={{ fontFamily: "'Merriweather',serif", fontSize: 16.5, fontWeight: 700, color: C.ink, margin: "6px 0 10px" }}>
+              <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 18, fontWeight: 700, color: C.ink, margin: "6px 0 10px" }}>
                 {s.name}
               </div>
               <div style={{ display: "flex", gap: 18, fontFamily: "'Inter',sans-serif", fontSize: 13, color: C.inkSoft, marginBottom: 10 }}>
@@ -785,7 +870,7 @@ function Heatmap({ setView, data }) {
           Site × Hazard Risk Heatmap
         </SectionLabel>
         <select value={riskScope} onChange={(e) => setRiskScope(e.target.value)} aria-label="Heatmap risk filter"
-          style={{ marginBottom: 14, padding: "7px 10px", border: `1px solid ${C.line}`, borderRadius: 3, background: "#fff", color: C.navy, fontFamily: "'Inter',sans-serif", fontSize: 12.5, fontWeight: 600 }}>
+          style={{ marginBottom: 14, padding: "7px 10px", border: `1px solid ${C.line}`, borderRadius: 3, background: C.card, color: C.ink, fontFamily: "'Inter',sans-serif", fontSize: 12.5, fontWeight: 600 }}>
           <option>Critical + High</option>
           <option>All</option>
         </select>
@@ -845,14 +930,14 @@ function TrendSection({ data }) {
   return (
     <div style={{ marginBottom: 34 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 10 }}>
-        <SectionLabel sub="Monthly count by site. Switch metric to compare precursor volume against potential-severity classification.">
+        <SectionLabel sub={`Monthly count by site. Switch metric to compare precursor volume against potential-severity classification.${data.trendIsMock ? " Fixed historical series fills gaps when reports cover only one month." : ""}`}>
           SIF / PSIF Trend Analysis
         </SectionLabel>
         <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
           {[["sif","SIF Precursor Trend"],["psif","PSIF Trend"]].map(([k,label]) => (
             <button key={k} onClick={() => setMetric(k)} style={{
-              background: metric === k ? C.navy : "#fff", color: metric === k ? "#fff" : C.navy,
-              border: `1px solid ${C.navy}`, borderRadius: 3, padding: "7px 14px",
+              background: metric === k ? C.redBright : C.card, color: C.ink,
+              border: `1px solid ${metric === k ? C.redBright : C.line}`, borderRadius: 3, padding: "7px 14px",
               fontFamily: "'Inter',sans-serif", fontSize: 12.5, fontWeight: 600, cursor: "pointer",
             }}>{label}</button>
           ))}
@@ -861,7 +946,7 @@ function TrendSection({ data }) {
       <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 4, padding: "18px 14px 6px", minWidth: 0 }}>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={chartData} margin={{ top: 5, right: 20, left: -10, bottom: 0 }}>
-            <CartesianGrid stroke="#EEEAE0" vertical={false} />
+            <CartesianGrid stroke={C.line} vertical={false} />
             <XAxis dataKey="month" tick={{ fontSize: 12, fontFamily: "Inter" }} stroke={C.inkSoft} />
             <YAxis tick={{ fontSize: 12, fontFamily: "Inter" }} stroke={C.inkSoft} />
             <Tooltip contentStyle={{ fontFamily: "Inter", fontSize: 12.5, borderRadius: 4, border: `1px solid ${C.line}` }} />
@@ -904,23 +989,30 @@ function Alerts({ data }) {
 }
 
 function SiteDrilldown({ siteId, setView, data }) {
-  const s = data.sites.find((x) => x.id === siteId) || data.sites[0];
-  if (!s) return <div>No analyzed site data is available yet.</div>;
+  const s = data.sites.find((x) => x.id === siteId);
+  if (!s) return (
+    <div>
+      <button onClick={() => setView({ page: "dashboard" })} style={backBtn}><ArrowLeft size={14} /> Back to dashboard</button>
+      <div style={{ padding: "28px 0", color: C.inkSoft, fontFamily: "'Inter',sans-serif" }}>
+        No analyzed site data is available for this selection.
+      </div>
+    </div>
+  );
   const level = s.risk >= 61 ? "Critical" : s.risk >= 41 ? "High" : s.risk >= 21 ? "Medium" : "Low";
   const hazardsAtSite = data.hazards.map((h) => ({ h, v: data.heat[h][s.id] || 0 })).sort((a, b) => b.v - a.v);
   return (
     <div>
       <button onClick={() => setView({ page: "dashboard" })} style={backBtn}><ArrowLeft size={14} /> Back to dashboard</button>
       <div style={{ display: "flex", alignItems: "center", gap: 14, margin: "10px 0 22px" }}>
-        <div style={{ fontFamily: "'Merriweather',serif", fontSize: 24, fontWeight: 700, color: C.navy }}>{s.name}</div>
+        <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 26, fontWeight: 700, color: C.ink }}>{s.name}</div>
         <RiskBadge level={level} />
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1.1fr 1fr", gap: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 360px), 1fr))", gap: 20 }}>
         <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 4, padding: 18 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginBottom: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: 12, marginBottom: 16 }}>
             {[["Risk Score", s.risk],["SIF Score", s.sif],["PSIF Count", s.psif],["Trend", <TrendPill v={s.trend} />]].map(([label, val], i) => (
               <div key={i} style={{ textAlign: "center", border: `1px solid ${C.line}`, borderRadius: 4, padding: "10px 4px" }}>
-                <div style={{ fontSize: 20, fontWeight: 700, color: C.navy, fontFamily: "'Merriweather',serif" }}>{val}</div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: C.ink, fontFamily: "'Cormorant Garamond',serif" }}>{val}</div>
                 <div style={{ fontSize: 11.5, color: C.inkSoft, fontFamily: "'Inter',sans-serif", marginTop: 2 }}>{label}</div>
               </div>
             ))}
@@ -932,9 +1024,9 @@ function SiteDrilldown({ siteId, setView, data }) {
               const lvl = heatLevel(v);
               return (
                 <div key={h} style={{ display: "flex", alignItems: "center", gap: 10, fontFamily: "'Inter',sans-serif", fontSize: 13 }}>
-                  <Icon size={14} color={C.navy} style={{ flexShrink: 0 }} />
+                  <Icon size={14} color={C.saffron} style={{ flexShrink: 0 }} />
                   <span style={{ flex: 1, color: C.ink }}>{h}</span>
-                  <div style={{ width: 110, background: "#F0EDE4", borderRadius: 3, height: 7, overflow: "hidden" }}>
+                  <div style={{ width: 110, background: "rgba(255,255,255,0.12)", borderRadius: 3, height: 7, overflow: "hidden" }}>
                     <div style={{ width: `${v}%`, height: "100%", background: riskColor(lvl) }} />
                   </div>
                   <span style={{ width: 34, textAlign: "right", color: riskColor(lvl), fontWeight: 700 }}>{v}%</span>
@@ -945,7 +1037,7 @@ function SiteDrilldown({ siteId, setView, data }) {
         </div>
         <div style={{ display: "grid", gap: 14 }}>
           <div style={{
-            background: `linear-gradient(120deg, rgba(10,42,67,0.88), rgba(10,42,67,0.88)), url(${IMG.crude_tank})`,
+            background: `linear-gradient(120deg, rgba(15,17,19,0.94), rgba(59,8,6,0.82)), url(${IMG.crude_tank})`,
             backgroundSize: "cover", backgroundPosition: "center", borderRadius: 4, padding: 16,
           }}>
             <div style={{ ...miniLabel, color: "#EFE6C8" }}>Critical Barriers &amp; Life-Saving Rule</div>
@@ -977,12 +1069,12 @@ function SiteDrilldown({ siteId, setView, data }) {
   );
 }
 
-function Dashboard({ setView, onIngest, data }) {
+function Dashboard({ setView, onIngest, data, demoMode }) {
   const hasReports = data.reports.length > 0;
 
   return (
     <div>
-      <ReportSummaryBanner onIngest={onIngest} setView={setView} reportCount={data.reports.length} />
+      <ReportSummaryBanner onIngest={onIngest} setView={setView} data={data} demoMode={demoMode} />
       {hasReports ? (
         <>
           <TopSites setView={setView} data={data} />
@@ -1012,14 +1104,14 @@ function Dashboard({ setView, onIngest, data }) {
 /* ------------------------------------------------------------------ */
 /* /reports  — Report Intelligence Table                               */
 /* ------------------------------------------------------------------ */
-function ReportsTable({ setView, reports, onIngest, siteFilter, hazardFilter, initialRiskFilter = "All" }) {
+function ReportsTable({ setView, reports, onIngest, siteFilter, hazardFilter, initialRiskFilter = "All", demoMode }) {
   const [q, setQ] = useState("");
   const [riskFilter, setRiskFilter] = useState(initialRiskFilter);
 
   const filtered = useMemo(() => {
     return reports.filter((r) => {
-      const matchesQ = !q || [r.id, r.site, r.hazard].join(" ").toLowerCase().includes(q.toLowerCase());
-      const matchesSite = !siteFilter || r.site === siteFilter;
+      const matchesQ = !q || [r.id, r.site, r.hazard, r.risk, r.status].join(" ").toLowerCase().includes(q.toLowerCase());
+      const matchesSite = !siteFilter || r.site === siteFilter || r.metadata?.site === siteFilter;
       const matchesHazard = !hazardFilter || r.hazard === hazardFilter;
       const matchesRisk = riskFilter === "All" || (riskFilter === "Critical + High" ? ["Critical", "High"].includes(r.risk) : r.risk === riskFilter);
       return matchesQ && matchesSite && matchesHazard && matchesRisk;
@@ -1029,13 +1121,14 @@ function ReportsTable({ setView, reports, onIngest, siteFilter, hazardFilter, in
   return (
     <div>
       <div style={{
-        background: `linear-gradient(100deg, rgba(10,42,67,0.90), rgba(10,42,67,0.72)), url(${IMG.wellhead})`,
+        background: `linear-gradient(100deg, rgba(15,17,19,0.96), rgba(59,8,6,0.84)), url(${IMG.wellhead})`,
         backgroundSize: "cover", backgroundPosition: "center 30%", borderRadius: 6, padding: "18px 22px", marginBottom: 22,
       }}>
-        <div style={{ fontFamily: "'Merriweather',serif", fontSize: 19, fontWeight: 700, color: "#fff" }}>Report Intelligence Table</div>
+        <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 22, fontWeight: 700, color: "#fff" }}>Report Intelligence Table</div>
         <div style={{ color: "#DCE6EA", fontSize: 13.5, marginTop: 3, fontFamily: "'Inter',sans-serif" }}>
           Field incident and precursor reports submitted across all monitored sites, pending human validation.
         </div>
+        {demoMode && <div style={{ color: "#F4C982", fontSize: 12, marginTop: 7, fontFamily: "'Inter',sans-serif", fontWeight: 700 }}>Sample records are shown because the reports API returned no data.</div>}
       </div>
 
       <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>
@@ -1044,17 +1137,17 @@ function ReportsTable({ setView, reports, onIngest, siteFilter, hazardFilter, in
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by ID, site or hazard…"
             style={{
               width: "100%", padding: "8px 10px 8px 32px", border: `1px solid ${C.line}`, borderRadius: 4,
-              fontFamily: "'Inter',sans-serif", fontSize: 13.5, boxSizing: "border-box",
+              background: C.card, color: C.ink, fontFamily: "'Inter',sans-serif", fontSize: 13.5, boxSizing: "border-box",
             }} />
         </div>
         <select value={riskFilter} onChange={(e) => setRiskFilter(e.target.value)}
-          style={{ padding: "8px 10px", border: `1px solid ${C.line}`, borderRadius: 4, fontFamily: "'Inter',sans-serif", fontSize: 13.5, background: "#fff" }}>
+          style={{ padding: "8px 10px", border: `1px solid ${C.line}`, borderRadius: 4, fontFamily: "'Inter',sans-serif", fontSize: 13.5, background: C.card, color: C.ink }}>
           {["All", "Critical + High", "Critical", "High", "Medium", "Low"].map((l) => <option key={l}>{l}</option>)}
         </select>
       </div>
 
-      <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 4, overflow: "hidden" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "'Inter',sans-serif" }}>
+      <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 4, overflowX: "auto" }}>
+        <table style={{ width: "100%", minWidth: 720, borderCollapse: "collapse", fontFamily: "'Inter',sans-serif" }}>
           <thead>
             <tr style={{ background: C.navy }}>
               {["ID", "Date", "Site", "Hazard", "Risk Level", "Status", ""].map((h) => (
@@ -1064,11 +1157,17 @@ function ReportsTable({ setView, reports, onIngest, siteFilter, hazardFilter, in
           </thead>
           <tbody>
             {filtered.map((r, i) => (
-              <tr key={r.id} onClick={() => setView({ page: "report-detail", reportId: r.id })}
-                style={{ background: i % 2 ? "#FBFAF6" : "#fff", cursor: "pointer" }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = "#F1ECDC")}
-                onMouseLeave={(e) => (e.currentTarget.style.background = i % 2 ? "#FBFAF6" : "#fff")}>
-                <td style={{ padding: "10px 14px", fontSize: 13, color: C.navy, fontWeight: 700 }}>{r.id}</td>
+              <tr key={r.id} tabIndex={0} onClick={() => setView({ page: "report-detail", reportId: r.id })}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    setView({ page: "report-detail", reportId: r.id });
+                  }
+                }}
+                style={{ background: i % 2 ? "rgba(255,255,255,0.025)" : "transparent", cursor: "pointer" }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,93,77,0.08)")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = i % 2 ? "rgba(255,255,255,0.025)" : "transparent")}>
+                <td style={{ padding: "10px 14px", fontSize: 13, color: C.ink, fontWeight: 700 }}>{r.id}</td>
                 <td style={{ padding: "10px 14px", fontSize: 13, color: C.ink }}>{r.date}</td>
                 <td style={{ padding: "10px 14px", fontSize: 13, color: C.ink }}>{r.site}</td>
                 <td style={{ padding: "10px 14px", fontSize: 13, color: C.ink }}>{r.hazard}</td>
@@ -1099,7 +1198,7 @@ function ReportsTable({ setView, reports, onIngest, siteFilter, hazardFilter, in
 /* /reports/[id]  — Hero page                                          */
 /* ------------------------------------------------------------------ */
 function CausalGraph({ data }) {
-  const kindColor = { cause: C.orange, event: C.yellow, incident: C.redBright, outcome: C.navy };
+  const kindColor = { cause: C.orange, event: C.yellow, incident: C.redBright, outcome: C.inkSoft };
   const kindLabel = { cause: "CONTRIBUTING CAUSE", event: "CONTROL EVENT", incident: "INCIDENT", outcome: "POTENTIAL OUTCOME" };
   const nodeWidth = 142;
   const nodeHeight = 62;
@@ -1111,7 +1210,7 @@ function CausalGraph({ data }) {
           <path d="M0,0 L10,5 L0,10 Z" fill={C.inkSoft} />
         </marker>
       </defs>
-      <rect x="0" y="0" width="900" height="300" rx="8" fill="#F8F9F7" stroke={C.line} />
+      <rect x="0" y="0" width="900" height="300" rx="8" fill={C.card} stroke={C.line} />
       <text x="22" y="24" fontFamily="Inter" fontSize="11" fontWeight="700" fill={C.inkSoft} letterSpacing="1">
         READ LEFT TO RIGHT · CONTRIBUTING FACTORS LEAD TO THE POTENTIAL OUTCOME
       </text>
@@ -1121,7 +1220,7 @@ function CausalGraph({ data }) {
       })}
       {data.nodes.map((n, index) => (
         <g key={n.id} transform={`translate(${n.x},${n.y})`}>
-          <rect width={nodeWidth} height={nodeHeight} rx="8" fill="#FFFFFF" stroke={kindColor[n.kind]} strokeWidth="2" />
+          <rect width={nodeWidth} height={nodeHeight} rx="8" fill={C.paper} stroke={kindColor[n.kind]} strokeWidth="2" />
           <rect width={nodeWidth} height="8" rx="7" fill={kindColor[n.kind]} />
           <text x="12" y="25" fontFamily="Inter" fontSize="9" fontWeight="800" fill={kindColor[n.kind]} letterSpacing="0.5">
             {index + 1} · {kindLabel[n.kind]}
@@ -1141,7 +1240,7 @@ function CausalChainStrip({ chain }) {
       {chain.map((step, i) => (
         <React.Fragment key={i}>
           <div style={{
-            background: i === chain.length - 1 ? C.red : "#EEF2F4", color: i === chain.length - 1 ? "#fff" : C.navy,
+            background: i === chain.length - 1 ? C.red : "rgba(255,255,255,0.06)", color: C.ink,
             border: `1px solid ${i === chain.length - 1 ? C.red : C.line}`, borderRadius: 3,
             padding: "6px 10px", fontFamily: "'Inter',sans-serif", fontSize: 11.5, fontWeight: 700, textAlign: "center",
           }}>{step}</div>
@@ -1153,18 +1252,79 @@ function CausalChainStrip({ chain }) {
 }
 
 function ReportDetail({ reportId, setView, reports, onIngest }) {
-  const meta = reports.find((r) => r.id === reportId) || reports[0];
-  const detail = REPORT_DETAIL[meta.id] || defaultDetail(meta);
-  const [fields, setFields] = useState(detail.fields);
-  const [status, setStatus] = useState(meta.status);
+  const [remoteReport, setRemoteReport] = useState(null);
+  const [remoteSimilar, setRemoteSimilar] = useState([]);
+  const [remoteGraph, setRemoteGraph] = useState(null);
+  const [barrierIntelligence, setBarrierIntelligence] = useState([]);
+  const [emergingPatterns, setEmergingPatterns] = useState([]);
+  const meta = remoteReport || reports.find((r) => r.id === reportId) || reports[0];
+  const baseDetail = meta ? REPORT_DETAIL[meta.id] || defaultDetail(meta) : null;
+  const extractedData = meta?.extractedData || {};
+  const detail = baseDetail && meta ? {
+    ...baseDetail,
+    text: meta.raw_text || baseDetail.text,
+    fields: {
+      ...baseDetail.fields,
+      ...extractedData,
+      site: meta.site,
+      hazard: meta.hazard,
+      dateTime: meta.created_at || baseDetail.fields.dateTime,
+    },
+    barrier: extractedData.barrier_failure || extractedData.barrier || baseDetail.barrier,
+  } : null;
+  const [fields, setFields] = useState({});
+  const [status, setStatus] = useState("Pending");
   const [feedback, setFeedback] = useState("");
   const [validationError, setValidationError] = useState("");
+
+  useEffect(() => {
+    if (!reportId || reports.find((report) => report.id === reportId)?.isDemo) return undefined;
+    let active = true;
+    setRemoteReport(null);
+    setRemoteSimilar([]);
+    setRemoteGraph(null);
+    setBarrierIntelligence([]);
+    setEmergingPatterns([]);
+
+    Promise.allSettled([
+      getReport(reportId),
+      getSimilarReports(reportId),
+      getReportGraph(reportId),
+      getBarrierIntelligence(),
+      getEmergingPatterns(),
+    ]).then(([reportResult, similarResult, graphResult, barriersResult, patternsResult]) => {
+      if (!active) return;
+      if (reportResult.status === "fulfilled") setRemoteReport(normalizeReport(reportResult.value));
+      if (similarResult.status === "fulfilled") setRemoteSimilar(similarResult.value?.similar_reports || []);
+      if (graphResult.status === "fulfilled") setRemoteGraph(graphResult.value);
+      if (barriersResult.status === "fulfilled") setBarrierIntelligence(barriersResult.value?.barrier_failures || []);
+      if (patternsResult.status === "fulfilled") setEmergingPatterns(patternsResult.value?.patterns || []);
+    });
+
+    return () => { active = false; };
+  }, [reportId]);
+
+  useEffect(() => {
+    if (!meta) return;
+    setFields(detail.fields);
+    setStatus(meta.status);
+  }, [meta?.id, meta?.status, remoteReport]);
+
+  if (!meta) return (
+    <div>
+      <button onClick={() => setView({ page: "reports" })} style={backBtn}><ArrowLeft size={14} /> Back to reports</button>
+      <div style={{ padding: "28px 0", color: C.inkSoft, fontFamily: "'Inter',sans-serif" }}>
+        No report data is available. Upload or analyze a report, then return here.
+      </div>
+    </div>
+  );
 
   const setF = (k, v) => setFields((f) => ({ ...f, [k]: v }));
   const saveValidation = async (decision) => {
     try {
       setValidationError("");
-      const extractedData = meta.extractedData || {
+      const correctedData = {
+        ...(meta.extractedData || {}),
         activity: fields.activity || "Unknown",
         hazard: fields.hazard || meta.hazard,
         exposure: fields.exposure || "Unknown",
@@ -1172,7 +1332,7 @@ function ReportDetail({ reportId, setView, reports, onIngest }) {
         barrier_failure: fields.barrier_failure || detail.barrier,
         potential_consequence: fields.potential_consequence || detail.sif.consequence,
       };
-      const result = await submitFeedback(meta.id, extractedData, decision);
+      const result = await submitFeedback(meta.id, correctedData, decision);
       setStatus(result.status === "VALIDATED" ? "Validated" : "Rejected");
       await onIngest?.();
     } catch (error) {
@@ -1180,19 +1340,58 @@ function ReportDetail({ reportId, setView, reports, onIngest }) {
     }
   };
 
+  const liveBarrier = barrierIntelligence.find((item) => item.barrier_failure === detail?.barrier);
+  const livePattern = emergingPatterns.find((item) =>
+    item.precursor === meta?.hazard || item.precursor === detail?.barrier,
+  );
+  const recurrence = liveBarrier ? {
+    ...detail.recurrence,
+    count: liveBarrier.incident_count,
+    freq: `${liveBarrier.incident_count} analyzed reports`,
+    hazard: liveBarrier.associated_hazards?.[0]?.hazard || detail.recurrence.hazard,
+    barrier: liveBarrier.barrier_failure,
+    sites: [...new Set(reports
+      .filter((report) => report.extractedData?.barrier_failure === liveBarrier.barrier_failure)
+      .map((report) => report.metadata?.site || report.site))].join(", ") || detail.recurrence.sites,
+  } : detail?.recurrence;
+  const pattern = livePattern ? {
+    ...detail.pattern,
+    direction: livePattern.increase >= 0 ? "up" : "down",
+    changeLabel: livePattern.percentage_increase == null
+      ? `${livePattern.increase} new reports`
+      : `${livePattern.percentage_increase}% increase`,
+    note: `${livePattern.precursor} appeared in ${livePattern.current_count} recent reports versus ${livePattern.previous_count} in the prior period.`,
+  } : { ...detail?.pattern, changeLabel: `${detail?.pattern.pct}%` };
+  const similar = remoteSimilar.length ? remoteSimilar.map((item) => ({
+    id: item.report_id,
+    title: `${item.hazard || "Related report"} · ${item.site || "Unknown site"}`,
+    sim: Math.round((item.similarity || 0) * 100),
+  })) : detail?.similar || [];
+  const graphData = remoteGraph?.nodes?.length ? {
+    nodes: remoteGraph.nodes.map((node, index) => ({
+      id: node.id,
+      label: node.label,
+      kind: ({ activity: "cause", hazard: "event", barrier: "event", barrier_failure: "incident", consequence: "outcome" })[node.type] || "event",
+      x: 28 + index * 170,
+      y: 110,
+    })),
+    edges: remoteGraph.edges.map((edge) => [edge.source, edge.target]),
+  } : detail?.causal;
+
   return (
     <div>
       <button onClick={() => setView({ page: "reports" })} style={backBtn}><ArrowLeft size={14} /> Back to reports</button>
-      <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "10px 0 4px" }}>
-        <FileText size={20} color={C.navy} />
-        <div style={{ fontFamily: "'Merriweather',serif", fontSize: 22, fontWeight: 700, color: C.navy }}>{meta.id}</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "10px 0 4px", flexWrap: "wrap" }}>
+        <FileText size={20} color={C.saffron} />
+        <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 24, fontWeight: 700, color: C.ink }}>{meta.id}</div>
         <RiskBadge level={meta.risk} />
+        {meta.isDemo && <span style={{ color: C.orange, fontFamily: "'Inter',sans-serif", fontSize: 11, fontWeight: 800 }}>SAMPLE</span>}
       </div>
       <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: C.inkSoft, marginBottom: 20 }}>
         {meta.site} &nbsp;·&nbsp; {meta.hazard} &nbsp;·&nbsp; {meta.date}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))", gap: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 360px), 1fr))", gap: 20 }}>
         {/* LEFT PANE — DATA */}
         <div>
           <Panel title="Original Report Text">
@@ -1209,7 +1408,7 @@ function ReportDetail({ reportId, setView, reports, onIngest }) {
                     {k.replace(/([A-Z])/g, " $1")}
                   </span>
                   <input value={v} onChange={(e) => setF(k, e.target.value)}
-                    style={{ border: `1px solid ${C.line}`, borderRadius: 4, padding: "7px 9px", fontFamily: "'Inter',sans-serif", fontSize: 13 }} />
+                    style={{ border: `1px solid ${C.line}`, borderRadius: 4, padding: "7px 9px", background: C.paper, color: C.ink, fontFamily: "'Inter',sans-serif", fontSize: 13 }} />
                 </label>
               ))}
             </div>
@@ -1217,11 +1416,11 @@ function ReportDetail({ reportId, setView, reports, onIngest }) {
 
           <Panel title="SIF Explainability" icon={AlertTriangle} tone={C.redBright}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
-              <div style={{ border: `1px solid ${C.line}`, borderRadius: 4, padding: "10px 12px", background: "#FAFBFA" }}>
+              <div style={{ border: `1px solid ${C.line}`, borderRadius: 4, padding: "10px 12px", background: C.paper }}>
                 <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, color: C.inkSoft, fontWeight: 700, marginBottom: 4 }}>
                   REPORT TYPE
                 </div>
-                <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, color: C.navy, fontWeight: 700 }}>
+                <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, color: C.ink, fontWeight: 700 }}>
                   {meta.extractedData?.report_type || "Unknown"}
                 </div>
                 <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11.5, color: C.inkSoft, marginTop: 3 }}>
@@ -1231,7 +1430,7 @@ function ReportDetail({ reportId, setView, reports, onIngest }) {
                 </div>
               </div>
 
-              <div style={{ border: `1px solid ${C.line}`, borderRadius: 4, padding: "10px 12px", background: "#FAFBFA" }}>
+              <div style={{ border: `1px solid ${C.line}`, borderRadius: 4, padding: "10px 12px", background: C.paper }}>
                 <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, color: C.inkSoft, fontWeight: 700, marginBottom: 4 }}>
                   SIF POTENTIAL
                 </div>
@@ -1276,7 +1475,7 @@ function ReportDetail({ reportId, setView, reports, onIngest }) {
             </div>
           </Panel>
 
-          <Panel title="Life-Saving Rule Mapping" icon={ListChecks} tone={C.navy}>
+          <Panel title="Life-Saving Rule Mapping" icon={ListChecks} tone={C.saffron}>
             <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: C.ink, marginBottom: 6 }}>
               Relevant OIL Life-Saving Rule: <b>{detail.lsr}</b>
             </div>
@@ -1303,12 +1502,12 @@ function ReportDetail({ reportId, setView, reports, onIngest }) {
             </div>
             <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
               <button onClick={() => saveValidation("VALIDATED")} style={{
-                flex: 1, background: status === "Validated" ? C.greenGood : "#fff", color: status === "Validated" ? "#fff" : C.greenGood,
+                flex: 1, background: status === "Validated" ? C.greenGood : C.card, color: status === "Validated" ? "#fff" : C.greenGood,
                 border: `1px solid ${C.greenGood}`, borderRadius: 4, padding: "9px 0", fontFamily: "'Inter',sans-serif",
                 fontWeight: 700, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
               }}><CheckCircle2 size={15} /> Approve</button>
               <button onClick={() => saveValidation("REJECTED")} style={{
-                flex: 1, background: status === "Rejected" ? C.red : "#fff", color: status === "Rejected" ? "#fff" : C.red,
+                flex: 1, background: status === "Rejected" ? C.red : C.card, color: status === "Rejected" ? "#fff" : C.red,
                 border: `1px solid ${C.red}`, borderRadius: 4, padding: "9px 0", fontFamily: "'Inter',sans-serif",
                 fontWeight: 700, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
               }}><XCircle size={15} /> Reject</button>
@@ -1328,7 +1527,7 @@ function ReportDetail({ reportId, setView, reports, onIngest }) {
           <div style={{ background: C.navy, borderRadius: 4, padding: 20 }}>
             <div style={{ textAlign: "center", marginBottom: 14 }}>
               <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, color: "#B9C6CF", letterSpacing: 0.4 }}>COMPUTED RISK SCORE</div>
-              <div style={{ fontFamily: "'Merriweather',serif", fontSize: 44, fontWeight: 700, color: "#fff", margin: "4px 0" }}>{detail.riskScore}<span style={{ fontSize: 18, color: "#B9C6CF" }}> /100</span></div>
+              <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 44, fontWeight: 700, color: "#fff", margin: "4px 0" }}>{detail.riskScore}<span style={{ fontSize: 18, color: "#B9BFC7" }}> /100</span></div>
             </div>
             <div style={{ display: "grid", gap: 8 }}>
               {detail.scoreBreakdown.map((b, i) => (
@@ -1354,7 +1553,7 @@ function ReportDetail({ reportId, setView, reports, onIngest }) {
               Follow the arrows from the contributing causes through the control event to the incident and potential outcomes.
             </div>
             <div style={{ overflowX: "auto" }}>
-              <CausalGraph data={detail.causal} />
+              {graphData && <CausalGraph data={graphData} />}
             </div>
             <div style={{ display: "flex", gap: 14, marginTop: 8, flexWrap: "wrap" }}>
               {[["cause", C.orange], ["event", C.yellow], ["incident", C.redBright], ["outcome", C.navy]].map(([k, c]) => (
@@ -1368,40 +1567,40 @@ function ReportDetail({ reportId, setView, reports, onIngest }) {
           <Panel title="Recurring Precursor Intelligence" icon={TrendingUp} tone={C.orange}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
               <div style={{ border: `1px solid ${C.line}`, borderRadius: 4, padding: "10px 12px" }}>
-                <div style={{ fontFamily: "'Merriweather',serif", fontSize: 20, fontWeight: 700, color: C.navy }}>{detail.recurrence.count}</div>
+                <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 22, fontWeight: 700, color: C.ink }}>{recurrence.count}</div>
                 <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11.5, color: C.inkSoft }}>Similar past events</div>
               </div>
               <div style={{ border: `1px solid ${C.line}`, borderRadius: 4, padding: "10px 12px" }}>
-                <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, fontWeight: 700, color: C.navy }}>{detail.recurrence.freq}</div>
+                <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, fontWeight: 700, color: C.ink }}>{recurrence.freq}</div>
                 <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11.5, color: C.inkSoft }}>Frequency / recurrence</div>
               </div>
             </div>
             <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: C.ink, marginBottom: 4 }}>
-              Common hazard: <b>{detail.recurrence.hazard}</b>
+              Common hazard: <b>{recurrence.hazard}</b>
             </div>
             <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: C.ink, marginBottom: 4 }}>
-              Common failed barrier: <b>{detail.recurrence.barrier}</b>
+              Common failed barrier: <b>{recurrence.barrier}</b>
             </div>
             <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: C.ink }}>
-              Sites where it occurred: <b>{detail.recurrence.sites}</b>
+              Sites where it occurred: <b>{recurrence.sites}</b>
             </div>
           </Panel>
 
-          <Panel title="Emerging Pattern Detection" icon={detail.pattern.direction === "up" ? TrendingUp : TrendingDown} tone={detail.pattern.direction === "up" ? C.redBright : C.greenGood}>
+          <Panel title="Emerging Pattern Detection" icon={pattern.direction === "up" ? TrendingUp : TrendingDown} tone={pattern.direction === "up" ? C.redBright : C.greenGood}>
             <div style={{
-              background: detail.pattern.direction === "up" ? "#FCEDEB" : "#EAF5EE",
-              border: `1px solid ${detail.pattern.direction === "up" ? C.red : C.greenGood}44`,
+              background: pattern.direction === "up" ? "#FCEDEB" : "#EAF5EE",
+              border: `1px solid ${pattern.direction === "up" ? C.red : C.greenGood}44`,
               borderRadius: 4, padding: "10px 12px", display: "flex", alignItems: "center", gap: 10, marginBottom: 10,
             }}>
-              {detail.pattern.direction === "up" ? <TrendingUp size={17} color={C.redBright} /> : <TrendingDown size={17} color={C.greenGood} />}
+              {pattern.direction === "up" ? <TrendingUp size={17} color={C.redBright} /> : <TrendingDown size={17} color={C.greenGood} />}
               <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: C.ink }}>
-                <b>{detail.pattern.direction === "up" ? "Increasing" : "Decreasing"} trend — {detail.pattern.pct}%.</b> {detail.pattern.note}
+                <b>{pattern.direction === "up" ? "Increasing" : "Decreasing"} trend · {pattern.changeLabel}.</b> {pattern.note}
               </div>
             </div>
             <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5, color: C.inkSoft, marginBottom: 8 }}>
-              Newly emerging hazard: <b style={{ color: C.ink }}>{detail.pattern.newHazard}</b>
+              Newly emerging hazard: <b style={{ color: C.ink }}>{livePattern?.precursor_type === "hazard" ? livePattern.precursor : detail.pattern.newHazard}</b>
             </div>
-            {detail.pattern.direction === "up" && detail.pattern.pct >= 20 && (
+            {pattern.direction === "up" && (livePattern?.percentage_increase >= 20 || (!livePattern && detail.pattern.pct >= 20)) && (
               <div style={{ display: "flex", gap: 8, background: C.red, borderRadius: 4, padding: "9px 12px" }}>
                 <ShieldAlert size={15} color="#fff" style={{ flexShrink: 0, marginTop: 1 }} />
                 <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5, color: "#fff" }}>
@@ -1413,10 +1612,10 @@ function ReportDetail({ reportId, setView, reports, onIngest }) {
 
           <Panel title="Similar Incidents — Top 3 Historical Matches">
             <div style={{ display: "grid", gap: 10 }}>
-              {detail.similar.map((s) => (
+              {similar.map((s) => (
                 <div key={s.id} style={{ border: `1px solid ${C.line}`, borderRadius: 4, padding: "10px 12px", display: "flex", alignItems: "center", gap: 12 }}>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5, fontWeight: 700, color: C.navy }}>{s.id}</div>
+                    <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5, fontWeight: 700, color: C.ink }}>{s.id}</div>
                     <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5, color: C.inkSoft, marginTop: 2 }}>{s.title}</div>
                   </div>
                   <div style={{ width: 60, background: "#F0EDE4", borderRadius: 3, height: 7, overflow: "hidden" }}>
@@ -1439,6 +1638,7 @@ function ReportDetail({ reportId, setView, reports, onIngest }) {
 export default function App() {
   const [view, setView] = useState({ page: "home" });
   const [reports, setReports] = useState([]);
+  const [demoMode, setDemoMode] = useState(false);
 
   useEffect(() => {
     window.localStorage.setItem("oil-sentinel-view", JSON.stringify(view));
@@ -1447,27 +1647,26 @@ export default function App() {
   const refreshReports = async () => {
     try {
       const response = await getReports();
-      setReports(response.map((report) => ({
-        ...report,
-        date: report.created_at?.slice(0, 10) || "",
-        site: report.metadata?.site || "Unknown",
-        hazard: report.analysis?.extracted_data?.hazard || "Unknown",
-        extractedData: report.analysis?.extracted_data || null,
-        risk: toRiskLevel(report.analysis?.risk_score || 0),
-        status: report.analysis?.status === "VALIDATED"
-          ? "Validated"
-          : report.analysis?.status === "REJECTED"
-            ? "Rejected"
-            : "Pending",
-      })));
-    } catch (error) {
-      console.error("Unable to load analyzed reports:", error);
+      if (response.length) {
+        setReports(response.map(normalizeReport));
+        setDemoMode(false);
+      } else {
+        setReports(DEMO_REPORTS);
+        setDemoMode(true);
+      }
+    } catch {
+      setReports(DEMO_REPORTS);
+      setDemoMode(true);
     }
   };
 
   const onIngest = async () => {
     await refreshReports();
   };
+
+  useEffect(() => {
+    void refreshReports();
+  }, []);
 
   const dashboardData = useMemo(() => buildDashboardData(reports), [reports]);
   const isHome = view.page === "home";
@@ -1477,7 +1676,17 @@ export default function App() {
     <div style={{ minHeight: "100vh", background: C.paper }}>
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Inter:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap');
+        @media (max-width: 600px) {
+          .portal-topbar-inner { padding: 12px 16px !important; gap: 10px !important; }
+          .portal-topbar-inner > svg { width: 36px !important; height: 36px !important; flex: 0 0 36px; }
+          .portal-header-meta { display: none !important; }
+          .portal-brand-kicker { font-size: 8px !important; letter-spacing: 0.5px !important; line-height: 1.35; }
+          .portal-brand-title { font-size: 20px !important; line-height: 1.1; }
+          .portal-nav { padding: 0 16px 12px !important; justify-content: flex-start !important; flex-wrap: nowrap !important; overflow-x: auto; }
+          .portal-nav button { padding: 8px 12px !important; font-size: 11px !important; white-space: nowrap; }
+          .portal-page { padding: 18px 16px 40px !important; }
+        }
         html, body, #root {
           margin: 0;
           width: 100%;
@@ -1497,7 +1706,7 @@ export default function App() {
 
       {!isCommandCenter && !isHome && <TopBar view={view} setView={setView} />}
 
-      <div style={{
+      <div className={!isCommandCenter && !isHome ? "portal-page" : undefined} style={{
         width: isCommandCenter ? "100%" : "100%",
         maxWidth: isCommandCenter ? "none" : isHome ? 1600 : 1320,
         margin: isCommandCenter ? 0 : "0 auto",
@@ -1506,9 +1715,9 @@ export default function App() {
       }}>
         {view.page === "home" && <Home onStart={() => setView({ page: "command-center" })} />}
         {view.page === "command-center" && <CommandCenter setView={setView} onIngest={onIngest} />}
-        {view.page === "dashboard" && <Dashboard setView={setView} onIngest={onIngest} data={dashboardData} />}
+        {view.page === "dashboard" && <Dashboard setView={setView} onIngest={onIngest} data={dashboardData} demoMode={demoMode} />}
         {view.page === "site-drill" && <SiteDrilldown siteId={view.siteId} setView={setView} data={dashboardData} />}
-        {view.page === "reports" && <ReportsTable setView={setView} reports={reports} onIngest={onIngest} siteFilter={view.siteFilter} hazardFilter={view.hazardFilter} initialRiskFilter={view.riskFilter} />}
+        {view.page === "reports" && <ReportsTable setView={setView} reports={reports} onIngest={onIngest} siteFilter={view.siteFilter} hazardFilter={view.hazardFilter} initialRiskFilter={view.riskFilter} demoMode={demoMode} />}
         {view.page === "report-detail" && <ReportDetail reportId={view.reportId} setView={setView} reports={reports} onIngest={onIngest} />}
       </div>
 
