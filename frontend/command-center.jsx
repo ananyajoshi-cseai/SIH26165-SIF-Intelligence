@@ -17,6 +17,7 @@ import {
 } from "recharts";
 import { IMG, UploadWidget } from "./oil-safety-portal.jsx";
 import { getDashboardSummary } from "../src/api.js";
+import "./command-center.css";
 
 const C = {
   navy: "#0A2A43",
@@ -37,7 +38,7 @@ const C = {
 
 function Emblem({ size = 44 }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 100 100">
+    <svg className="cc-emblem" width={size} height={size} viewBox="0 0 100 100">
       <circle
         cx="50"
         cy="50"
@@ -84,7 +85,7 @@ function Emblem({ size = 44 }) {
 
 function CommandHeader() {
   return (
-    <div>
+    <div className="cc-header">
       {/* Tricolor strip */}
       <div style={{ height: 5, display: "flex" }}>
         <div style={{ flex: 1, background: C.saffron }} />
@@ -94,6 +95,7 @@ function CommandHeader() {
 
       {/* Main header */}
       <div
+        className="cc-header-band"
         style={{
           background: `linear-gradient(
       100deg,
@@ -164,6 +166,7 @@ function CommandHeader() {
 function CommandFooter() {
   return (
     <div
+      className="cc-footer"
       style={{
         background: C.navyDeep,
         color: "#9FB0BB",
@@ -182,6 +185,7 @@ function CommandFooter() {
 function BarrierFailureChart({ data }) {
   return (
     <section
+      className="cc-panel"
       style={{
         marginTop: "28px",
         background: C.card,
@@ -192,6 +196,7 @@ function BarrierFailureChart({ data }) {
       }}
     >
       <div
+        className="cc-panel-head"
         style={{
           margin: "-22px -22px 20px -22px",
           padding: "20px 22px",
@@ -286,6 +291,7 @@ function KPICard({ label, value, subtext, icon: Icon }) {
 
   return (
     <div
+      className="cc-kpi"
       style={{
         background: C.card,
         border: `1px solid ${C.line}`,
@@ -323,6 +329,7 @@ function KPICard({ label, value, subtext, icon: Icon }) {
         </p>
 
         <div
+          className="cc-kpi-icon"
           style={{
             width: 38,
             height: 38,
@@ -377,6 +384,7 @@ function KPICard({ label, value, subtext, icon: Icon }) {
 function SiteRiskComparison({ data }) {
   return (
     <section
+      className="cc-panel"
       style={{
         marginTop: "28px",
         background: C.card,
@@ -387,6 +395,7 @@ function SiteRiskComparison({ data }) {
       }}
     >
       <div
+        className="cc-panel-head"
         style={{
           margin: "-22px -22px 20px -22px",
           padding: "20px 22px",
@@ -567,6 +576,7 @@ function SiteRiskComparison({ data }) {
 function HighSIFReports({ reports, setView }) {
   return (
     <section
+      className="cc-panel"
       style={{
         marginTop: "28px",
         background: C.card,
@@ -578,6 +588,7 @@ function HighSIFReports({ reports, setView }) {
     >
       {/* Section Header */}
       <div
+        className="cc-panel-head"
         style={{
           padding: "20px 22px",
           background: `linear-gradient(90deg, ${C.navy}, #123B59)`,
@@ -613,6 +624,7 @@ function HighSIFReports({ reports, setView }) {
         </div>
 
         <div
+          className="cc-priority-badge"
           style={{
             background: C.redBright,
             color: "#FFFFFF",
@@ -658,6 +670,7 @@ function HighSIFReports({ reports, setView }) {
       {reports.map((report, index) => (
         <div
           key={String(report.id).slice(0, 8)}
+          className="cc-row"
           style={{
             display: "grid",
             gridTemplateColumns: "90px 150px 1fr 110px 80px 85px",
@@ -753,6 +766,7 @@ function HighSIFReports({ reports, setView }) {
 
           {/* Review */}
           <button
+            className="cc-btn-outline"
             onClick={() => {
               setView({
                 page: "report-detail",
@@ -787,7 +801,7 @@ function CommandUpload({ setView, onIngest }) {
   };
 
   return (
-    <section style={{
+    <section className="cc-upload" style={{
       marginBottom: "28px",
       background: `linear-gradient(120deg, rgba(10,42,67,0.92), rgba(10,42,67,0.75)), url(${IMG.plant})`,
       backgroundSize: "cover", backgroundPosition: "center",
@@ -818,6 +832,7 @@ function LiveHighlights({ dashboard }) {
 
   return (
     <section
+      className="cc-highlight-grid"
       style={{
         display: "grid",
         gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
@@ -825,7 +840,7 @@ function LiveHighlights({ dashboard }) {
         marginTop: "28px",
       }}
     >
-      <div style={highlightCardStyle}>
+      <div className="cc-highlight-card" style={highlightCardStyle}>
         <h2 style={highlightHeadingStyle}>Top hazards</h2>
         {dashboard.top_hazards.length ? dashboard.top_hazards.map((item, index) => (
           <div key={item.label} style={highlightRowStyle}>
@@ -836,7 +851,7 @@ function LiveHighlights({ dashboard }) {
         )) : <p style={emptyTextStyle}>No hazard data for today.</p>}
       </div>
 
-      <div style={highlightCardStyle}>
+      <div className="cc-highlight-card" style={highlightCardStyle}>
         <h2 style={highlightHeadingStyle}>Highest-risk locations</h2>
         {dashboard.highest_risk_locations.length ? dashboard.highest_risk_locations.slice(0, 3).map((item) => (
           <div key={item.site} style={highlightRowStyle}>
@@ -846,7 +861,7 @@ function LiveHighlights({ dashboard }) {
         )) : <p style={emptyTextStyle}>No location data for today.</p>}
       </div>
 
-      <div style={highlightCardStyle}>
+      <div className="cc-highlight-card" style={highlightCardStyle}>
         <h2 style={highlightHeadingStyle}>Trends</h2>
         <p style={{ ...emptyTextStyle, color: C.ink, lineHeight: 1.6 }}>
           ⚠️ {trend?.label || "Safety precursors"} {trendText}.
@@ -859,6 +874,7 @@ function LiveHighlights({ dashboard }) {
 function AboutOilSentinel() {
   return (
     <section
+      className="cc-about"
       style={{
         margin: "48px -28px -40px",
         padding: "42px 28px 46px",
@@ -1018,6 +1034,7 @@ export default function CommandCenter({ setView, onIngest }) {
 
   return (
     <div
+      className="cc-root"
       style={{
         minHeight: "100vh",
         background: C.paper,
@@ -1029,6 +1046,7 @@ export default function CommandCenter({ setView, onIngest }) {
       <CommandHeader />
 
       <main
+        className="cc-main"
         style={{
           width: "100%",
           maxWidth: 1320,
@@ -1038,7 +1056,28 @@ export default function CommandCenter({ setView, onIngest }) {
         }}
       >
         <div style={{ marginBottom: "28px" }}>
-          <div style={{ marginBottom: "28px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, marginBottom: "20px" }}>
+            <button
+              type="button"
+              className="cc-btn-outline"
+              onClick={() => setView({ page: "home" })}
+              style={{
+                border: `1px solid ${C.line}`,
+                background: C.card,
+                color: C.navy,
+                borderRadius: 8,
+                padding: "8px 14px",
+                fontWeight: 700,
+                fontSize: 12,
+                cursor: "pointer",
+                fontFamily: "'Inter', sans-serif",
+              }}
+            >
+              ← Home
+            </button>
+          </div>
+
+          <div className="cc-page-title" style={{ marginBottom: "28px" }}>
             <h1
               style={{
                 margin: 0,
@@ -1069,6 +1108,7 @@ export default function CommandCenter({ setView, onIngest }) {
         </div>
 
         <div
+          className="cc-kpi-grid"
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
