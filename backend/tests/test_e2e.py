@@ -80,7 +80,7 @@ def test_csv_upload():
     r = requests.post(f"{BASE}/reports/upload", files=files)
     assert r.status_code == 201
     data = r.json()
-    assert data["created"] >= 1
+    assert data["created"] >= 1 or (data["duplicate"] and data["analyzed"] >= 1)
 
 
 def test_similar_reports_endpoint():

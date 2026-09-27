@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
@@ -22,6 +22,7 @@ from app.services.dashboard_service import get_dashboard_summary
 from app.services.feedback_service import validate_analysis
 from app.services.graph_service import build_causal_graph
 from app.services.pattern_service import detect_emerging_patterns
+from app.services.ocr_service import extract_text_from_image
 from app.services.report_service import (
     create_report,
     delete_report,
@@ -77,6 +78,85 @@ def analyze_report_endpoint(
         db=db,
         raw_text=payload.text,
         site=payload.site,
+        is_synthetic=True,
+    )
+
+    analysis = analyze_report(
+        db=db,
+        report=report,
+    )
+
+    extracted = analysis.extracted_data
+
+    return AnalyzeResponse(
+        report_id=report.id,
+        report_type=extracted.get("report_type", "Unknown"),
+        report_type_confidence=extracted.get(
+            "report_type_confidence",
+            0.0,
+        ),
+        sif_potential=extracted.get(
+            "sif_potential",
+            "Unknown",
+        ),
+        sif_confidence=extracted.get(
+            "sif_confidence",
+            0.0,
+        ),
+        risk_score=analysis.risk_score,
+        risk_level=analysis.sif_level,
+        confidence=analysis.confidence,
+        extraction=extracted,
+        risk_breakdown=RiskBreakdown(
+            **get_risk_breakdown(extracted)
+        ),
+    )
+
+
+@router.post(
+    "/analyze-image",
+    response_model=AnalyzeResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def analyze_image_endpoint(
+    file: UploadFile = File(...),
+    site: str = Form("Unknown"),
+    db: Session = Depends(get_db),
+):
+    if not file.filename:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Image file is required",
+        )
+
+    allowed_extensions = (".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tiff")
+
+    if not file.filename.lower().endswith(allowed_extensions):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Supported image formats: PNG, JPG, JPEG, WEBP, BMP, TIFF",
+        )
+
+    content = await file.read()
+
+    try:
+        extracted_text = extract_text_from_image(content)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"OCR failed: {exc}",
+        ) from exc
+
+    if not extracted_text:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No readable text was found in the image",
+        )
+
+    report = create_report(
+        db=db,
+        raw_text=extracted_text,
+        site=site,
         is_synthetic=True,
     )
 

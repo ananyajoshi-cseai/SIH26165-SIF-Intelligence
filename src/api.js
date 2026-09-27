@@ -48,6 +48,16 @@ export async function uploadReports(file) {
   });
 }
 
+export async function analyzeImage(file, site = "Unknown") {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("site", site);
+  return request("/reports/analyze-image", {
+    method: "POST",
+    body: formData,
+  });
+}
+
 export async function getDashboardSummary() {
   return request("/reports/dashboard-summary");
 }

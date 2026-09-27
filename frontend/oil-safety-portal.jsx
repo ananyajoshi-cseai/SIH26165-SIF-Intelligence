@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { getReports, submitFeedback, uploadReports } from "../src/api.js";
+import { getReports, submitFeedback, uploadReports, analyzeImage } from "../src/api.js";
 import {
   LineChart,
   Line,
@@ -471,7 +471,7 @@ function Panel({ title, icon: Icon, children, tone }) {
 /* ------------------------------------------------------------------ */
 /* FILE UPLOAD (functional, mock analysis)                             */
 /* ------------------------------------------------------------------ */
-export function UploadWidget({ compact, onIngest, accept = ".csv,.pdf,image/*" }) {
+export function UploadWidget({ compact, onIngest, accept = ".csv,image/*", site = "Unknown" }) {
   const [fileName, setFileName] = useState(null);
   const [status, setStatus] = useState("idle"); // idle | analyzing | done | error
   const [message, setMessage] = useState("");
@@ -485,11 +485,18 @@ export function UploadWidget({ compact, onIngest, accept = ".csv,.pdf,image/*" }
     setMessage("");
 
     try {
-      const result = await uploadReports(f);
+      const isImage = f.type?.startsWith("image/");
+
+      const result = isImage
+        ? await analyzeImage(f, site)
+        : await uploadReports(f);
 
       setStatus("done");
+
       setMessage(
-        `${result.analyzed ?? result.created ?? 0} report(s) analysed successfully`
+        isImage
+          ? `${result.report_type ?? "Report"} ? ${result.sif_potential ?? "Unknown"} ? Risk ${result.risk_score ?? 0}`
+          : `${result.analyzed ?? result.created ?? 0} report(s) analysed successfully`
       );
 
       if (onIngest) onIngest(f.name, result);
@@ -529,7 +536,7 @@ export function UploadWidget({ compact, onIngest, accept = ".csv,.pdf,image/*" }
       <input
         ref={inputRef}
         type="file"
-        accept=".csv,.pdf,image/*"
+        accept=".csv,image/*"
         style={{ display: "none" }}
         onChange={(e) => {
           handleFile(e.target.files[0]);
@@ -622,7 +629,7 @@ export function UploadWidget({ compact, onIngest, accept = ".csv,.pdf,image/*" }
             color: "#a7b6c2",
             marginTop: 4,
           }}>
-            CSV, PDF or image up to 20MB
+            CSV or image up to 20MB
           </div>
         )}
       </div>
