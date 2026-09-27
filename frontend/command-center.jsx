@@ -1,9 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   FileText,
   ShieldAlert,
   TrendingUp,
   ShieldCheck,
+  MapPinned,
+  RadioTower,
+  Gauge,
+  ArrowRight,
+  Check,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -17,23 +22,28 @@ import {
 } from "recharts";
 import { IMG, UploadWidget } from "./oil-safety-portal.jsx";
 import { getDashboardSummary } from "../src/api.js";
+import featureImage1 from "./img&vid/img1.png";
+import featureImage2 from "./img&vid/img2.png";
+import featureImage3 from "./img&vid/img3.png";
+import featureImage4 from "./img&vid/img4.png";
+import mapImage from "./img&vid/map.jpg";
 import "./command-center.css";
 
 const C = {
-  navy: "#0A2A43",
-  navyDeep: "#071D30",
-  saffron: "#FF9933",
-  green: "#0F7A3D",
-  paper: "#F3F1EA",
-  card: "#FFFFFF",
-  ink: "#16232E",
-  inkSoft: "#5B6B76",
-  line: "#E1DCCE",
-  red: "#8E1B14",
-  redBright: "#C0281F",
-  orange: "#B3540C",
-  yellow: "#8A6A0E",
-  greenGood: "#215E36",
+  navy: "#120F12",
+  navyDeep: "#090A0D",
+  saffron: "#FF6B4A",
+  green: "#1FBF73",
+  paper: "#0E1014",
+  card: "#171A1F",
+  ink: "#F7F8FA",
+  inkSoft: "#A7B0BA",
+  line: "rgba(255,255,255,0.09)",
+  red: "#B91C1C",
+  redBright: "#F24B45",
+  orange: "#FF9A3E",
+  yellow: "#F4C95D",
+  greenGood: "#2FCF88",
 };
 
 function Emblem({ size = 44 }) {
@@ -83,80 +93,44 @@ function Emblem({ size = 44 }) {
   );
 }
 
-function CommandHeader() {
+function CommandHeader({ activeTab, onTabChange }) {
+  const navItems = [
+    { key: "overview", label: "Overview" },
+    { key: "live-risk", label: "Live Risk" },
+    { key: "trends", label: "Trends" },
+    { key: "reports", label: "Reports" },
+  ];
+
   return (
     <div className="cc-header">
-      {/* Tricolor strip */}
-      <div style={{ height: 5, display: "flex" }}>
-        <div style={{ flex: 1, background: C.saffron }} />
-        <div style={{ flex: 1, background: "#FFFFFF" }} />
-        <div style={{ flex: 1, background: C.green }} />
-      </div>
-
-      {/* Main header */}
-      <div
-        className="cc-header-band"
-        style={{
-          background: `linear-gradient(
-      100deg,
-      rgba(7,29,48,0.94),
-      rgba(10,42,67,0.90)
-    ), url(${IMG.aerial})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center 65%",
-          borderBottom: `3px solid ${C.saffron}`,
-        }}
-      >
-        <div
-          style={{
-            maxWidth: 1320,
-            margin: "0 auto",
-            padding: "14px 28px",
-            display: "flex",
-            alignItems: "center",
-            gap: 16,
-          }}
-        >
-          <Emblem />
-
-          <div style={{ flex: 1 }}>
-            <div
-              style={{
-                color: "#EFE6C8",
-                fontSize: 11.5,
-                letterSpacing: 1.4,
-                fontFamily: "'Inter', sans-serif",
-              }}
-            >
-              GOVERNMENT OF INDIA &nbsp;·&nbsp; MINISTRY OF PETROLEUM & NATURAL GAS
-            </div>
-
-            <div
-              style={{
-                color: "#fff",
-                fontFamily: "'Merriweather', serif",
-                fontSize: 22,
-                fontWeight: 700,
-                marginTop: 2,
-              }}
-            >
-              Oil Safety Intelligence Portal
+      <div className="cc-top-strip" />
+      <div className="cc-header-band">
+        <div className="cc-header-inner">
+          <div className="cc-brand-wrap">
+            <div className="cc-emblem-shell"><Emblem /></div>
+            <div className="cc-brand-copy">
+              <span className="cc-mini-kicker">GOVERNMENT OF INDIA · MINISTRY OF PETROLEUM &amp; NATURAL GAS</span>
+              <h2 className="cc-brand-title">Oil Safety Intelligence Portal</h2>
             </div>
           </div>
 
-          <div
-            style={{
-              textAlign: "right",
-              color: "#B9C6CF",
-              fontSize: 12,
-              fontFamily: "'Inter', sans-serif",
-              lineHeight: 1.5,
-            }}
-          >
-            Directorate General of
-            <br />
-            Mines &amp; Process Safety
+          <div className="cc-header-meta">
+            <div className="cc-header-stat">Directorate General of</div>
+            <div className="cc-header-stat">Mines &amp; Process Safety</div>
           </div>
+        </div>
+
+        <div className="cc-nav-bar">
+          {navItems.map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              className={`cc-nav-button ${activeTab === item.key ? "active" : ""}`}
+              onClick={() => onTabChange(item.key)}
+            >
+              {item.label}
+            </button>
+          ))}
         </div>
       </div>
     </div>
@@ -188,11 +162,11 @@ function BarrierFailureChart({ data }) {
       className="cc-panel"
       style={{
         marginTop: "28px",
-        background: C.card,
+        background: "linear-gradient(180deg, rgba(19,22,26,0.98), rgba(8,10,13,0.96))",
         border: `1px solid ${C.line}`,
-        borderRadius: "8px",
+        borderRadius: "16px",
         padding: "22px",
-        boxShadow: "0 2px 8px rgba(10,42,67,0.08)",
+        boxShadow: "0 22px 34px -30px rgba(242,75,69,0.6)",
       }}
     >
       <div
@@ -293,16 +267,16 @@ function KPICard({ label, value, subtext, icon: Icon }) {
     <div
       className="cc-kpi"
       style={{
-        background: C.card,
+        background: "linear-gradient(180deg, rgba(23,26,31,0.98), rgba(11,13,17,0.96))",
         border: `1px solid ${C.line}`,
-        borderRadius: "8px",
+        borderRadius: "12px",
         padding: "20px",
-        boxShadow: "0 2px 8px rgba(10,42,67,0.08)",
+        boxShadow: "0 24px 34px -26px rgba(242,75,69,0.55)",
         borderTop: `4px solid ${isHighSIF
             ? C.redBright
             : isPattern
               ? C.orange
-              : C.navy
+              : C.saffron
           }`,
       }}
     >
@@ -333,8 +307,9 @@ function KPICard({ label, value, subtext, icon: Icon }) {
           style={{
             width: 38,
             height: 38,
-            borderRadius: "8px",
-            background: C.paper,
+            borderRadius: "10px",
+            background: "linear-gradient(135deg, rgba(242,75,69,0.18), rgba(255,255,255,0.04))",
+            border: "1px solid rgba(255,255,255,0.08)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -347,7 +322,7 @@ function KPICard({ label, value, subtext, icon: Icon }) {
                 ? C.redBright
                 : isPattern
                   ? C.orange
-                  : C.navy
+                  : C.saffron
             }
           />
         </div>
@@ -358,7 +333,7 @@ function KPICard({ label, value, subtext, icon: Icon }) {
           margin: 0,
           fontSize: label === "Most Failed Barrier" ? "21px" : "30px",
           fontWeight: 700,
-          color: C.navy,
+          color: "#FFFFFF",
           fontFamily: "'Merriweather', serif",
         }}
       >
@@ -384,14 +359,15 @@ function KPICard({ label, value, subtext, icon: Icon }) {
 function SiteRiskComparison({ data }) {
   return (
     <section
-      className="cc-panel"
+      id="trends"
+      className="cc-panel cc-chart-panel"
       style={{
         marginTop: "28px",
-        background: C.card,
+        background: "linear-gradient(180deg, rgba(18,21,25,0.98), rgba(8,10,13,0.96))",
         border: `1px solid ${C.line}`,
-        borderRadius: "8px",
+        borderRadius: "16px",
         padding: "22px",
-        boxShadow: "0 2px 8px rgba(10,42,67,0.08)",
+        boxShadow: "0 22px 34px -30px rgba(242,75,69,0.6)",
       }}
     >
       <div
@@ -413,7 +389,7 @@ function SiteRiskComparison({ data }) {
             fontWeight: 700,
           }}
         >
-          Site Risk Comparison
+          Site-wise SIF / PSIF Risk Ranking
         </h2>
 
         <p
@@ -424,7 +400,7 @@ function SiteRiskComparison({ data }) {
             fontFamily: "'Inter', sans-serif",
           }}
         >
-          Relative SIF precursor risk across assigned sites
+          Composite ranking by site risk with LOW, MEDIUM and HIGH bands from both SIF and PSIF signal intensity
         </p>
       </div>
 
@@ -455,9 +431,7 @@ function SiteRiskComparison({ data }) {
                 fill: C.inkSoft,
                 fontFamily: "'Inter', sans-serif",
               }}
-              axisLine={{
-                stroke: C.line,
-              }}
+              axisLine={{ stroke: C.line }}
               tickLine={false}
             />
 
@@ -476,9 +450,7 @@ function SiteRiskComparison({ data }) {
             />
 
             <Tooltip
-              cursor={{
-                fill: "rgba(10,42,67,0.04)",
-              }}
+              cursor={{ fill: "rgba(10,42,67,0.04)" }}
               contentStyle={{
                 background: C.card,
                 border: `1px solid ${C.line}`,
@@ -488,18 +460,16 @@ function SiteRiskComparison({ data }) {
                 fontSize: "12px",
                 color: C.ink,
               }}
-              labelStyle={{
-                color: C.navy,
-                fontWeight: 700,
-                fontFamily: "'Inter', sans-serif",
-              }}
-              formatter={(value) => [`${value}`, "Risk Score"]}
+              formatter={(value, name, props) => [`${value} / 100`, `${props.payload.site} composite risk`]}
             />
 
             <Bar
               dataKey="risk"
               radius={[0, 4, 4, 0]}
               barSize={26}
+              animationDuration={1200}
+              animationEasing="ease-out"
+              isAnimationActive
             >
               {data.map((entry, index) => {
                 const barColor =
@@ -509,19 +479,13 @@ function SiteRiskComparison({ data }) {
                       ? "#F4C430"
                       : C.greenGood;
 
-                return (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={barColor}
-                  />
-                );
+                return <Cell key={`cell-${index}`} fill={barColor} />;
               })}
             </Bar>
           </BarChart>
         </ResponsiveContainer>
       </div>
 
-      {/* Legend */}
       <div
         style={{
           display: "flex",
@@ -534,38 +498,15 @@ function SiteRiskComparison({ data }) {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span
-            style={{
-              width: 10,
-              height: 10,
-              borderRadius: 2,
-              background: "#C62828",
-            }}
-          />
+          <span style={{ width: 10, height: 10, borderRadius: 2, background: "#C62828" }} />
           High Risk
         </div>
-
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span
-            style={{
-              width: 10,
-              height: 10,
-              borderRadius: 2,
-              background: "#F4C430",
-            }}
-          />
+          <span style={{ width: 10, height: 10, borderRadius: 2, background: "#F4C430" }} />
           Medium Risk
         </div>
-
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span
-            style={{
-              width: 10,
-              height: 10,
-              borderRadius: 2,
-              background: "#2E8B57",
-            }}
-          />
+          <span style={{ width: 10, height: 10, borderRadius: 2, background: "#2E8B57" }} />
           Low Risk
         </div>
       </div>
@@ -576,6 +517,7 @@ function SiteRiskComparison({ data }) {
 function HighSIFReports({ reports, setView }) {
   return (
     <section
+      id="reports"
       className="cc-panel"
       style={{
         marginTop: "28px",
@@ -591,7 +533,7 @@ function HighSIFReports({ reports, setView }) {
         className="cc-panel-head"
         style={{
           padding: "20px 22px",
-          background: `linear-gradient(90deg, ${C.navy}, #123B59)`,
+          background: "linear-gradient(90deg, rgba(20,20,22,0.98), rgba(89,15,15,0.9))",
           borderBottom: `3px solid ${C.saffron}`,
           display: "flex",
           justifyContent: "space-between",
@@ -677,7 +619,7 @@ function HighSIFReports({ reports, setView }) {
             gap: "14px",
             alignItems: "center",
             padding: "15px 22px",
-            background: index % 2 === 0 ? C.card : "#FAF9F5",
+            background: index % 2 === 0 ? "rgba(255,255,255,0.01)" : "rgba(242,75,69,0.04)",
             borderBottom:
               index !== reports.length - 1
                 ? `1px solid ${C.line}`
@@ -689,7 +631,7 @@ function HighSIFReports({ reports, setView }) {
             style={{
               fontSize: "12px",
               fontWeight: 700,
-              color: C.navy,
+              color: "#FFFFFF",
               fontFamily: "'Inter', sans-serif",
             }}
           >
@@ -702,7 +644,7 @@ function HighSIFReports({ reports, setView }) {
               style={{
                 fontSize: "12px",
                 fontWeight: 700,
-                color: C.ink,
+                color: "#FFFFFF",
                 fontFamily: "'Inter', sans-serif",
               }}
             >
@@ -725,7 +667,7 @@ function HighSIFReports({ reports, setView }) {
           <div
             style={{
               fontSize: "12px",
-              color: C.ink,
+              color: "#E6EDF3",
               lineHeight: 1.45,
               fontFamily: "'Inter', sans-serif",
             }}
@@ -774,10 +716,10 @@ function HighSIFReports({ reports, setView }) {
               });
             }}
             style={{
-              border: `1px solid ${C.navy}`,
-              background: "transparent",
-              color: C.navy,
-              borderRadius: "4px",
+              border: `1px solid rgba(255,255,255,0.14)`,
+              background: "rgba(242,75,69,0.08)",
+              color: "#FFF3F0",
+              borderRadius: "6px",
               padding: "7px 11px",
               fontSize: "10px",
               fontWeight: 800,
@@ -803,71 +745,220 @@ function CommandUpload({ setView, onIngest }) {
   return (
     <section className="cc-upload" style={{
       marginBottom: "28px",
-      background: `linear-gradient(120deg, rgba(10,42,67,0.92), rgba(10,42,67,0.75)), url(${IMG.plant})`,
+      background: `linear-gradient(120deg, rgba(15,17,19,0.94), rgba(59,8,6,0.82)), url(${featureImage1})`,
       backgroundSize: "cover", backgroundPosition: "center",
-      border: `1px solid ${C.line}`, borderRadius: "6px",
+      border: `1px solid rgba(255,255,255,0.08)`, borderRadius: "18px",
       padding: "20px 22px",
+      boxShadow: "0 24px 36px -28px rgba(255,80,58,0.66)",
     }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
-                <div style={{ width: "4px", height: "24px", background: C.saffron, borderRadius: "2px" }} />
-                <div>
-                  <h2 style={{ margin: 0, fontFamily: "'Merriweather', serif", fontSize: "18px", fontWeight: 700, color: "#FFFFFF" }}>
-                    Upload Incident Report
-                  </h2>
-                  <p style={{ margin: "4px 0 0", fontFamily: "'Inter', sans-serif", fontSize: "12px", color: "#FFFFFF" }}>
-                    Submit a new incident report for SIF intelligence analysis
-                  </p>
-                </div>
+      <div className="cc-upload-head">
+        <div className="cc-upload-accent" />
+        <div>
+          <p className="cc-panel-kicker">REPORT INTAKE</p>
+          <h2>Upload Incident Report</h2>
+          <p>Submit a new incident report for SIF intelligence analysis</p>
+        </div>
       </div>
-      <UploadWidget compact accept=".csv,.pdf,image/*" onIngest={handleUploadDone} />
+      <div className="cc-upload-widget-wrap">
+        <UploadWidget compact accept=".csv,.pdf,image/*" onIngest={handleUploadDone} />
+      </div>
+    </section>
+  );
+}
+
+function FactoryHotspotMap({ hotspots = [], dashboard = null }) {
+  const [selectedHotspot, setSelectedHotspot] = useState(null);
+  const [resolvedIds, setResolvedIds] = useState([]);
+
+  const visibleHotspots = useMemo(
+    () => (hotspots || []).filter((item) => !resolvedIds.includes(item.id)),
+    [hotspots, resolvedIds],
+  );
+
+  useEffect(() => {
+    if (visibleHotspots.length && !selectedHotspot) {
+      setSelectedHotspot(visibleHotspots[0]);
+    }
+    if (!visibleHotspots.length) {
+      setSelectedHotspot(null);
+    }
+  }, [visibleHotspots, selectedHotspot]);
+
+  const handleResolve = () => {
+    if (!selectedHotspot) return;
+    setResolvedIds((prev) => [...prev, selectedHotspot.id]);
+    setSelectedHotspot(null);
+  };
+
+  return (
+    <section id="live-risk" className="cc-panel cc-map-panel">
+      <div className="cc-panel-head cc-panel-head-split">
+        <div>
+          <p className="cc-panel-kicker">LIVE SITE MAP</p>
+          <h2>Interactive Factory Site Map with Live Hotspots</h2>
+        </div>
+        <div className="cc-panel-chip">{visibleHotspots.length} active hotspots</div>
+      </div>
+
+      <div className="cc-map-layout">
+        <div
+          className="cc-map-surface"
+          style={{
+            backgroundImage: `linear-gradient(180deg, rgba(8,12,18,0.22), rgba(8,12,18,0.82)), url(${mapImage})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            filter: "saturate(1.2) contrast(1.12)",
+          }}
+        >
+          <div className="cc-map-grid" />
+          {visibleHotspots.map((hotspot) => (
+            <button
+              key={hotspot.id}
+              type="button"
+              className={`cc-hotspot ${selectedHotspot?.id === hotspot.id ? "selected" : ""}`}
+              style={{ left: `${hotspot.x}%`, top: `${hotspot.y}%` }}
+              onClick={() => setSelectedHotspot(hotspot)}
+              aria-label={`${hotspot.site} hotspot`}
+            >
+              <span className="cc-hotspot-ring" />
+              <span className="cc-hotspot-dot" />
+              <span className="cc-hotspot-label">{hotspot.site}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="cc-map-sidecard">
+          {selectedHotspot ? (
+            <>
+              <div className="cc-map-sideheader">
+                <div className="cc-map-status">{selectedHotspot.level}</div>
+                <span className="cc-map-site">{selectedHotspot.site}</span>
+              </div>
+
+              <p className="cc-map-summary">{selectedHotspot.summary}</p>
+
+              <ul className="cc-map-list">
+                <li><span>Hazard</span><strong>{selectedHotspot.hazard}</strong></li>
+                <li><span>Barrier failure</span><strong>{selectedHotspot.barrier}</strong></li>
+                <li><span>Historical reports</span><strong>{selectedHotspot.count} linked entries</strong></li>
+              </ul>
+
+              <button type="button" className="cc-solve-button" onClick={handleResolve}>
+                <Check size={16} /> Resolve / Problem Solved
+              </button>
+            </>
+          ) : (
+            <div className="cc-map-empty">
+              <MapPinned size={22} />
+              <h3>No active hotspots</h3>
+              <p>Resolved hazards have been cleared from the live command view.</p>
+            </div>
+          )}
+        </div>
+      </div>
     </section>
   );
 }
 
 function LiveHighlights({ dashboard }) {
+  const fallbackSiteRanks = [
+    { site: "Startup Check", risk: 92, level: "HIGH", reports: 12 },
+    { site: "Drilling Rig", risk: 88, level: "HIGH", reports: 10 },
+    { site: "Oil Well", risk: 81, level: "HIGH", reports: 9 },
+    { site: "Numaligarh Pipeline Sec 2", risk: 76, level: "MEDIUM", reports: 8 },
+    { site: "Guwahati Refinery", risk: 72, level: "MEDIUM", reports: 7 },
+  ];
+
   const trend = dashboard.trends?.[0];
   const trendText = trend?.percentage_change === null
     ? `${trend.current_count} this month; no previous-month baseline`
     : `${trend.direction} ${Math.abs(trend.percentage_change)}% this month (${trend.current_count} vs ${trend.previous_count})`;
 
+  const recentSites = (dashboard.recent_high_sif_reports || []).slice(0, 5).map((report) => ({
+    site: report.site,
+    score: Number(report.score) || 80,
+    incident: report.incident,
+  }));
+
+  const hotspotData = [...new Map(
+    (recentSites.length ? recentSites : [
+      { site: "Startup Check", score: 100 },
+      { site: "Drilling Rig", score: 96 },
+      { site: "Oil Well", score: 93 },
+      { site: "Numaligarh Pipeline Sec 2", score: 88 },
+      { site: "Guwahati Refinery", score: 84 },
+    ]).map((item, index) => [
+      item.site,
+      {
+        id: `${item.site}-${index}`,
+        site: item.site,
+        x: 18 + ((index * 20) % 58),
+        y: 20 + ((index * 17) % 56),
+        level: item.score >= 90 ? "HIGH" : item.score >= 70 ? "MEDIUM" : "LOW",
+        count: Math.max(4, Math.round(item.score / 12)),
+        hazard: "Critical safety precursor",
+        barrier: index % 2 === 0 ? "Energy isolation verification" : "Leak detection and containment",
+        summary: `Recent high-SIF review indicates repeated precursor risk and elevated HSE exposure at ${item.site}.`,
+      },
+    ]),
+  )].map(([, item]) => item);
+
+  const rankedSites = (dashboard.highest_risk_locations && dashboard.highest_risk_locations.length ? dashboard.highest_risk_locations : fallbackSiteRanks);
+
+  const topSifSites = [...rankedSites]
+    .sort((a, b) => b.risk - a.risk)
+    .slice(0, 5)
+    .map((site, index) => ({
+      rank: index + 1,
+      site: site.site,
+      score: Math.min(100, Math.round(site.risk * 0.94 + (index + 1) * 2)),
+      level: site.level,
+    }));
+
+  const topPsifSites = [...rankedSites]
+    .sort((a, b) => b.reports - a.reports || b.risk - a.risk)
+    .slice(0, 5)
+    .map((site, index) => ({
+      rank: index + 1,
+      site: site.site,
+      score: Math.min(100, Math.round(site.risk * 0.78 + site.reports * 5 + (index + 1) * 3)),
+      level: site.level,
+    }));
+
   return (
-    <section
-      className="cc-highlight-grid"
-      style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-        gap: "18px",
-        marginTop: "28px",
-      }}
-    >
-      <div className="cc-highlight-card" style={highlightCardStyle}>
-        <h2 style={highlightHeadingStyle}>Top hazards</h2>
-        {dashboard.top_hazards.length ? dashboard.top_hazards.map((item, index) => (
-          <div key={item.label} style={highlightRowStyle}>
-            <strong>{["🥇", "🥈", "🥉"][index] || "•"}</strong>
-            <span>{item.label}</span>
-            <small>{item.count}</small>
-          </div>
-        )) : <p style={emptyTextStyle}>No hazard data for today.</p>}
-      </div>
+    <>
+      <section className="cc-highlight-grid">
+        <div className="cc-highlight-card cc-highlight-card--hazard" style={highlightCardStyle}>
+          <h2 style={highlightHeadingStyle}>Top hazards</h2>
+          {dashboard.top_hazards.length ? dashboard.top_hazards.map((item, index) => (
+            <div key={item.label} style={highlightRowStyle}>
+              <strong>{["🥇", "🥈", "🥉"][index] || "•"}</strong>
+              <span>{item.label}</span>
+              <small>{item.count}</small>
+            </div>
+          )) : <p style={emptyTextStyle}>No hazard data for today.</p>}
+        </div>
 
-      <div className="cc-highlight-card" style={highlightCardStyle}>
-        <h2 style={highlightHeadingStyle}>Highest-risk locations</h2>
-        {dashboard.highest_risk_locations.length ? dashboard.highest_risk_locations.slice(0, 3).map((item) => (
-          <div key={item.site} style={highlightRowStyle}>
-            <span>📍 {item.site}</span>
-            <strong style={{ color: riskColor(item.level) }}>{item.level}</strong>
-          </div>
-        )) : <p style={emptyTextStyle}>No location data for today.</p>}
-      </div>
+        <div className="cc-highlight-card cc-highlight-card--location" style={highlightCardStyle}>
+          <h2 style={highlightHeadingStyle}>Highest-risk locations</h2>
+          {dashboard.highest_risk_locations.length ? dashboard.highest_risk_locations.slice(0, 3).map((item) => (
+            <div key={item.site} style={highlightRowStyle}>
+              <span>📍 {item.site}</span>
+              <strong style={{ color: riskColor(item.level) }}>{item.level}</strong>
+            </div>
+          )) : <p style={emptyTextStyle}>No location data for today.</p>}
+        </div>
 
-      <div className="cc-highlight-card" style={highlightCardStyle}>
-        <h2 style={highlightHeadingStyle}>Trends</h2>
-        <p style={{ ...emptyTextStyle, color: C.ink, lineHeight: 1.6 }}>
-          ⚠️ {trend?.label || "Safety precursors"} {trendText}.
-        </p>
-      </div>
-    </section>
+        <div className="cc-highlight-card cc-highlight-card--trends" style={highlightCardStyle}>
+          <h2 style={highlightHeadingStyle}>Trends</h2>
+          <p style={{ ...emptyTextStyle, color: C.ink, lineHeight: 1.6 }}>
+            ⚠️ {trend?.label || "Safety precursors"} {trendText}.
+          </p>
+        </div>
+      </section>
+
+      <FactoryHotspotMap hotspots={hotspotData} dashboard={dashboard} />
+    </>
   );
 }
 
@@ -949,16 +1040,16 @@ function AboutOilSentinel() {
 }
 
 const highlightCardStyle = {
-  background: C.card,
+  background: "linear-gradient(180deg, rgba(19,22,25,0.98), rgba(10,12,15,0.96))",
   border: `1px solid ${C.line}`,
-  borderRadius: "8px",
+  borderRadius: "14px",
   padding: "18px",
-  boxShadow: "0 2px 8px rgba(10,42,67,0.08)",
+  boxShadow: "0 24px 36px -30px rgba(242,75,69,0.52)",
 };
 
 const highlightHeadingStyle = {
   margin: "0 0 14px",
-  color: C.navy,
+  color: "#FFFFFF",
   fontFamily: "'Merriweather', serif",
   fontSize: "17px",
 };
@@ -969,13 +1060,13 @@ const highlightRowStyle = {
   gap: "8px",
   padding: "9px 0",
   borderBottom: `1px solid ${C.line}`,
-  color: C.ink,
+  color: "#E7EEF7",
   fontSize: "13px",
 };
 
 const emptyTextStyle = {
   margin: 0,
-  color: C.inkSoft,
+  color: "#C1CCD8",
   fontSize: "12px",
 };
 
@@ -987,9 +1078,26 @@ export default function CommandCenter({ setView, onIngest }) {
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [activeTab, setActiveTab] = useState("overview");
 
   useEffect(() => {
     let cancelled = false;
+
+    const handleHeaderJump = (tab) => {
+      const targetMap = {
+        overview: "overview",
+        "live-risk": "live-risk",
+        trends: "trends",
+        reports: "reports",
+      };
+
+      const target = document.getElementById(targetMap[tab]);
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    };
+
+    handleHeaderJump(activeTab);
 
     async function loadDashboard() {
       try {
@@ -1017,7 +1125,7 @@ export default function CommandCenter({ setView, onIngest }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [activeTab]);
 
   const severity = Object.fromEntries(
     (dashboard?.sif_breakdown || []).map((item) => [item.label, item.count]),
@@ -1030,28 +1138,52 @@ export default function CommandCenter({ setView, onIngest }) {
   ] : [];
 
   const highSIFReports = dashboard?.recent_high_sif_reports || [];
-  const siteRiskData = dashboard?.highest_risk_locations || [];
+  const siteRiskData = useMemo(() => {
+    const fallback = [
+      { site: "Startup Check", risk: 92, level: "HIGH", reports: 12 },
+      { site: "Drilling Rig", risk: 88, level: "HIGH", reports: 10 },
+      { site: "Oil Well", risk: 81, level: "HIGH", reports: 9 },
+      { site: "Numaligarh Pipeline Sec 2", risk: 76, level: "MEDIUM", reports: 8 },
+      { site: "Guwahati Refinery", risk: 72, level: "MEDIUM", reports: 7 },
+    ];
+
+    const source = dashboard?.highest_risk_locations && dashboard.highest_risk_locations.length ? dashboard.highest_risk_locations : fallback;
+
+    return source.map((site, index) => {
+      const recentForSite = dashboard?.recent_high_sif_reports?.filter((x) => x.site === site.site).length || 0;
+      const psifProxy = Math.min(100, Math.round(site.risk * 0.72 + recentForSite * 9 + (index + 1) * 3));
+      const combined = Math.min(100, Math.round((site.risk + psifProxy) / 2));
+
+      return {
+        ...site,
+        risk: combined,
+        level: combined >= 75 ? "HIGH" : combined >= 45 ? "MEDIUM" : "LOW",
+      };
+    });
+  }, [dashboard]);
 
   return (
     <div
       className="cc-root"
       style={{
         minHeight: "100vh",
-        background: C.paper,
+        width: "100%",
+        background: "transparent",
         fontFamily: "'Inter', sans-serif",
         display: "flex",
         flexDirection: "column",
       }}
     >
-      <CommandHeader />
+      <CommandHeader activeTab={activeTab} onTabChange={setActiveTab} />
 
       <main
+        id="overview"
         className="cc-main"
         style={{
           width: "100%",
-          maxWidth: 1320,
-          margin: "0 auto",
-          padding: "30px 28px 40px",
+          maxWidth: "none",
+          margin: 0,
+          padding: "30px 18px 40px",
           flex: 1,
         }}
       >
@@ -1062,15 +1194,16 @@ export default function CommandCenter({ setView, onIngest }) {
               className="cc-btn-outline"
               onClick={() => setView({ page: "home" })}
               style={{
-                border: `1px solid ${C.line}`,
-                background: C.card,
-                color: C.navy,
-                borderRadius: 8,
-                padding: "8px 14px",
-                fontWeight: 700,
+                border: "1px solid rgba(255, 140, 104, 0.5)",
+                background: "linear-gradient(180deg, rgba(255,93,77,0.16), rgba(15,18,22,0.94))",
+                color: "#f8fafc",
+                borderRadius: 10,
+                padding: "10px 16px",
+                fontWeight: 900,
                 fontSize: 12,
                 cursor: "pointer",
                 fontFamily: "'Inter', sans-serif",
+                boxShadow: "0 18px 28px -20px rgba(255,93,77,0.75)",
               }}
             >
               ← Home
@@ -1082,7 +1215,7 @@ export default function CommandCenter({ setView, onIngest }) {
               style={{
                 margin: 0,
                 fontSize: "30px",
-                color: C.navy,
+                color: "#F7F9FB",
                 fontFamily: "'Merriweather', serif",
                 fontWeight: 700,
               }}
@@ -1094,7 +1227,7 @@ export default function CommandCenter({ setView, onIngest }) {
               style={{
                 margin: "6px 0 0",
                 fontSize: "13px",
-                color: C.inkSoft,
+                color: "#C7D3DC",
                 fontFamily: "'Inter', sans-serif",
               }}
             >

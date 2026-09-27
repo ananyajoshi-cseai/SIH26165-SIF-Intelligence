@@ -504,24 +504,27 @@ export function UploadWidget({ compact, onIngest, accept = ".csv,.pdf,image/*" }
 
   return (
     <div style={{
-      border: `1.5px dashed ${
+      border: `1px solid ${
         status === "done"
-          ? C.greenGood
+          ? "rgba(34,197,94,0.45)"
           : status === "error"
-            ? "#B42318"
-            : C.line
+            ? "rgba(239,68,68,0.4)"
+            : "rgba(255,255,255,0.12)"
       }`,
-      borderRadius: 4,
-      padding: compact ? "12px 14px" : "18px 16px",
+      borderRadius: 16,
+      padding: compact ? "12px 14px" : "16px 18px",
       background:
         status === "done"
-          ? "#F1F8F3"
+          ? "linear-gradient(180deg, rgba(15,25,20,0.9), rgba(10,16,14,0.96))"
           : status === "error"
-            ? "#FFF5F4"
-            : "#FBFAF6",
+            ? "linear-gradient(180deg, rgba(34,11,11,0.92), rgba(17,12,12,0.96))"
+            : "linear-gradient(180deg, rgba(12,14,17,0.96), rgba(18,22,28,0.96))",
       display: "flex",
       alignItems: "center",
       gap: 12,
+      boxShadow: status === "done" || status === "error"
+        ? "inset 0 0 0 1px rgba(255,255,255,0.02), 0 18px 24px -22px rgba(0,0,0,0.8)"
+        : "inset 0 0 0 1px rgba(255,255,255,0.02), 0 20px 28px -24px rgba(255,93,77,0.55)",
     }}>
       <input
         ref={inputRef}
@@ -535,40 +538,43 @@ export function UploadWidget({ compact, onIngest, accept = ".csv,.pdf,image/*" }
       />
 
       <div style={{
-        width: 34,
-        height: 34,
-        borderRadius: 4,
-        background: status === "error" ? "#B42318" : C.navy,
+        width: 42,
+        height: 42,
+        borderRadius: 12,
+        background: status === "error" ? "linear-gradient(180deg, #f87171, #b91c1c)" : "linear-gradient(180deg, #ff9c66, #ff5d4d)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         flexShrink: 0,
+        boxShadow: status === "error" ? "0 12px 18px -12px rgba(239,68,68,0.9)" : "0 16px 20px -14px rgba(255,93,77,0.9)",
       }}>
         {status === "analyzing" ? (
-          <Loader2 size={16} color="#fff" className="spin" />
+          <Loader2 size={18} color="#fff" className="spin" />
         ) : status === "done" ? (
-          <CheckCircle2 size={16} color="#fff" />
+          <CheckCircle2 size={18} color="#fff" />
         ) : status === "error" ? (
-          <XCircle size={16} color="#fff" />
+          <XCircle size={18} color="#fff" />
         ) : (
-          <Upload size={16} color="#fff" />
+          <Upload size={18} color="#fff" />
         )}
       </div>
 
       <div style={{ flex: 1, fontFamily: "'Inter',sans-serif" }}>
         {!fileName && (
           <div style={{
-            fontSize: 13,
-            color: C.ink,
-            fontWeight: 600,
+            fontSize: 12,
+            color: "#f7fbff",
+            fontWeight: 800,
+            letterSpacing: 0.12,
+            textTransform: "uppercase",
           }}>
-            Upload another incident report
+            Upload Incident Report
           </div>
         )}
 
         {fileName && status === "analyzing" && (
-          <div style={{ fontSize: 13, color: C.ink }}>
-            Analysing <b>{fileName}</b>�
+          <div style={{ fontSize: 13, color: "#edf3f8", fontWeight: 600 }}>
+            Analysing <b>{fileName}</b>…
           </div>
         )}
 
@@ -576,14 +582,14 @@ export function UploadWidget({ compact, onIngest, accept = ".csv,.pdf,image/*" }
           <>
             <div style={{
               fontSize: 13,
-              color: C.greenGood,
-              fontWeight: 600,
+              color: "#9ae6b4",
+              fontWeight: 700,
             }}>
               {fileName} uploaded successfully
             </div>
             <div style={{
               fontSize: 11.5,
-              color: C.inkSoft,
+              color: "#b7c3ce",
               marginTop: 2,
             }}>
               {message}
@@ -595,14 +601,14 @@ export function UploadWidget({ compact, onIngest, accept = ".csv,.pdf,image/*" }
           <>
             <div style={{
               fontSize: 13,
-              color: "#B42318",
-              fontWeight: 600,
+              color: "#fca5a5",
+              fontWeight: 700,
             }}>
               Upload failed
             </div>
             <div style={{
               fontSize: 11.5,
-              color: C.inkSoft,
+              color: "#d8e1ea",
               marginTop: 2,
             }}>
               {message}
@@ -613,8 +619,8 @@ export function UploadWidget({ compact, onIngest, accept = ".csv,.pdf,image/*" }
         {!fileName && (
           <div style={{
             fontSize: 12,
-            color: C.inkSoft,
-            marginTop: 1,
+            color: "#a7b6c2",
+            marginTop: 4,
           }}>
             CSV, PDF or image up to 20MB
           </div>
@@ -625,21 +631,24 @@ export function UploadWidget({ compact, onIngest, accept = ".csv,.pdf,image/*" }
         onClick={() => inputRef.current?.click()}
         disabled={isBusy}
         style={{
-          background: "#fff",
-          color: C.navy,
-          border: `1px solid ${C.navy}`,
-          borderRadius: 4,
-          padding: "8px 14px",
+          background: "linear-gradient(180deg, #ff9c66, #ff5d4d)",
+          color: "#fff",
+          border: "1px solid rgba(255,255,255,0.16)",
+          borderRadius: 10,
+          padding: "9px 16px",
           fontFamily: "'Inter',sans-serif",
-          fontWeight: 700,
-          fontSize: 12.5,
+          fontWeight: 800,
+          fontSize: 12,
+          letterSpacing: 0.08,
           cursor: isBusy ? "default" : "pointer",
           flexShrink: 0,
+          boxShadow: "0 16px 20px -16px rgba(255,93,77,0.92)",
+          transition: "transform 0.2s ease, box-shadow 0.2s ease",
         }}
       >
         {status === "done" || status === "error"
-          ? "Upload another"
-          : "Choose file"}
+          ? "Upload report"
+          : "Select file"}
       </button>
     </div>
   );
@@ -1462,6 +1471,16 @@ export default function App() {
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Inter:wght@400;500;600;700&display=swap');
+        html, body, #root {
+          margin: 0;
+          width: 100%;
+          min-height: 100%;
+          background: #05080a;
+          overflow-x: hidden;
+        }
+        body {
+          min-height: 100vh;
+        }
         * { box-sizing: border-box; }
         table { border-spacing: 0; }
         input:focus, select:focus, textarea:focus { outline: 2px solid ${C.saffron}; outline-offset: 1px; }
@@ -1471,7 +1490,13 @@ export default function App() {
 
       {!isCommandCenter && !isHome && <TopBar view={view} setView={setView} />}
 
-      <div style={{ maxWidth: isHome ? 1600 : 1320, margin: "0 auto", padding: isCommandCenter ? 0 : isHome ? 0 : "26px 28px 60px" }}>
+      <div style={{
+        width: isCommandCenter ? "100%" : "100%",
+        maxWidth: isCommandCenter ? "none" : isHome ? 1600 : 1320,
+        margin: isCommandCenter ? 0 : "0 auto",
+        padding: isCommandCenter ? 0 : isHome ? 0 : "26px 28px 60px",
+        background: isCommandCenter ? "#05080a" : "transparent",
+      }}>
         {view.page === "home" && <Home onStart={() => setView({ page: "command-center" })} />}
         {view.page === "command-center" && <CommandCenter setView={setView} onIngest={onIngest} />}
         {view.page === "dashboard" && <Dashboard setView={setView} onIngest={onIngest} data={dashboardData} />}

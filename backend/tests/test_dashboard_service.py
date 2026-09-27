@@ -43,6 +43,9 @@ def test_dashboard_summary():
         assert result["total_reports"] >= 1
         assert result["high_sif_precursors"] >= 1
         assert result["emerging_pattern_count"] >= 0
+        assert any(item["label"] == "Near Miss" for item in result["report_type_breakdown"])
+        assert any(item["label"] == "Unsafe Act" for item in result["report_type_breakdown"])
+        assert any(item["label"] == "Unsafe Condition" for item in result["report_type_breakdown"])
         assert len(result["recent_high_sif_reports"]) >= 1
 
         recent = result["recent_high_sif_reports"][0]

@@ -67,6 +67,16 @@ def get_dashboard_summary(db: Session) -> dict:
         {"label": "LOW", "count": severity_counts.get("LOW", 0)},
     ]
 
+    report_type_counts = Counter(
+        analysis.extracted_data.get("report_type", "Unknown")
+        for _, analysis in today_rows
+    )
+    report_type_breakdown = [
+        {"label": "Near Miss", "count": report_type_counts.get("Near Miss", 0)},
+        {"label": "Unsafe Condition", "count": report_type_counts.get("Unsafe Condition", 0)},
+        {"label": "Unsafe Act", "count": report_type_counts.get("Unsafe Act", 0)},
+    ]
+
     hazard_counts = Counter(
         value.strip()
         for _, analysis in today_rows
@@ -195,6 +205,7 @@ def get_dashboard_summary(db: Session) -> dict:
         "recent_high_sif_reports": recent_high_sif_reports,
         "period_label": today_start.strftime("%d %b %Y"),
         "sif_breakdown": sif_breakdown,
+        "report_type_breakdown": report_type_breakdown,
         "top_hazards": top_hazards,
         "barrier_failures": barrier_failure_counts,
         "highest_risk_locations": highest_risk_locations,

@@ -40,6 +40,7 @@ class DashboardSummaryResponse(BaseModel):
     recent_high_sif_reports: list[DashboardReport]
     period_label: str
     sif_breakdown: list[DashboardCount]
+    report_type_breakdown: list[DashboardCount]
     top_hazards: list[DashboardCount]
     barrier_failures: list[DashboardCount]
     highest_risk_locations: list[DashboardSiteRisk]
