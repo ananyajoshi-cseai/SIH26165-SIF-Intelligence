@@ -36,6 +36,19 @@ router = APIRouter(
     prefix="/reports",
     tags=["Reports"],
 )
+@router.get("/metrics")
+def get_evaluation_metrics():
+    """
+    Returns classification evaluation metrics for both:
+      - Report Type  (Near Miss / Unsafe Condition / Unsafe Act)
+      - SIF Potential  (SIF Potential / Non-SIF Potential)
+ 
+    Evaluated against the OIL India HSE Incident Dataset (29 real records
+    + 6 synthetic balanced records = 35 total).
+ 
+    Used in the PPT/demo to justify AI predictions with real numbers.
+    """
+    return run_evaluation()
 
 
 @router.post(
