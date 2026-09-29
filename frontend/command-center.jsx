@@ -260,7 +260,7 @@ function BarrierFailureChart({ data }) {
 }
 
 function KPICard({ label, value, subtext, icon: Icon }) {
-  const isHighSIF = label === "High SIF Precursors";
+  const isHighSIF = label === "High SIF Precursors" || label === "High SIF";
   const isPattern = label === "Emerging Pattern Flag";
 
   return (
@@ -515,6 +515,11 @@ function SiteRiskComparison({ data }) {
 }
 
 function HighSIFReports({ reports, setView }) {
+  // Newest first, max 5. Data comes from dashboard.recent_high_sif_reports
+  const topReports = [...(reports || [])]
+    .sort((x, y) => new Date(y.date) - new Date(x.date))
+    .slice(0, 5);
+
   return (
     <section
       id="reports"
@@ -609,7 +614,12 @@ function HighSIFReports({ reports, setView }) {
       </div>
 
       {/* Reports */}
-      {reports.map((report, index) => (
+      {topReports.length === 0 && (
+        <div style={{ padding: "18px 22px" }}>
+          <p style={emptyTextStyle}>No high-risk SIF reports available.</p>
+        </div>
+      )}
+      {topReports.map((report, index) => (
         <div
           key={String(report.id).slice(0, 8)}
           className="cc-row"
@@ -621,7 +631,7 @@ function HighSIFReports({ reports, setView }) {
             padding: "15px 22px",
             background: index % 2 === 0 ? "rgba(255,255,255,0.01)" : "rgba(242,75,69,0.04)",
             borderBottom:
-              index !== reports.length - 1
+              index !== topReports.length - 1
                 ? `1px solid ${C.line}`
                 : "none",
           }}
@@ -861,6 +871,11 @@ function FactoryHotspotMap({ hotspots = [], dashboard = null }) {
 }
 
 function LiveHighlights({ dashboard }) {
+  // dashboard can be null while loading or if the API request fails
+  const data = dashboard || {};
+  const topHazards = data.top_hazards || [];
+  const riskLocations = data.highest_risk_locations || [];
+
   const fallbackSiteRanks = [
     { site: "Startup Check", risk: 92, level: "HIGH", reports: 12 },
     { site: "Drilling Rig", risk: 88, level: "HIGH", reports: 10 },
@@ -869,12 +884,14 @@ function LiveHighlights({ dashboard }) {
     { site: "Guwahati Refinery", risk: 72, level: "MEDIUM", reports: 7 },
   ];
 
-  const trend = dashboard.trends?.[0];
-  const trendText = trend?.percentage_change === null
-    ? `${trend.current_count} this month; no previous-month baseline`
-    : `${trend.direction} ${Math.abs(trend.percentage_change)}% this month (${trend.current_count} vs ${trend.previous_count})`;
+  const trend = data.trends?.[0];
+  const trendText = !trend
+    ? null
+    : trend.percentage_change === null
+      ? `${trend.current_count} this month; no previous-month baseline`
+      : `${trend.direction} ${Math.abs(trend.percentage_change)}% this month (${trend.current_count} vs ${trend.previous_count})`;
 
-  const recentSites = (dashboard.recent_high_sif_reports || []).slice(0, 5).map((report) => ({
+  const recentSites = (data.recent_high_sif_reports || []).slice(0, 5).map((report) => ({
     site: report.site,
     score: Number(report.score) || 80,
     incident: report.incident,
@@ -903,7 +920,7 @@ function LiveHighlights({ dashboard }) {
     ]),
   )].map(([, item]) => item);
 
-  const rankedSites = (dashboard.highest_risk_locations && dashboard.highest_risk_locations.length ? dashboard.highest_risk_locations : fallbackSiteRanks);
+  const rankedSites = riskLocations.length ? riskLocations : fallbackSiteRanks;
 
   const topSifSites = [...rankedSites]
     .sort((a, b) => b.risk - a.risk)
@@ -930,7 +947,7 @@ function LiveHighlights({ dashboard }) {
       <section className="cc-highlight-grid">
         <div className="cc-highlight-card cc-highlight-card--hazard" style={highlightCardStyle}>
           <h2 style={highlightHeadingStyle}>Top hazards</h2>
-          {dashboard.top_hazards.length ? dashboard.top_hazards.map((item, index) => (
+          {topHazards.length ? topHazards.map((item, index) => (
             <div key={item.label} style={highlightRowStyle}>
               <strong>{["🥇", "🥈", "🥉"][index] || "•"}</strong>
               <span>{item.label}</span>
@@ -941,7 +958,7 @@ function LiveHighlights({ dashboard }) {
 
         <div className="cc-highlight-card cc-highlight-card--location" style={highlightCardStyle}>
           <h2 style={highlightHeadingStyle}>Highest-risk locations</h2>
-          {dashboard.highest_risk_locations.length ? dashboard.highest_risk_locations.slice(0, 3).map((item) => (
+          {riskLocations.length ? riskLocations.slice(0, 3).map((item) => (
             <div key={item.site} style={highlightRowStyle}>
               <span>📍 {item.site}</span>
               <strong style={{ color: riskColor(item.level) }}>{item.level}</strong>
@@ -952,7 +969,9 @@ function LiveHighlights({ dashboard }) {
         <div className="cc-highlight-card cc-highlight-card--trends" style={highlightCardStyle}>
           <h2 style={highlightHeadingStyle}>Trends</h2>
           <p style={{ ...emptyTextStyle, color: C.ink, lineHeight: 1.6 }}>
-            ⚠️ {trend?.label || "Safety precursors"} {trendText}.
+            {trendText
+              ? `⚠️ ${trend.label || "Safety precursors"} ${trendText}.`
+              : "No trend data available."}
           </p>
         </div>
       </section>
@@ -1130,12 +1149,19 @@ export default function CommandCenter({ setView, onIngest }) {
   const severity = Object.fromEntries(
     (dashboard?.sif_breakdown || []).map((item) => [item.label, item.count]),
   );
-  const kpiData = dashboard ? [
-    { label: "Total Reports Today", value: dashboard.total_reports.toLocaleString(), subtext: `${dashboard.period_label} · uploaded files`, icon: FileText },
+  const todayLabel = new Date().toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+
+  // KPI cards always render; they show 0 until dashboard data loads
+  const kpiData = [
+    { label: "Total Reports Today", value: (dashboard?.total_reports ?? 0).toLocaleString(), subtext: `${dashboard?.period_label || todayLabel} · uploaded files`, icon: FileText },
     { label: "High SIF", value: (severity.HIGH || 0).toLocaleString(), subtext: "Today's high-risk precursors", icon: ShieldAlert },
     { label: "Medium SIF", value: (severity.MEDIUM || 0).toLocaleString(), subtext: "Today's medium-risk precursors", icon: TrendingUp },
     { label: "Low SIF", value: (severity.LOW || 0).toLocaleString(), subtext: "Today's low-risk precursors", icon: ShieldCheck },
-  ] : [];
+  ];
 
   const highSIFReports = dashboard?.recent_high_sif_reports || [];
   const siteRiskData = useMemo(() => {
@@ -1253,15 +1279,12 @@ export default function CommandCenter({ setView, onIngest }) {
           ))}
         </div>
         {loading && <p style={emptyTextStyle}>Loading live dashboard data...</p>}
-        {error && <p style={{ ...emptyTextStyle, color: C.redBright }}>{error}</p>}
-        {dashboard && <LiveHighlights dashboard={dashboard} />}
+        <LiveHighlights dashboard={dashboard} />
         {siteRiskData.length > 0 && <SiteRiskComparison data={siteRiskData} />}
-        {highSIFReports.length > 0 && (
-          <HighSIFReports
-            reports={highSIFReports}
-            setView={setView}
-          />
-        )}
+        <HighSIFReports
+          reports={highSIFReports}
+          setView={setView}
+        />
         <AboutOilSentinel />
       </main>
 
