@@ -9,6 +9,16 @@ import {
   Gauge,
   ArrowRight,
   Check,
+  HardHat,
+  X,
+  Activity,
+  Bell,
+  Mic,
+  FileUp,
+  ClipboardCheck,
+  History,
+  BrainCircuit,
+  UsersRound,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -20,13 +30,21 @@ import {
   Tooltip,
   Cell,
 } from "recharts";
-import { IMG, UploadWidget } from "./oil-safety-portal.jsx";
-import { getDashboardSummary } from "../src/api.js";
+import {
+  analyzeImage,
+  analyzeReport,
+  getBarrierIntelligence,
+  getDashboardSummary,
+  getEmergingPatterns,
+  getEvaluationMetrics,
+  getSimilarReports,
+  submitFeedback,
+  uploadReports,
+} from "../src/api.js";
 import featureImage1 from "./img&vid/img1.png";
 import featureImage2 from "./img&vid/img2.png";
 import featureImage3 from "./img&vid/img3.png";
 import featureImage4 from "./img&vid/img4.png";
-import mapImage from "./img&vid/map.jpg";
 import "./command-center.css";
 
 const C = {
@@ -95,10 +113,13 @@ function Emblem({ size = 44 }) {
 
 function CommandHeader({ activeTab, onTabChange }) {
   const navItems = [
-    { key: "overview", label: "Overview" },
-    { key: "live-risk", label: "Live Risk" },
-    { key: "trends", label: "Trends" },
-    { key: "reports", label: "Reports" },
+    { key: "overview", label: "Operations" },
+    { key: "analyze-report", label: "Analyze" },
+    { key: "sites", label: "Sites" },
+    { key: "historical", label: "History" },
+    { key: "precursors", label: "Precursors" },
+    { key: "workforce", label: "Workforce" },
+    { key: "models", label: "Models" },
   ];
 
   return (
@@ -110,21 +131,26 @@ function CommandHeader({ activeTab, onTabChange }) {
             <div className="cc-emblem-shell"><Emblem /></div>
             <div className="cc-brand-copy">
               <span className="cc-mini-kicker">GOVERNMENT OF INDIA · MINISTRY OF PETROLEUM &amp; NATURAL GAS</span>
-              <h2 className="cc-brand-title">Oil Safety Intelligence Portal</h2>
+              <h2 className="cc-brand-title">OIL SENTINEL</h2>
+              <span className="cc-command-subtitle">Command Center / Operations</span>
             </div>
           </div>
 
-          <div className="cc-header-meta">
-            <div className="cc-header-stat">Directorate General of</div>
-            <div className="cc-header-stat">Mines &amp; Process Safety</div>
+          <div className="cc-header-tools">
+            <button className="cc-alert-button" type="button" onClick={() => onTabChange("hse-review")} aria-label="Open HSE review alerts">
+              <Bell size={16} /><span>Alerts</span><b>!</b>
+            </button>
+            <div className="cc-header-profile"><span className="cc-profile-avatar">HSE</span><span><strong>HSE Officer</strong><small>Operations</small></span></div>
           </div>
         </div>
 
-        <div className="cc-nav-bar">
+        <div className="cc-nav-bar" role="tablist" aria-label="Command Center workspaces">
           {navItems.map((item) => (
             <button
               key={item.key}
               type="button"
+              role="tab"
+              aria-selected={activeTab === item.key}
               className={`cc-nav-button ${activeTab === item.key ? "active" : ""}`}
               onClick={() => onTabChange(item.key)}
             >
@@ -746,125 +772,404 @@ function HighSIFReports({ reports, setView }) {
   );
 }
 
-function CommandUpload({ setView, onIngest }) {
-  const handleUploadDone = async () => {
-    await onIngest?.();
-    setView({ page: "dashboard" });
+function CommandUpload({ onIngest, setView }) {
+  const [site, setSite] = useState("Numaligarh Refinery");
+  const [fileName, setFileName] = useState("");
+  const [text, setText] = useState("");
+  const [analysis, setAnalysis] = useState(null);
+  const [editedExtraction, setEditedExtraction] = useState({});
+  const [status, setStatus] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [audioUrl, setAudioUrl] = useState("");
+  const [csvFile, setCsvFile] = useState(null);
+  const recognitionRef = React.useRef(null);
+  const fileRef = React.useRef(null);
+
+  const extractFile = async (file) => {
+    if (!file) return;
+    setFileName(file.name);
+    setCsvFile(null);
+    setError("");
+    setAnalysis(null);
+    setStatus("Extracting source text...");
+    const extension = file.name.split(".").pop()?.toLowerCase();
+
+    try {
+      if (extension === "csv") {
+        setCsvFile(file);
+        setText(await file.text());
+        setStatus("CSV text extracted. Edit it before analysis, or import its rows as a structured batch.");
+        return;
+      }
+      if (["txt"].includes(extension)) {
+        setText(await file.text());
+      } else if (extension === "pdf") {
+        const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+        pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/legacy/build/pdf.worker.min.mjs", import.meta.url).toString();
+        const document = await pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
+        const pages = [];
+        for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber += 1) {
+          const page = await document.getPage(pageNumber);
+          const content = await page.getTextContent();
+          pages.push(content.items.map((item) => item.str).join(" "));
+        }
+        const extracted = pages.join("\n\n").trim();
+        if (!extracted) throw new Error("No embedded text found. Scanned PDFs need image OCR before analysis.");
+        setText(extracted);
+      } else if (["xlsx", "xls"].includes(extension)) {
+        const XLSX = await import("xlsx");
+        const workbook = XLSX.read(await file.arrayBuffer(), { type: "array" });
+        setText(workbook.SheetNames.map((name) => `## ${name}\n${XLSX.utils.sheet_to_csv(workbook.Sheets[name])}`).join("\n\n"));
+      } else if (file.type.startsWith("image/")) {
+        const result = await analyzeImage(file, site);
+        setAnalysis(result);
+        setEditedExtraction(result.extraction || {});
+        setStatus("OCR and AI analysis complete. Review or correct the extracted fields before HSE validation.");
+      } else if (file.type.startsWith("audio/")) {
+        setAudioUrl(URL.createObjectURL(file));
+        setStatus("Recording loaded. Use browser speech capture or enter the transcript below; uploaded-audio transcription is not configured on this server.");
+      } else {
+        throw new Error("Choose a PDF, CSV, Excel, TXT, image, or audio recording.");
+      }
+    } catch (uploadError) {
+      setError(uploadError.message || "Unable to extract report text.");
+      setStatus("");
+    }
+  };
+
+  const startSpeechCapture = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setError("Speech capture is not supported in this browser. Upload a recording and add its transcript manually.");
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-IN";
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.onresult = (event) => {
+      const transcript = Array.from(event.results).map((result) => result[0].transcript).join(" ");
+      setText(transcript);
+    };
+    recognition.onerror = (event) => setError(`Speech capture failed: ${event.error}`);
+    recognition.onend = () => setStatus("Speech capture ended. Review the transcript before analysis.");
+    recognitionRef.current = recognition;
+    setStatus("Listening. Review the transcript below before analysis.");
+    recognition.start();
+  };
+
+  const runAnalysis = async () => {
+    if (!text.trim()) {
+      setError("Extract or enter report text before starting analysis.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      const result = await analyzeReport({ site, text: text.trim() });
+      setAnalysis(result);
+      setEditedExtraction(result.extraction || {});
+      setStatus("AI analysis complete. HSE validation is required before this record is considered final.");
+      await onIngest?.();
+    } catch (analysisError) {
+      setError(analysisError.message || "Analysis failed.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const importCsvBatch = async () => {
+    if (!csvFile) return;
+    setBusy(true);
+    setError("");
+    try {
+      const result = await uploadReports(csvFile);
+      setStatus(`${result.analyzed || 0} reports imported and analyzed from ${csvFile.name}.`);
+      await onIngest?.();
+    } catch (importError) {
+      setError(importError.message || "CSV batch import failed.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const saveDecision = async (decision) => {
+    if (!analysis?.report_id) return;
+    setBusy(true);
+    setError("");
+    try {
+      await submitFeedback(analysis.report_id, editedExtraction, decision);
+      setStatus(`HSE ${decision === "VALIDATED" ? "approved" : "rejected"} the record. The decision and corrections are saved as model feedback.`);
+      await onIngest?.();
+    } catch (validationError) {
+      setError(validationError.message || "Unable to save HSE decision.");
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
-    <section className="cc-upload" style={{
-      marginBottom: "28px",
-      background: `linear-gradient(120deg, rgba(15,17,19,0.94), rgba(59,8,6,0.82)), url(${featureImage1})`,
-      backgroundSize: "cover", backgroundPosition: "center",
-      border: `1px solid rgba(255,255,255,0.08)`, borderRadius: "18px",
-      padding: "20px 22px",
-      boxShadow: "0 24px 36px -28px rgba(255,80,58,0.66)",
-    }}>
-      <div className="cc-upload-head">
-        <div className="cc-upload-accent" />
-        <div>
-          <p className="cc-panel-kicker">REPORT INTAKE</p>
-          <h2>Upload Incident Report</h2>
-          <p>Submit a new incident report for SIF intelligence analysis</p>
-        </div>
+    <section id="analyze-report" className="cc-analysis-workspace">
+      <div className="cc-workspace-heading">
+        <div><p className="cc-panel-kicker">ANALYZE · VALIDATE · LEARN</p><h2>Report Analysis &amp; HSE Validation</h2><p>AI supports the investigation. HSE personnel make the final decision.</p></div>
+        <span className="cc-human-authority"><ClipboardCheck size={15} /> HUMAN VALIDATION REQUIRED</span>
       </div>
-      <div className="cc-upload-widget-wrap">
-        <UploadWidget compact accept=".csv,.pdf,image/*" onIngest={handleUploadDone} />
+      <div className="cc-analysis-grid">
+        <div className="cc-analysis-intake">
+          <label className="cc-field-label">SITE<input value={site} onChange={(event) => setSite(event.target.value)} /></label>
+          <div className="cc-intake-actions">
+            <button type="button" onClick={() => fileRef.current?.click()}><FileUp size={16} /> Choose report</button>
+            <input ref={fileRef} type="file" accept=".pdf,.csv,.xlsx,.xls,.txt,image/*,audio/*,.wav,.mp3,.m4a,.webm" onChange={(event) => { extractFile(event.target.files?.[0]); event.target.value = ""; }} hidden />
+            <button type="button" className="cc-speech-button" onClick={startSpeechCapture}><Mic size={16} /> Capture speech</button>
+          </div>
+          {fileName && <div className="cc-file-label">{fileName}</div>}
+          {audioUrl && <audio controls src={audioUrl} className="cc-audio-player" />}
+          <label className="cc-field-label">EDITABLE EXTRACTED TEXT<textarea rows={9} value={text} onChange={(event) => setText(event.target.value)} placeholder="Extracted PDF, spreadsheet, OCR, or speech text appears here. Edit it before analysis." /></label>
+          <div className="cc-pipeline" aria-label="Analysis pipeline">
+            {["Extract", "Classify", "SIF / PSIF", "Hazard & exposure", "Barriers & LSR", "Risk score", "Similarity & patterns", "HSE validation"].map((step, index) => <span key={step} className={analysis && index < 7 ? "complete" : ""}><i>{analysis && index < 7 ? <Check size={11} /> : index + 1}</i>{step}</span>)}
+          </div>
+          <button type="button" className="cc-analyze-button" disabled={busy || !text.trim()} onClick={runAnalysis}>{busy ? "Analyzing..." : "Analyze report"}<ArrowRight size={16} /></button>
+          {csvFile && <button type="button" className="cc-csv-import-button" disabled={busy} onClick={importCsvBatch}>Import CSV rows as a batch</button>}
+          {status && <p className="cc-status-message">{status}</p>}{error && <p className="cc-error-message">{error}</p>}
+        </div>
+
+        <div className="cc-validation-pane">
+          <div className="cc-validation-title"><div><p className="cc-panel-kicker">AI ANALYSIS</p><h3>Decision record</h3></div><span className={analysis ? "cc-validation-live" : "cc-validation-pending"}>{analysis ? "READY FOR HSE" : "AWAITING REPORT"}</span></div>
+          {analysis ? (
+            <>
+              <div className="cc-analysis-score"><strong>{analysis.risk_score ?? "--"}</strong><span>/100 RISK</span><b>{analysis.risk_level || "Pending"}</b></div>
+              <div className="cc-editable-fields">{["report_type", "sif_potential", "hazard", "activity", "exposure", "barrier_failure", "potential_consequence"].map((field) => <label key={field}>{field.replaceAll("_", " ")}<input value={editedExtraction[field] || ""} onChange={(event) => setEditedExtraction((previous) => ({ ...previous, [field]: event.target.value }))} /></label>)}</div>
+              <div className="cc-provenance"><span>AI-generated information</span><i /><span>HSE correction</span><i /><strong>Final validated record</strong></div>
+              <div className="cc-decision-buttons"><button type="button" disabled={busy} onClick={() => saveDecision("VALIDATED")}><Check size={15} /> Approve</button><button type="button" disabled={busy} onClick={() => saveDecision("REJECTED")}><X size={15} /> Reject</button></div>
+              {analysis.report_id && <button type="button" className="cc-open-analysis" onClick={() => setView({ page: "report-detail", reportId: analysis.report_id })}>Open full investigation <ArrowRight size={14} /></button>}
+            </>
+          ) : <div className="cc-validation-empty"><ClipboardCheck size={25} /><strong>AI findings appear here</strong><span>Classification, SIF potential, hazards, failed barriers, and risk score will be reviewed by an HSE officer.</span></div>}
+        </div>
       </div>
     </section>
   );
 }
 
-function FactoryHotspotMap({ hotspots = [], dashboard = null }) {
-  const [selectedHotspot, setSelectedHotspot] = useState(null);
-  const [resolvedIds, setResolvedIds] = useState([]);
+function IntelligenceLayers({ dashboard, barriers, patterns, reports, mode, similarReports = [] }) {
+  const hazardRows = dashboard?.top_hazards || [];
+  const barrierRows = barriers.length ? barriers.slice(0, 4) : dashboard?.barrier_failures || [];
+  const patternRows = patterns.slice(0, 4);
+  const [searchText, setSearchText] = useState("");
 
-  const visibleHotspots = useMemo(
-    () => (hotspots || []).filter((item) => !resolvedIds.includes(item.id)),
-    [hotspots, resolvedIds],
-  );
-
-  useEffect(() => {
-    if (visibleHotspots.length && !selectedHotspot) {
-      setSelectedHotspot(visibleHotspots[0]);
-    }
-    if (!visibleHotspots.length) {
-      setSelectedHotspot(null);
-    }
-  }, [visibleHotspots, selectedHotspot]);
-
-  const handleResolve = () => {
-    if (!selectedHotspot) return;
-    setResolvedIds((prev) => [...prev, selectedHotspot.id]);
-    setSelectedHotspot(null);
-  };
+  const filteredReports = (reports || []).filter((report) => `${report.site} ${report.incident}`.toLowerCase().includes(searchText.toLowerCase()));
+  const matchingPatterns = patternRows.length ? patternRows : hazardRows;
+  const fatigueProfiles = [
+    { site: "Numaligarh Refinery", level: "HIGH", precursor: 12 },
+    { site: "Duliajan LPG Plant", level: "HIGH", precursor: 7 },
+    { site: "Brahmaputra Cracker & Polymer", level: "MEDIUM", precursor: 8 },
+    { site: "Moran", level: "LOW", precursor: 5 },
+  ];
 
   return (
-    <section id="live-risk" className="cc-panel cc-map-panel">
-      <div className="cc-panel-head cc-panel-head-split">
+    <section className="cc-intelligence-workspace" aria-label={`${mode} intelligence`}>
+      <div className="cc-workspace-heading"><div><p className="cc-panel-kicker">CONNECTED SIGNALS</p><h2>{mode === "precursors" ? "Recurring Precursor Intelligence" : mode === "historical" ? "Historical Intelligence" : mode === "workforce" ? "Workforce Intelligence" : "HSE Review Queue"}</h2><p>{mode === "historical" ? "Have we seen something like this before?" : mode === "workforce" ? "Aggregate fatigue signals and precursor concentration." : mode === "hse-review" ? "HSE personnel remain the final decision-maker." : "Repeated signals, failed controls, and emerging risk."}</p></div></div>
+      <div className="cc-intelligence-grid">
+        {mode === "precursors" && <>
+          <article id="precursors" className="cc-intel-module cc-intel-module--wide"><div className="cc-module-title"><Activity size={17} /><div><h3>Recurring Precursor Intelligence</h3><small>Patterns · barrier failure · affected operations</small></div></div>
+          {matchingPatterns.length ? matchingPatterns.map((item, index) => <div className="cc-pattern-row" key={item.precursor || item.label || index}><div><strong>{item.precursor || item.label}</strong><small>{item.current_count ?? item.count ?? 0} reports · {item.affected_sites?.length || Math.min(5, index + 2)} sites</small></div><b>{item.percentage_increase == null ? "TRACKING" : `${item.percentage_increase > 0 ? "+" : ""}${item.percentage_increase}%`}</b></div>) : <p className="cc-empty-inline">No recurring precursor patterns returned by the service.</p>}
+          <div className="cc-module-foot">Repeated hazards · activities · locations · failed barriers · Life-Saving Rules</div>
+          </article>
+          <article className="cc-intel-module"><div className="cc-module-title"><ShieldAlert size={17} /><div><h3>Failed Barriers</h3><small>Critical protection gaps</small></div></div>
+            {barrierRows.slice(0, 4).map((item, index) => <div className="cc-barrier-row" key={item.barrier_failure || item.label || index}><span>{item.barrier_failure || item.label}</span><b>{item.incident_count ?? item.count ?? 0}</b></div>)}
+            {!barrierRows.length && <p className="cc-empty-inline">No barrier failures available yet.</p>}
+          </article>
+        </>}
+        {mode === "historical" && <article id="historical" className="cc-intel-module cc-intel-module--wide"><div className="cc-module-title"><History size={17} /><div><h3>Historical Similarity</h3><small>Semantic matches against analyzed reports</small></div></div>
+          <div className="cc-similarity-stat"><strong>{similarReports.length || 0}</strong><span>similar reports found</span></div>
+          <div className="cc-similarity-breakdown"><span>{similarReports.filter((item) => item.site === reports?.[0]?.site).length} same site</span><span>{new Set(similarReports.map((item) => item.hazard).filter(Boolean)).size} related hazards</span><span>{barrierRows.length} barrier signals</span></div>
+          <input className="cc-search-input" value={searchText} onChange={(event) => setSearchText(event.target.value)} placeholder="Search recent incidents" aria-label="Search recent incidents" />
+          <div className="cc-history-results">{similarReports.map((report) => <div key={report.report_id}><strong>{report.site} · {report.hazard || "Related report"}</strong><span>{report.text}</span></div>)}{!similarReports.length && filteredReports.slice(0, 3).map((report) => <div key={report.id}><strong>{report.site}</strong><span>{report.incident}</span></div>)}{!filteredReports.length && !similarReports.length && <small>No matching reports in the current summary.</small>}</div>
+          <div className="cc-module-foot">Previous HSE actions and outcomes are not returned by the current similarity endpoint.</div>
+        </article>}
+        {mode === "workforce" && <article id="workforce" className="cc-intel-module cc-intel-module--wide cc-workforce-module"><div className="cc-module-title"><UsersRound size={17} /><div><h3>Workforce Fatigue</h3><small>Aggregate view · illustrative until fatigue feed connected</small></div></div>
+          <div className="cc-fatigue-metrics"><div><b>1,284</b><span>Workers</span></div><div className="fatigue-very-high"><b>4%</b><span>Very high</span></div><div className="fatigue-high"><b>12%</b><span>High</span></div><div className="fatigue-medium"><b>31%</b><span>Medium</span></div><div className="fatigue-low"><b>53%</b><span>Low</span></div></div>
+          <div className="cc-site-fatigue-list">{fatigueProfiles.map((item) => <div key={item.site}><span>{item.site}</span><i className={`fatigue-fill fatigue-fill--${item.level.toLowerCase()}`} /><b>{item.level}</b><small>{item.precursor} precursor reports</small></div>)}</div>
+          <div className="cc-fatigue-correlation"><span>Fatigue concentration</span><i /><span>SIF / PSIF precursors</span><b>Monitor</b></div>
+          <div className="cc-module-foot">Site-wise distribution and precursor correlation are demonstration values, not live personnel data.</div>
+        </article>}
+        {mode === "hse-review" && <article id="hse-review" className="cc-intel-module cc-intel-module--wide"><div className="cc-module-title"><ClipboardCheck size={17} /><div><h3>Recent HSE Actions</h3><small>Validation queue</small></div></div>
+          {(reports || []).slice(0, 4).map((report) => <div className="cc-action-row" key={report.id}><span className="cc-action-dot" /><div><strong>{report.site}</strong><small>{report.incident}</small></div><b>REVIEW</b></div>)}
+          {!reports?.length && <p className="cc-empty-inline">No recent HSE review actions.</p>}
+          <div className="cc-module-foot">Open the Analyze tab to approve, reject, or correct an AI analysis.</div>
+        </article>}
+      </div>
+    </section>
+  );
+}
+
+function SiteIntelligenceWorkspace({ dashboard, selectedSite, patterns = [] }) {
+  const sites = dashboard?.highest_risk_locations || [];
+  const hazards = dashboard?.top_hazards || [];
+  const barriers = dashboard?.barrier_failures || [];
+  const topSite = selectedSite || sites[0];
+  const siteName = topSite?.site || topSite?.name;
+  const siteReports = (dashboard?.recent_high_sif_reports || []).filter((report) => report.site === siteName);
+  const trend = dashboard?.trends?.[0];
+
+  return (
+    <section id="sites" className="cc-site-workspace">
+      <div className="cc-workspace-heading"><div><p className="cc-panel-kicker">DRILL DOWN · WHY IS IT HAPPENING?</p><h2>Site Risk Intelligence{siteName ? ` — ${siteName}` : ""}</h2><p>Risk context, recurring signals, barriers, and HSE status from analyzed reports.</p>{selectedSite?.isSample && <span className="cc-representative-label">REPRESENTATIVE SITE PROFILE · REPORT LINK NOT FOUND</span>}</div></div>
+      <div className="cc-site-overview-grid">
+        <div className="cc-site-overview-score"><span>RISK SCORE</span><strong>{topSite?.risk ?? "--"}<small>/100</small></strong><b>{topSite?.level || (topSite ? siteRiskLevel(topSite.risk) : "AWAITING DATA")}</b></div>
+        <div className="cc-site-metric"><span>SIF POTENTIAL</span><strong>{selectedSite ? "--" : dashboard?.high_sif_precursors ?? 0}</strong><small>{selectedSite ? "not returned for this site" : "network reports"}</small></div>
+        <div className="cc-site-metric"><span>PSIF / HIGH POTENTIAL</span><strong>{selectedSite?.isSample ? "--" : topSite?.reports ?? 0}</strong><small>{selectedSite?.isSample ? "representative profile only" : "site reports"}</small></div>
+        <div className="cc-site-metric"><span>HSE VALIDATION</span><strong>Pending</strong><small>reviewer assignment required</small></div>
+      </div>
+      <div className="cc-site-insight-grid">
+        <div className="cc-site-insight"><h3>Risk overview</h3><div className="cc-risk-bars">{sites.slice(0, 5).map((item) => <div key={item.site}><span>{item.site}</span><i><b style={{ width: `${item.risk}%`, background: riskColor(item.level) }} /></i><strong>{item.risk}</strong></div>)}</div></div>
+        <div className="cc-site-insight"><h3>Top hazards &amp; activities</h3>{hazards.slice(0, 4).map((item, index) => <div className="cc-site-data-row" key={item.label}><span>{index + 1}. {item.label}</span><b>{item.count} reports</b></div>)}<p className="cc-site-note">Activity details are available in each report investigation.</p></div>
+        <div className="cc-site-insight"><h3>Failed / missing barriers</h3>{barriers.slice(0, 4).map((item, index) => <div className="cc-site-data-row" key={item.label}><span>{item.label}</span><b>{item.count}</b></div>)}<p className="cc-site-note">Barrier intelligence is aggregated across analyzed reports.</p></div>
+        <div className="cc-site-insight"><h3>SIF / PSIF trend context</h3>{trend ? <><div className="cc-trend-comparison"><div><span>Previous period</span><b>{trend.previous_count}</b></div><i /><div><span>Current period</span><b>{trend.current_count}</b></div><strong>{trend.percentage_change == null ? "NO BASELINE" : `${trend.percentage_change > 0 ? "+" : ""}${trend.percentage_change}%`}</strong></div><p className="cc-site-note">Network trend; the current API does not return a per-site monthly series.</p></> : <p className="cc-site-note">No trend data returned.</p>}
+          <h4 className="cc-subsection-label">Linked recent SIF reports</h4>{siteReports.slice(0, 3).map((report) => <div className="cc-site-data-row" key={report.id}><span>{report.date ? new Date(report.date).toLocaleDateString("en-IN", { month: "short", day: "numeric" }) : "Recent"} · {report.incident}</span><b>{report.score}/100</b></div>)}{!siteReports.length && <p className="cc-site-note">No recent report linked to this site in the summary.</p>}</div>
+        <div className="cc-site-insight"><h3>Recurring &amp; emerging risks</h3>{patterns.slice(0, 3).map((item, index) => <div className="cc-site-data-row" key={item.precursor || index}><span>{item.precursor}</span><b>{item.current_count ?? 0} reports</b></div>)}{!patterns.length && <p className="cc-site-note">No emerging-risk patterns returned.</p>}<h4 className="cc-subsection-label">Life-Saving Rule distribution</h4><p className="cc-site-note">Rule-level counts are not provided by the current site intelligence API.</p></div>
+        <div className="cc-site-insight cc-prevention-card"><h3>Preventive recommendations</h3><p>Prioritize verification of critical controls at the highest-risk site.</p><p>Review repeat precursor activity and assign a named HSE owner.</p><p>Validate fatigue indicators before scheduling safety-critical work.</p><span>HSE validation status · Pending</span></div>
+      </div>
+    </section>
+  );
+}
+
+function ModelPerformance({ metrics }) {
+  const panels = [
+    { key: "report_type_classification", label: "Report Type Classification" },
+    { key: "sif_potential_classification", label: "SIF Potential Classification" },
+  ];
+  return (
+    <section id="models" className="cc-model-workspace">
+      <div className="cc-workspace-heading"><div><p className="cc-panel-kicker">MODEL PERFORMANCE · EVALUATOR VIEW</p><h2>Classification Performance</h2><p>{metrics?.dataset_info?.total_records || 0} evaluation records · {metrics?.dataset_info?.source || "Metrics service unavailable"}</p></div><BrainCircuit size={22} /></div>
+      <div className="cc-model-grid">{panels.map(({ key, label }) => {
+        const result = metrics?.[key];
+        const values = result ? [["Accuracy", result.accuracy], ["Precision", result.macro_precision], ["Recall", result.macro_recall], ["F1 Score", result.macro_f1]] : [];
+        const labels = result?.per_class_metrics?.map((item) => item.label) || [];
+        return <article className="cc-model-panel" key={key}><div className="cc-model-panel-title"><div><h3>{label}</h3><small>{result ? `${result.total_samples} labeled samples · macro average` : "Loading evaluation data"}</small></div><span>{result?.correct_predictions ?? "--"}<small>correct</small></span></div>
+          <div className="cc-model-metrics">{values.map(([name, value]) => <div key={name}><span>{name}</span><b>{typeof value === "number" ? `${(value * 100).toFixed(1)}%` : "--"}</b><i><em style={{ width: `${Math.max(0, Math.min(100, (value || 0) * 100))}%` }} /></i></div>)}<div><span>PR-AUC</span><b>N/A</b><small>Score probabilities are not returned by the evaluator.</small></div></div>
+          {result?.confusion_matrix && <div className="cc-confusion-wrap"><h4>Confusion matrix</h4><table className="cc-confusion-matrix"><thead><tr><th>Actual ↓ / Predicted →</th>{labels.map((label) => <th key={label}>{label}</th>)}</tr></thead><tbody>{labels.map((actual) => <tr key={actual}><th>{actual}</th>{labels.map((predicted) => <td key={predicted}>{result.confusion_matrix[actual]?.[predicted] ?? 0}</td>)}</tr>)}</tbody></table></div>}
+        </article>;
+      })}</div>
+    </section>
+  );
+}
+
+const oilSites = [
+  { name: "Numaligarh Refinery", x: 82, y: 35, risk: 88, fatigue: "HIGH", hazard: "Energy isolation", activity: "Maintenance and hot work", barrier: "Permit verification", reports: 12 },
+  { name: "Brahmaputra Cracker & Polymer", x: 88, y: 31, risk: 77, fatigue: "MEDIUM", hazard: "Gas release", activity: "Process operations", barrier: "Gas detection", reports: 8 },
+  { name: "Duliajan LPG Plant", x: 86, y: 39, risk: 72, fatigue: "HIGH", hazard: "Fire and explosion", activity: "LPG transfer", barrier: "Ignition control", reports: 7 },
+  { name: "Naharkatiya", x: 84, y: 42, risk: 66, fatigue: "MEDIUM", hazard: "Line of fire", activity: "Well servicing", barrier: "Exclusion zone", reports: 6 },
+  { name: "Moran", x: 81, y: 43, risk: 61, fatigue: "LOW", hazard: "Dropped objects", activity: "Drilling operations", barrier: "Lifting plan", reports: 5 },
+  { name: "Jorajan", x: 87, y: 46, risk: 55, fatigue: "MEDIUM", hazard: "Vehicle movement", activity: "Field logistics", barrier: "Journey management", reports: 4 },
+  { name: "Kumchai", x: 90, y: 42, risk: 48, fatigue: "LOW", hazard: "Pressure release", activity: "Well intervention", barrier: "Isolation verification", reports: 3 },
+  { name: "Bhaghewala", x: 45, y: 54, risk: 45, fatigue: "MEDIUM", hazard: "Manual handling", activity: "Field operations", barrier: "Task risk assessment", reports: 3 },
+  { name: "Dandewala", x: 43, y: 61, risk: 39, fatigue: "LOW", hazard: "Vehicle movement", activity: "Site transport", barrier: "Journey management", reports: 2 },
+  { name: "Madhuban Central Tank Farm", x: 83, y: 48, risk: 71, fatigue: "HIGH", hazard: "Tank overfill", activity: "Tank farm operations", barrier: "Level alarm response", reports: 6 },
+  { name: "Tengakhat", x: 78, y: 45, risk: 51, fatigue: "MEDIUM", hazard: "Electrical contact", activity: "Equipment maintenance", barrier: "LOTO", reports: 4 },
+  { name: "Barekhuri", x: 80, y: 49, risk: 42, fatigue: "LOW", hazard: "Fall from height", activity: "Inspection", barrier: "Work-at-height control", reports: 2 },
+  { name: "Shalmari", x: 85, y: 51, risk: 33, fatigue: "LOW", hazard: "Pressure release", activity: "Well operations", barrier: "Pressure testing", reports: 1 },
+];
+
+const siteRiskLevel = (score) => score >= 70 ? "HIGH" : score >= 45 ? "MEDIUM" : "LOW";
+const riskMarkerColor = (level) => level === "HIGH" ? "#F24B45" : level === "MEDIUM" ? "#F4C95D" : "#2FCF88";
+
+function IndiaLiveRiskMap({ dashboard = null, onSiteAnalysis }) {
+  const [selectedSite, setSelectedSite] = useState(null);
+  const riskLocations = dashboard?.highest_risk_locations || [];
+  const sites = oilSites.map((site) => {
+    const live = riskLocations.find((item) => item.site.toLowerCase().includes(site.name.toLowerCase()) || site.name.toLowerCase().includes(item.site.toLowerCase()));
+    return live ? { ...site, risk: live.risk, reports: live.reports, isSample: false } : { ...site, isSample: true };
+  });
+  const highestAttention = [...sites].sort((a, b) => b.risk - a.risk)[0];
+  const fatigueColor = (level) => level === "HIGH" ? "#F24B45" : level === "MEDIUM" ? "#F4C95D" : "#2FCF88";
+
+  return (
+    <section id="live-risk" className="cc-map-workspace">
+      <div className="cc-map-titlebar">
         <div>
-          <p className="cc-panel-kicker">LIVE SITE MAP</p>
-          <h2>Interactive Factory Site Map with Live Hotspots</h2>
+          <p className="cc-panel-kicker">OPERATIONS · LIVE SIGNALS</p>
+          <h2>India Live Risk Map</h2>
+          <p>OIL locations · Site risk and aggregate workforce fatigue</p>
         </div>
-        <div className="cc-panel-chip">{visibleHotspots.length} active hotspots</div>
+        <div className="cc-map-live"><span /> LIVE MONITORING</div>
       </div>
 
-      <div className="cc-map-layout">
-        <div
-          className="cc-map-surface"
-          style={{
-            backgroundImage: `linear-gradient(180deg, rgba(8,12,18,0.22), rgba(8,12,18,0.82)), url(${mapImage})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            filter: "saturate(1.2) contrast(1.12)",
-          }}
-        >
-          <div className="cc-map-grid" />
-          {visibleHotspots.map((hotspot) => (
-            <button
-              key={hotspot.id}
-              type="button"
-              className={`cc-hotspot ${selectedHotspot?.id === hotspot.id ? "selected" : ""}`}
-              style={{ left: `${hotspot.x}%`, top: `${hotspot.y}%` }}
-              onClick={() => setSelectedHotspot(hotspot)}
-              aria-label={`${hotspot.site} hotspot`}
-            >
-              <span className="cc-hotspot-ring" />
-              <span className="cc-hotspot-dot" />
-              <span className="cc-hotspot-label">{hotspot.site}</span>
+      <div className="cc-india-map" role="group" aria-label="India live risk map">
+        <div className="cc-map-coordinate cc-map-coordinate-north">ASSAM · ARUNACHAL PRADESH</div>
+        <div className="cc-map-coordinate cc-map-coordinate-west">RAJASTHAN</div>
+        <svg className="cc-india-outline" viewBox="0 0 600 640" aria-hidden="true">
+          <defs>
+            <linearGradient id="india-fill" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stopColor="#24363a" />
+              <stop offset="1" stopColor="#111a1e" />
+            </linearGradient>
+            <pattern id="india-grid" width="28" height="28" patternUnits="userSpaceOnUse">
+              <path d="M 28 0 L 0 0 0 28" fill="none" stroke="#d5e1dd" strokeOpacity=".08" strokeWidth="1" />
+            </pattern>
+          </defs>
+          <path className="cc-india-shadow" d="M198 30 251 48 293 37 330 56 349 87 386 100 404 131 437 146 455 176 444 201 477 220 456 244 468 271 446 293 453 326 432 349 419 385 396 410 386 452 357 475 341 517 310 544 284 592 258 570 245 531 224 507 210 463 191 436 177 398 154 369 133 326 115 296 121 263 102 231 113 200 96 178 108 151 141 140 159 107 183 93Z" />
+          <path className="cc-india-land" d="M198 30 251 48 293 37 330 56 349 87 386 100 404 131 437 146 455 176 444 201 477 220 456 244 468 271 446 293 453 326 432 349 419 385 396 410 386 452 357 475 341 517 310 544 284 592 258 570 245 531 224 507 210 463 191 436 177 398 154 369 133 326 115 296 121 263 102 231 113 200 96 178 108 151 141 140 159 107 183 93Z" />
+          <path className="cc-india-lines" d="M127 230 212 224 291 239 366 210 447 223M130 295 217 286 299 301 386 280 453 286M164 362 235 350 312 368 415 344M194 421 263 408 351 430M221 472 289 458 375 467M160 148 231 165 307 148 380 171M209 102 272 116 339 103" />
+          <path className="cc-india-grid-clip" d="M198 30 251 48 293 37 330 56 349 87 386 100 404 131 437 146 455 176 444 201 477 220 456 244 468 271 446 293 453 326 432 349 419 385 396 410 386 452 357 475 341 517 310 544 284 592 258 570 245 531 224 507 210 463 191 436 177 398 154 369 133 326 115 296 121 263 102 231 113 200 96 178 108 151 141 140 159 107 183 93Z" />
+        </svg>
+
+        {sites.map((site) => {
+          const level = siteRiskLevel(site.risk);
+          return (
+            <button key={site.name} type="button" className={`cc-india-site cc-india-site--${level.toLowerCase()}`} style={{ left: `${site.x}%`, top: `${site.y}%`, "--site-color": riskMarkerColor(level) }} onClick={() => setSelectedSite(site)} aria-label={`${site.name}, ${level} risk, fatigue ${site.fatigue}`} title={`${site.name} · ${level} risk · fatigue ${site.fatigue}`}>
+              <span className="cc-site-pulse" />
+              <span className="cc-site-tooltip"><strong>{site.name}</strong><small>{level} RISK · FATIGUE {site.fatigue}</small></span>
             </button>
-          ))}
+          );
+        })}
+
+        {sites.filter((_, index) => index % 3 === 0).map((site) => (
+          <div key={`worker-${site.name}`} className="cc-worker-marker" style={{ left: `${site.x + 1.3}%`, top: `${site.y + 2.5}%`, "--fatigue-color": fatigueColor(site.fatigue) }} title={`Aggregate fatigue: ${site.fatigue} · ${site.name}`} aria-label={`Worker fatigue marker, ${site.fatigue}, near ${site.name}`}>
+            <HardHat size={13} />
+          </div>
+        ))}
+        <div className="cc-map-region-label cc-map-region-label--assam">UPPER ASSAM</div>
+        <div className="cc-map-region-label cc-map-region-label--rajasthan">RAJASTHAN</div>
+
+        <div className="cc-map-legend">
+          <span><i style={{ background: C.redBright }} /> High risk</span>
+          <span><i style={{ background: C.yellow }} /> Medium risk</span>
+          <span><i style={{ background: C.greenGood }} /> Low risk</span>
+          <span><HardHat size={13} /> Fatigue marker</span>
         </div>
 
-        <div className="cc-map-sidecard">
-          {selectedHotspot ? (
-            <>
-              <div className="cc-map-sideheader">
-                <div className="cc-map-status">{selectedHotspot.level}</div>
-                <span className="cc-map-site">{selectedHotspot.site}</span>
-              </div>
+        <div className="cc-critical-attention">
+          <div className="cc-critical-attention-kicker"><Activity size={13} /> CRITICAL ATTENTION</div>
+          <strong>{highestAttention.name}</strong>
+          <span>{highestAttention.risk}/100 · {highestAttention.hazard}</span>
+          <button type="button" onClick={() => setSelectedSite(highestAttention)}>Open intelligence <ArrowRight size={13} /></button>
+        </div>
 
-              <p className="cc-map-summary">{selectedHotspot.summary}</p>
-
-              <ul className="cc-map-list">
-                <li><span>Hazard</span><strong>{selectedHotspot.hazard}</strong></li>
-                <li><span>Barrier failure</span><strong>{selectedHotspot.barrier}</strong></li>
-                <li><span>Historical reports</span><strong>{selectedHotspot.count} linked entries</strong></li>
-              </ul>
-
-              <button type="button" className="cc-solve-button" onClick={handleResolve}>
-                <Check size={16} /> Resolve / Problem Solved
-              </button>
-            </>
-          ) : (
-            <div className="cc-map-empty">
-              <MapPinned size={22} />
-              <h3>No active hotspots</h3>
-              <p>Resolved hazards have been cleared from the live command view.</p>
+        {selectedSite && (
+          <div className="cc-site-overlay" role="dialog" aria-modal="true" aria-label={`${selectedSite.name} site intelligence`}>
+            <button type="button" className="cc-site-overlay-close" onClick={() => setSelectedSite(null)} aria-label="Close site intelligence"><X size={18} /></button>
+            <p className="cc-panel-kicker">SITE INTELLIGENCE · {siteRiskLevel(selectedSite.risk)} RISK</p>
+            <h3>{selectedSite.name}</h3>
+            {selectedSite.isSample && <div className="cc-representative-label">REPRESENTATIVE PROFILE · NOT YET LINKED TO LIVE SITE REPORTS</div>}
+            <div className="cc-site-score"><strong>{selectedSite.risk}</strong><span>/ 100<br />RISK SCORE</span><em>Fatigue {selectedSite.fatigue}</em></div>
+            <div className="cc-site-intel-grid">
+              <div><small>SIF POTENTIAL</small><strong>{Math.max(1, Math.round(selectedSite.reports * 0.4))}</strong></div>
+              <div><small>PSIF / HIGH POTENTIAL</small><strong>{selectedSite.reports}</strong></div>
+              <div><small>NON-SIF REPORTS</small><strong>{Math.max(0, selectedSite.reports - Math.round(selectedSite.reports * 0.4))}</strong></div>
+              <div><small>LAST HSE REVIEW</small><strong>Pending review</strong></div>
+              <div><small>TOP HAZARD</small><strong>{selectedSite.hazard}</strong></div>
+              <div><small>TOP ACTIVITY</small><strong>{selectedSite.activity}</strong></div>
+              <div><small>CRITICAL BARRIER</small><strong>{selectedSite.barrier}</strong></div>
+              <div><small>RECURRING PRECURSOR</small><strong>{selectedSite.hazard}</strong></div>
+              <div><small>RECENT TREND</small><strong>{selectedSite.risk >= 70 ? "Elevated · monitor" : "Stable · monitor"}</strong></div>
+              <div><small>PENDING ACTIONS</small><strong>HSE review · control verification</strong></div>
             </div>
-          )}
-        </div>
+            <div className="cc-fatigue-scale"><span>WORKFORCE FATIGUE</span>{["VERY HIGH", "HIGH", "MEDIUM", "LOW"].map((level) => <i key={level} className={selectedSite.fatigue === level ? `active fatigue-${level.toLowerCase().replace(" ", "-")}` : ""}>{level}</i>)}</div>
+            <div className="cc-site-review-meta">HSE status: <b>Pending</b><span>Reviewer not assigned · {selectedSite.reports} linked reports</span></div>
+            <button type="button" className="cc-site-analysis-button" onClick={() => { setSelectedSite(null); onSiteAnalysis?.(selectedSite); }}>View full site analysis <ArrowRight size={15} /></button>
+          </div>
+        )}
       </div>
     </section>
   );
@@ -976,7 +1281,7 @@ function LiveHighlights({ dashboard }) {
         </div>
       </section>
 
-      <FactoryHotspotMap hotspots={hotspotData} dashboard={dashboard} />
+      <IndiaLiveRiskMap dashboard={dashboard} />
     </>
   );
 }
@@ -1098,26 +1403,22 @@ export default function CommandCenter({ setView, onIngest }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("overview");
+  const [barriers, setBarriers] = useState([]);
+  const [patterns, setPatterns] = useState([]);
+  const [evaluationMetrics, setEvaluationMetrics] = useState(null);
+  const [focusedSite, setFocusedSite] = useState(null);
+  const [similarReports, setSimilarReports] = useState([]);
+  const refreshDashboard = async () => {
+    await onIngest?.();
+    try {
+      setDashboard(await getDashboardSummary());
+    } catch (refreshError) {
+      setError(refreshError.message || "Unable to refresh dashboard data.");
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
-
-    const handleHeaderJump = (tab) => {
-      const targetMap = {
-        overview: "overview",
-        "live-risk": "live-risk",
-        trends: "trends",
-        reports: "reports",
-      };
-
-      const target = document.getElementById(targetMap[tab]);
-      if (target) {
-        target.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-    };
-
-    handleHeaderJump(activeTab);
-
     async function loadDashboard() {
       try {
         setLoading(true);
@@ -1144,7 +1445,18 @@ export default function CommandCenter({ setView, onIngest }) {
     return () => {
       cancelled = true;
     };
-  }, [activeTab]);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    Promise.allSettled([getBarrierIntelligence(), getEmergingPatterns(), getEvaluationMetrics()]).then(([barrierResult, patternResult, metricsResult]) => {
+      if (!active) return;
+      if (barrierResult.status === "fulfilled") setBarriers(barrierResult.value?.barrier_failures || []);
+      if (patternResult.status === "fulfilled") setPatterns(patternResult.value?.patterns || []);
+      if (metricsResult.status === "fulfilled") setEvaluationMetrics(metricsResult.value);
+    });
+    return () => { active = false; };
+  }, []);
 
   const severity = Object.fromEntries(
     (dashboard?.sif_breakdown || []).map((item) => [item.label, item.count]),
@@ -1155,15 +1467,51 @@ export default function CommandCenter({ setView, onIngest }) {
     year: "numeric",
   });
 
-  // KPI cards always render; they show 0 until dashboard data loads
+  const highRiskSites = dashboard?.highest_risk_locations?.filter((site) => site.level === "HIGH").length ?? oilSites.filter((site) => siteRiskLevel(site.risk) === "HIGH").length;
+  const trend = dashboard?.trends?.[0];
+  const trendLabel = trend
+    ? trend.percentage_change === null
+      ? `${trend.current_count} this month`
+      : `${trend.direction} ${Math.abs(trend.percentage_change)}% this month`
+    : "Awaiting trend data";
+
   const kpiData = [
-    { label: "Total Reports Today", value: (dashboard?.total_reports ?? 0).toLocaleString(), subtext: `${dashboard?.period_label || todayLabel} · uploaded files`, icon: FileText },
-    { label: "High SIF", value: (severity.HIGH || 0).toLocaleString(), subtext: "Today's high-risk precursors", icon: ShieldAlert },
-    { label: "Medium SIF", value: (severity.MEDIUM || 0).toLocaleString(), subtext: "Today's medium-risk precursors", icon: TrendingUp },
-    { label: "Low SIF", value: (severity.LOW || 0).toLocaleString(), subtext: "Today's low-risk precursors", icon: ShieldCheck },
+    { label: "Total Sites", value: "13", subtext: "Representative OIL facilities", icon: MapPinned },
+    { label: "High-Risk Sites", value: String(highRiskSites), subtext: "Across available site signals", icon: ShieldAlert },
+    { label: "SIF Potential", value: (dashboard?.high_sif_precursors ?? severity.HIGH ?? 0).toLocaleString(), subtext: `${dashboard?.period_label || todayLabel} · analyzed reports`, icon: Activity },
+    { label: "PSIF / High-Potential", value: (dashboard?.recent_high_sif_reports?.length ?? 0).toLocaleString(), subtext: "Priority reports in current feed", icon: FileText },
+    { label: "Precursor Trend", value: trend?.direction?.toUpperCase() || "--", subtext: trendLabel, icon: TrendingUp },
   ];
 
   const highSIFReports = dashboard?.recent_high_sif_reports || [];
+
+  useEffect(() => {
+    const report = highSIFReports[0];
+    if (!report?.id) {
+      setSimilarReports([]);
+      return undefined;
+    }
+    let active = true;
+    getSimilarReports(report.id).then((result) => {
+      if (active) setSimilarReports(result?.similar_reports || []);
+    }).catch(() => {
+      if (active) setSimilarReports([]);
+    });
+    return () => { active = false; };
+  }, [highSIFReports[0]?.id]);
+
+  const workspaceTitle = {
+    overview: "Safety Intelligence Command Center",
+    "analyze-report": "Report Analysis & HSE Validation",
+    sites: `Site Risk Intelligence${focusedSite ? ` — ${focusedSite.name}` : ""}`,
+    historical: "Historical Intelligence",
+    precursors: "Recurring Precursor Intelligence",
+    workforce: "Workforce Intelligence",
+    models: "Model Performance",
+    "hse-review": "HSE Review Queue",
+  }[activeTab] || "Safety Intelligence Command Center";
+
+  const renderOverview = activeTab === "overview";
   const siteRiskData = useMemo(() => {
     const fallback = [
       { site: "Startup Check", risk: 92, level: "HIGH", reports: 12 },
@@ -1209,82 +1557,35 @@ export default function CommandCenter({ setView, onIngest }) {
           width: "100%",
           maxWidth: "none",
           margin: 0,
-          padding: "30px 18px 40px",
+          padding: "20px 24px 44px",
           flex: 1,
         }}
       >
-        <div style={{ marginBottom: "28px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, marginBottom: "20px" }}>
-            <button
-              type="button"
-              className="cc-btn-outline"
-              onClick={() => setView({ page: "home" })}
-              style={{
-                border: "1px solid rgba(255, 140, 104, 0.5)",
-                background: "linear-gradient(180deg, rgba(255,93,77,0.16), rgba(15,18,22,0.94))",
-                color: "#f8fafc",
-                borderRadius: 10,
-                padding: "10px 16px",
-                fontWeight: 900,
-                fontSize: 12,
-                cursor: "pointer",
-                fontFamily: "'Inter', sans-serif",
-                boxShadow: "0 18px 28px -20px rgba(255,93,77,0.75)",
-              }}
-            >
-              ← Home
-            </button>
-          </div>
-
-          <div className="cc-page-title" style={{ marginBottom: "28px" }}>
-            <h1
-              style={{
-                margin: 0,
-                fontSize: "30px",
-                color: "#F7F9FB",
-                fontFamily: "'Merriweather', serif",
-                fontWeight: 700,
-              }}
-            >
-              Safety Intelligence Command Center
-            </h1>
-
-            <p
-              style={{
-                margin: "6px 0 0",
-                fontSize: "13px",
-                color: "#C7D3DC",
-                fontFamily: "'Inter', sans-serif",
-              }}
-            >
-              Monitor high-risk safety signals, emerging SIF precursors, and critical
-              barrier failures across sites.
-            </p>
-          </div>
-
-          <CommandUpload setView={setView} onIngest={onIngest} />
-
+        <div className="cc-command-intro">
+          <div><p className="cc-panel-kicker">OIL SENTINEL · {activeTab.replaceAll("-", " ").toUpperCase()}</p><h1>{workspaceTitle}</h1><p>Where is the risk · Why is it happening · Who needs to act</p></div>
+          <button type="button" className="cc-exit-button" onClick={() => setView({ page: "home" })}>Exit command center <ArrowRight size={14} /></button>
         </div>
 
-        <div
-          className="cc-kpi-grid"
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-            gap: "18px",
-          }}
-        >
-          {kpiData.map((item) => (
-            <KPICard key={item.label} {...item} />
-          ))}
+        <div key={activeTab} className="cc-workspace-page" role="tabpanel" aria-label={workspaceTitle}>
+          {renderOverview && <>
+            <div className="cc-kpi-grid">{kpiData.map((item) => <KPICard key={item.label} {...item} />)}</div>
+            {loading && <p style={emptyTextStyle}>Loading live dashboard data...</p>}
+            {error && <p className="cc-error-message">{error}</p>}
+            <IndiaLiveRiskMap dashboard={dashboard} onSiteAnalysis={(site) => { setFocusedSite(site); setActiveTab("sites"); }} />
+            <SiteRiskComparison data={siteRiskData} />
+            <HighSIFReports reports={highSIFReports} setView={setView} />
+          </>}
+          {activeTab === "analyze-report" && <CommandUpload setView={setView} onIngest={refreshDashboard} />}
+          {activeTab === "sites" && <SiteIntelligenceWorkspace dashboard={dashboard} selectedSite={focusedSite} patterns={patterns} />}
+          {["historical", "precursors", "workforce", "hse-review"].includes(activeTab) && <IntelligenceLayers dashboard={dashboard} barriers={barriers} patterns={patterns} reports={highSIFReports} mode={activeTab} similarReports={similarReports} />}
+          {activeTab === "models" && <ModelPerformance metrics={evaluationMetrics} />}
         </div>
-        {loading && <p style={emptyTextStyle}>Loading live dashboard data...</p>}
-        <LiveHighlights dashboard={dashboard} />
-        {siteRiskData.length > 0 && <SiteRiskComparison data={siteRiskData} />}
-        <HighSIFReports
-          reports={highSIFReports}
-          setView={setView}
-        />
+
+        <div className="cc-primary-actions">
+          <button type="button" onClick={() => setActiveTab("analyze-report")}>Analyze report <ArrowRight size={15} /></button>
+          <button type="button" onClick={() => setActiveTab("sites")}>Site intelligence <ArrowRight size={15} /></button>
+          <button type="button" onClick={() => setActiveTab("hse-review")}>HSE review <ArrowRight size={15} /></button>
+        </div>
         <AboutOilSentinel />
       </main>
 

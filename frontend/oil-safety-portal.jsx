@@ -29,6 +29,7 @@ import {
   ClipboardCheck, Wrench as WrenchIcon, ShieldCheck, ListChecks, MessageSquare, Loader2,
 } from "lucide-react";
 import CommandCenter from "./command-center.jsx";
+import WorkforceIntelligence from "./workforce-intelligence.jsx";
 import Home from "./home.jsx";
 
 export const IMG = {
@@ -1671,6 +1672,8 @@ export default function App() {
   const dashboardData = useMemo(() => buildDashboardData(reports), [reports]);
   const isHome = view.page === "home";
   const isCommandCenter = view.page === "command-center";
+  const isWorkforceIntelligence = view.page === "workforce-intelligence";
+  const isFullWidthWorkspace = isCommandCenter || isWorkforceIntelligence;
 
   return (
     <div style={{ minHeight: "100vh", background: C.paper }}>
@@ -1704,24 +1707,25 @@ export default function App() {
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       `}</style>
 
-      {!isCommandCenter && !isHome && <TopBar view={view} setView={setView} />}
+      {!isFullWidthWorkspace && !isHome && <TopBar view={view} setView={setView} />}
 
-      <div className={!isCommandCenter && !isHome ? "portal-page" : undefined} style={{
-        width: isCommandCenter ? "100%" : "100%",
-        maxWidth: isCommandCenter ? "none" : isHome ? 1600 : 1320,
-        margin: isCommandCenter ? 0 : "0 auto",
-        padding: isCommandCenter ? 0 : isHome ? 0 : "26px 28px 60px",
-        background: isCommandCenter ? "#05080a" : "transparent",
+      <div className={!isFullWidthWorkspace && !isHome ? "portal-page" : undefined} style={{
+        width: "100%",
+        maxWidth: isFullWidthWorkspace ? "none" : isHome ? 1600 : 1320,
+        margin: isFullWidthWorkspace ? 0 : "0 auto",
+        padding: isFullWidthWorkspace ? 0 : isHome ? 0 : "26px 28px 60px",
+        background: isFullWidthWorkspace ? "#05080a" : "transparent",
       }}>
-        {view.page === "home" && <Home onStart={() => setView({ page: "command-center" })} />}
+        {view.page === "home" && <Home onStart={() => setView({ page: "command-center" })} onWorkforce={() => setView({ page: "workforce-intelligence" })} />}
         {view.page === "command-center" && <CommandCenter setView={setView} onIngest={onIngest} />}
+        {view.page === "workforce-intelligence" && <WorkforceIntelligence onBack={() => setView({ page: "home" })} />}
         {view.page === "dashboard" && <Dashboard setView={setView} onIngest={onIngest} data={dashboardData} demoMode={demoMode} />}
         {view.page === "site-drill" && <SiteDrilldown siteId={view.siteId} setView={setView} data={dashboardData} />}
         {view.page === "reports" && <ReportsTable setView={setView} reports={reports} onIngest={onIngest} siteFilter={view.siteFilter} hazardFilter={view.hazardFilter} initialRiskFilter={view.riskFilter} demoMode={demoMode} />}
         {view.page === "report-detail" && <ReportDetail reportId={view.reportId} setView={setView} reports={reports} onIngest={onIngest} />}
       </div>
 
-      {!isCommandCenter && !isHome && <div style={{
+      {!isFullWidthWorkspace && !isHome && <div style={{
         background: `linear-gradient(90deg, rgba(5,15,25,0.94), rgba(5,15,25,0.94)), url(${IMG.bottles})`,
         backgroundSize: "cover", backgroundPosition: "center",
         color: "#9FB0BB", textAlign: "center", padding: "16px 0", fontFamily: "'Inter',sans-serif", fontSize: 12,

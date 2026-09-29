@@ -62,6 +62,10 @@ export async function getDashboardSummary() {
   return request("/reports/dashboard-summary");
 }
 
+export async function getEvaluationMetrics() {
+  return request("/reports/metrics");
+}
+
 export async function getReports() {
   return request("/reports");
 }

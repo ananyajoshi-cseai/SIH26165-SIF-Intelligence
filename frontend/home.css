@@ -155,7 +155,8 @@
 }
 
 .primary-action,
-.ghost-action {
+.ghost-action,
+.workforce-action {
   position: relative;
   z-index: 1;
   overflow: hidden;
@@ -223,6 +224,30 @@
   border-color: rgba(255,93,77,0.82);
   color: #fff;
   transform: translateY(-2px);
+}
+
+.workforce-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 15px 19px;
+  border: 1px solid rgba(255,177,74,.48);
+  border-radius: 999px;
+  background: rgba(12,16,19,.7);
+  color: #f3d38b;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.workforce-action:hover {
+  transform: translateY(-2px);
+  border-color: var(--amber);
+  background: rgba(255,177,74,.1);
+  color: #fff;
 }
 
 .home-scroll {

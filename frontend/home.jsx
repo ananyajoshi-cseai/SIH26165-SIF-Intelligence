@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ArrowDownRight, ArrowRight, ChevronRight, Play } from "lucide-react";
+import { ArrowDownRight, ArrowRight, ChevronRight, Play, UsersRound } from "lucide-react";
 import FlipCard from "./FlipCard.jsx";
 import "./home.css";
 import featureImage1 from "./img&vid/img1.png";
@@ -28,7 +28,7 @@ const TIMELINE = [
   { year: "NOW", title: "OIL SENTINEL", text: "A human-led intelligence layer connects classification, barriers, deterministic risk, historical signals, and prevention.", image: oilSentinelImage },
 ];
 
-export default function Home({ onStart }) {
+export default function Home({ onStart, onWorkforce }) {
   const [activeFeature, setActiveFeature] = useState(0);
   const [activeTimeline, setActiveTimeline] = useState(0);
   const featureImages = FEATURE_IMAGES;
@@ -54,6 +54,7 @@ export default function Home({ onStart }) {
           <p className="home-lede">AI-powered SIF precursor and safety intelligence. From safety observations to proactive intelligence.</p>
           <div className="home-actions">
             <button className="primary-action" onClick={onStart}><Play size={15} fill="currentColor" /> Start Sentinel <ArrowRight size={15} /></button>
+            <button className="workforce-action" onClick={onWorkforce}><UsersRound size={16} /> Workforce Intelligence <ArrowRight size={15} /></button>
             <a className="ghost-action" href="#intelligence"><ArrowDownRight size={15} /> Explore intelligence</a>
           </div>
           <div className="home-scroll">Scroll to enter the system</div>
