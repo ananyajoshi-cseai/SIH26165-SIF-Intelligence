@@ -1,10 +1,14 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import indiaMap from "@svg-maps/india";
 import {
+  AlertTriangle,
   FileText,
   ShieldAlert,
   TrendingUp,
   ShieldCheck,
   MapPinned,
+  Minus,
+  Plus,
   RadioTower,
   Gauge,
   ArrowRight,
@@ -291,19 +295,9 @@ function KPICard({ label, value, subtext, icon: Icon }) {
 
   return (
     <div
-      className="cc-kpi"
+      className={`cc-kpi ${isHighSIF ? "cc-kpi--critical" : isPattern ? "cc-kpi--pattern" : "cc-kpi--signal"}`}
       style={{
-        background: "linear-gradient(180deg, rgba(23,26,31,0.98), rgba(11,13,17,0.96))",
-        border: `1px solid ${C.line}`,
-        borderRadius: "12px",
-        padding: "20px",
-        boxShadow: "0 24px 34px -26px rgba(242,75,69,0.55)",
-        borderTop: `4px solid ${isHighSIF
-            ? C.redBright
-            : isPattern
-              ? C.orange
-              : C.saffron
-          }`,
+        "--kpi-accent": isHighSIF ? C.redBright : isPattern ? C.orange : C.saffron,
       }}
     >
       <div
@@ -357,7 +351,7 @@ function KPICard({ label, value, subtext, icon: Icon }) {
       <h2
         style={{
           margin: 0,
-          fontSize: label === "Most Failed Barrier" ? "21px" : "30px",
+          fontSize: label === "Top Hazard" ? "17px" : "30px",
           fontWeight: 700,
           color: "#FFFFFF",
           fontFamily: "'Merriweather', serif",
@@ -384,158 +378,25 @@ function KPICard({ label, value, subtext, icon: Icon }) {
 
 function SiteRiskComparison({ data }) {
   return (
-    <section
-      id="trends"
-      className="cc-panel cc-chart-panel"
-      style={{
-        marginTop: "28px",
-        background: "linear-gradient(180deg, rgba(18,21,25,0.98), rgba(8,10,13,0.96))",
-        border: `1px solid ${C.line}`,
-        borderRadius: "16px",
-        padding: "22px",
-        boxShadow: "0 22px 34px -30px rgba(242,75,69,0.6)",
-      }}
-    >
-      <div
-        className="cc-panel-head"
-        style={{
-          margin: "-22px -22px 20px -22px",
-          padding: "20px 22px",
-          background: `linear-gradient(90deg, ${C.navy}, #123B59)`,
-          borderBottom: `3px solid ${C.saffron}`,
-          borderRadius: "8px 8px 0 0",
-        }}
-      >
-        <h2
-          style={{
-            margin: 0,
-            fontSize: "20px",
-            color: "#FFFFFF",
-            fontFamily: "'Merriweather', serif",
-            fontWeight: 700,
-          }}
-        >
-          Site-wise SIF / PSIF Risk Ranking
-        </h2>
-
-        <p
-          style={{
-            margin: "6px 0 0",
-            fontSize: "12px",
-            color: "#C7D3DC",
-            fontFamily: "'Inter', sans-serif",
-          }}
-        >
-          Composite ranking by site risk with LOW, MEDIUM and HIGH bands from both SIF and PSIF signal intensity
-        </p>
+    <section id="site-ranking" className="cc-ranking-panel">
+      <div className="cc-ranking-heading">
+        <div><p className="cc-panel-kicker">SITE INTELLIGENCE · TOP FIVE</p><h2>Highest risk locations</h2></div>
+        <span>COMPOSITE RISK · 0–100</span>
       </div>
-
-      <div style={{ width: "100%", height: 320 }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={data}
-            layout="vertical"
-            margin={{
-              top: 5,
-              right: 30,
-              left: 20,
-              bottom: 5,
-            }}
-          >
-            <CartesianGrid
-              strokeDasharray="3 3"
-              stroke={C.line}
-              vertical={true}
-              horizontal={false}
-            />
-
-            <XAxis
-              type="number"
-              domain={[0, 100]}
-              tick={{
-                fontSize: 11,
-                fill: C.inkSoft,
-                fontFamily: "'Inter', sans-serif",
-              }}
-              axisLine={{ stroke: C.line }}
-              tickLine={false}
-            />
-
-            <YAxis
-              type="category"
-              dataKey="site"
-              width={145}
-              tick={{
-                fontSize: 12,
-                fill: C.ink,
-                fontWeight: 600,
-                fontFamily: "'Inter', sans-serif",
-              }}
-              axisLine={false}
-              tickLine={false}
-            />
-
-            <Tooltip
-              cursor={{ fill: "rgba(10,42,67,0.04)" }}
-              contentStyle={{
-                background: C.card,
-                border: `1px solid ${C.line}`,
-                borderRadius: "6px",
-                boxShadow: "0 2px 8px rgba(10,42,67,0.10)",
-                fontFamily: "'Inter', sans-serif",
-                fontSize: "12px",
-                color: C.ink,
-              }}
-              formatter={(value, name, props) => [`${value} / 100`, `${props.payload.site} composite risk`]}
-            />
-
-            <Bar
-              dataKey="risk"
-              radius={[0, 4, 4, 0]}
-              barSize={26}
-              animationDuration={1200}
-              animationEasing="ease-out"
-              isAnimationActive
-            >
-              {data.map((entry, index) => {
-                const barColor =
-                  entry.level === "HIGH"
-                    ? C.redBright
-                    : entry.level === "MEDIUM"
-                      ? "#F4C430"
-                      : C.greenGood;
-
-                return <Cell key={`cell-${index}`} fill={barColor} />;
-              })}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+        <div className="cc-ranking-scale"><span>SITE</span><div>{[0, 20, 40, 60, 80, 100].map((value) => <span key={value}>{value}%</span>)}</div></div>
+      <div className="cc-ranking-rows">
+        {data.slice(0, 5).map((site, index) => (
+          <div className="cc-ranking-row" key={site.site}>
+            <div className="cc-ranking-site"><b>{String(index + 1).padStart(2, "0")}</b><span>{site.site}</span></div>
+            <div className="cc-ranking-track" aria-label={`${site.site}: ${site.risk} out of 100 risk`}>
+              <div className={`cc-ranking-fill cc-ranking-fill--${site.level.toLowerCase()}`} style={{ width: `${Math.max(0, Math.min(100, site.risk))}%` }}><span>{String(index + 1).padStart(2, "0")}</span></div>
+            </div>
+            <strong className={`cc-ranking-score cc-ranking-score--${site.level.toLowerCase()}`}>{site.risk}%</strong>
+          </div>
+        ))}
+        {!data.length && <p className="cc-ranking-empty">No site risk scores available yet.</p>}
       </div>
-
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          gap: "24px",
-          marginTop: "8px",
-          fontSize: "11px",
-          color: C.inkSoft,
-          fontFamily: "'Inter', sans-serif",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ width: 10, height: 10, borderRadius: 2, background: "#C62828" }} />
-          High Risk
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ width: 10, height: 10, borderRadius: 2, background: "#F4C430" }} />
-          Medium Risk
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ width: 10, height: 10, borderRadius: 2, background: "#2E8B57" }} />
-          Low Risk
-        </div>
-      </div>
+      <div className="cc-ranking-legend"><span><i className="high" />High</span><span><i className="medium" />Medium</span><span><i className="low" />Low</span></div>
     </section>
   );
 }
@@ -956,14 +817,13 @@ function IntelligenceLayers({ dashboard, barriers, patterns, reports, mode, simi
   const barrierRows = barriers.length ? barriers.slice(0, 4) : dashboard?.barrier_failures || [];
   const patternRows = patterns.slice(0, 4);
   const [searchText, setSearchText] = useState("");
+  const [reviewedWorkers, setReviewedWorkers] = useState([]);
 
   const filteredReports = (reports || []).filter((report) => `${report.site} ${report.incident}`.toLowerCase().includes(searchText.toLowerCase()));
   const matchingPatterns = patternRows.length ? patternRows : hazardRows;
-  const fatigueProfiles = [
-    { site: "Numaligarh Refinery", level: "HIGH", precursor: 12 },
-    { site: "Duliajan LPG Plant", level: "HIGH", precursor: 7 },
-    { site: "Brahmaputra Cracker & Polymer", level: "MEDIUM", precursor: 8 },
-    { site: "Moran", level: "LOW", precursor: 5 },
+  const priorityWorkers = [
+    { id: "W1219", site: "Duliajan", role: "Instrumentation Technician", level: "VERY HIGH", indicators: "8 consecutive shifts · 64 h roster · 5.2 h avg rest", signal: "Self-reported extremely tired", review: "Pending" },
+    { id: "W1024", site: "Duliajan", role: "Field Operator", level: "HIGH", indicators: "7 consecutive shifts · 58 h roster · 4 night shifts", signal: "Self-reported fatigue: high", review: "Pending" },
   ];
 
   return (
@@ -989,9 +849,17 @@ function IntelligenceLayers({ dashboard, barriers, patterns, reports, mode, simi
         </article>}
         {mode === "workforce" && <article id="workforce" className="cc-intel-module cc-intel-module--wide cc-workforce-module"><div className="cc-module-title"><UsersRound size={17} /><div><h3>Workforce Fatigue</h3><small>Aggregate view · illustrative until fatigue feed connected</small></div></div>
           <div className="cc-fatigue-metrics"><div><b>1,284</b><span>Workers</span></div><div className="fatigue-very-high"><b>4%</b><span>Very high</span></div><div className="fatigue-high"><b>12%</b><span>High</span></div><div className="fatigue-medium"><b>31%</b><span>Medium</span></div><div className="fatigue-low"><b>53%</b><span>Low</span></div></div>
-          <div className="cc-site-fatigue-list">{fatigueProfiles.map((item) => <div key={item.site}><span>{item.site}</span><i className={`fatigue-fill fatigue-fill--${item.level.toLowerCase()}`} /><b>{item.level}</b><small>{item.precursor} precursor reports</small></div>)}</div>
           <div className="cc-fatigue-correlation"><span>Fatigue concentration</span><i /><span>SIF / PSIF precursors</span><b>Monitor</b></div>
-          <div className="cc-module-foot">Site-wise distribution and precursor correlation are demonstration values, not live personnel data.</div>
+          <div className="cc-priority-heading"><div><strong>Priority worker review</strong><small>High and very high fatigue signals requiring HSE attention</small></div><span>{priorityWorkers.filter((worker) => !reviewedWorkers.includes(worker.id)).length} open</span></div>
+          <div className="cc-worker-priority-list">{priorityWorkers.map((worker) => {
+            const reviewed = reviewedWorkers.includes(worker.id);
+            return <div className={`cc-worker-priority-row ${reviewed ? "is-reviewed" : ""}`} key={worker.id}>
+              <div className="cc-worker-priority-main"><div><strong>{worker.id}</strong><span>{worker.role} · {worker.site}</span></div><b className={`cc-fatigue-band cc-fatigue-band--${worker.level.toLowerCase().replace(" ", "-")}`}>{worker.level}</b></div>
+              <div className="cc-worker-priority-details"><span>{worker.indicators}</span><small>{worker.signal} · {reviewed ? "Reviewed by HSE" : worker.review}</small></div>
+              <button type="button" className="cc-worker-review-button" onClick={() => setReviewedWorkers((current) => reviewed ? current.filter((id) => id !== worker.id) : [...current, worker.id])}>{reviewed ? "Reopen review" : "Mark reviewed"}<Check size={13} /></button>
+            </div>;
+          })}</div>
+          <div className="cc-module-foot">Aggregate fatigue bands are representative signals, not live personnel data. Confirm each priority record against the current roster.</div>
         </article>}
         {mode === "hse-review" && <article id="hse-review" className="cc-intel-module cc-intel-module--wide"><div className="cc-module-title"><ClipboardCheck size={17} /><div><h3>Recent HSE Actions</h3><small>Validation queue</small></div></div>
           {(reports || []).slice(0, 4).map((report) => <div className="cc-action-row" key={report.id}><span className="cc-action-dot" /><div><strong>{report.site}</strong><small>{report.incident}</small></div><b>REVIEW</b></div>)}
@@ -1007,22 +875,21 @@ function SiteIntelligenceWorkspace({ dashboard, selectedSite, patterns = [] }) {
   const sites = dashboard?.highest_risk_locations || [];
   const hazards = dashboard?.top_hazards || [];
   const barriers = dashboard?.barrier_failures || [];
-  const topSite = selectedSite || sites[0];
+  const topSite = selectedSite || sites[0] || oilSites[0];
   const siteName = topSite?.site || topSite?.name;
   const siteReports = (dashboard?.recent_high_sif_reports || []).filter((report) => report.site === siteName);
   const trend = dashboard?.trends?.[0];
 
   return (
     <section id="sites" className="cc-site-workspace">
-      <div className="cc-workspace-heading"><div><p className="cc-panel-kicker">DRILL DOWN · WHY IS IT HAPPENING?</p><h2>Site Risk Intelligence{siteName ? ` — ${siteName}` : ""}</h2><p>Risk context, recurring signals, barriers, and HSE status from analyzed reports.</p>{selectedSite?.isSample && <span className="cc-representative-label">REPRESENTATIVE SITE PROFILE · REPORT LINK NOT FOUND</span>}</div></div>
+      <div className="cc-workspace-heading"><div><p className="cc-panel-kicker">DRILL DOWN · WHY IS IT HAPPENING?</p><h2>Site Risk Intelligence{siteName ? ` — ${siteName}` : ""}</h2><p>Risk context, recurring signals, barriers, and HSE status from analyzed reports.</p>{(selectedSite?.isSample || !selectedSite) && <span className="cc-representative-label">REPRESENTATIVE SITE PROFILE · VERIFY AGAINST LIVE RECORDS</span>}</div></div>
       <div className="cc-site-overview-grid">
         <div className="cc-site-overview-score"><span>RISK SCORE</span><strong>{topSite?.risk ?? "--"}<small>/100</small></strong><b>{topSite?.level || (topSite ? siteRiskLevel(topSite.risk) : "AWAITING DATA")}</b></div>
-        <div className="cc-site-metric"><span>SIF POTENTIAL</span><strong>{selectedSite ? "--" : dashboard?.high_sif_precursors ?? 0}</strong><small>{selectedSite ? "not returned for this site" : "network reports"}</small></div>
-        <div className="cc-site-metric"><span>PSIF / HIGH POTENTIAL</span><strong>{selectedSite?.isSample ? "--" : topSite?.reports ?? 0}</strong><small>{selectedSite?.isSample ? "representative profile only" : "site reports"}</small></div>
-        <div className="cc-site-metric"><span>HSE VALIDATION</span><strong>Pending</strong><small>reviewer assignment required</small></div>
+        <div className="cc-site-metric"><span>SIF PRECURSORS</span><strong>{topSite?.sif ?? dashboard?.high_sif_precursors ?? 0}</strong><small>{topSite?.sif != null ? "representative site profile" : "network reports"}</small></div>
+        <div className="cc-site-metric"><span>HIGH PSIF SIGNALS</span><strong>{topSite?.psifHigh ?? topSite?.reports ?? 0}</strong><small>{topSite?.psifHigh != null ? "representative site profile" : "linked site reports"}</small></div>
+        <div className="cc-site-metric"><span>LAST REVIEWED</span><strong>{topSite?.lastReviewed || "Pending"}</strong><small>{topSite?.lastReviewed ? "representative profile date" : "reviewer assignment required"}</small></div>
       </div>
       <div className="cc-site-insight-grid">
-        <div className="cc-site-insight"><h3>Risk overview</h3><div className="cc-risk-bars">{sites.slice(0, 5).map((item) => <div key={item.site}><span>{item.site}</span><i><b style={{ width: `${item.risk}%`, background: riskColor(item.level) }} /></i><strong>{item.risk}</strong></div>)}</div></div>
         <div className="cc-site-insight"><h3>Top hazards &amp; activities</h3>{hazards.slice(0, 4).map((item, index) => <div className="cc-site-data-row" key={item.label}><span>{index + 1}. {item.label}</span><b>{item.count} reports</b></div>)}<p className="cc-site-note">Activity details are available in each report investigation.</p></div>
         <div className="cc-site-insight"><h3>Failed / missing barriers</h3>{barriers.slice(0, 4).map((item, index) => <div className="cc-site-data-row" key={item.label}><span>{item.label}</span><b>{item.count}</b></div>)}<p className="cc-site-note">Barrier intelligence is aggregated across analyzed reports.</p></div>
         <div className="cc-site-insight"><h3>SIF / PSIF trend context</h3>{trend ? <><div className="cc-trend-comparison"><div><span>Previous period</span><b>{trend.previous_count}</b></div><i /><div><span>Current period</span><b>{trend.current_count}</b></div><strong>{trend.percentage_change == null ? "NO BASELINE" : `${trend.percentage_change > 0 ? "+" : ""}${trend.percentage_change}%`}</strong></div><p className="cc-site-note">Network trend; the current API does not return a per-site monthly series.</p></> : <p className="cc-site-note">No trend data returned.</p>}
@@ -1056,26 +923,30 @@ function ModelPerformance({ metrics }) {
 }
 
 const oilSites = [
-  { name: "Numaligarh Refinery", x: 82, y: 35, risk: 88, fatigue: "HIGH", hazard: "Energy isolation", activity: "Maintenance and hot work", barrier: "Permit verification", reports: 12 },
-  { name: "Brahmaputra Cracker & Polymer", x: 88, y: 31, risk: 77, fatigue: "MEDIUM", hazard: "Gas release", activity: "Process operations", barrier: "Gas detection", reports: 8 },
-  { name: "Duliajan LPG Plant", x: 86, y: 39, risk: 72, fatigue: "HIGH", hazard: "Fire and explosion", activity: "LPG transfer", barrier: "Ignition control", reports: 7 },
-  { name: "Naharkatiya", x: 84, y: 42, risk: 66, fatigue: "MEDIUM", hazard: "Line of fire", activity: "Well servicing", barrier: "Exclusion zone", reports: 6 },
-  { name: "Moran", x: 81, y: 43, risk: 61, fatigue: "LOW", hazard: "Dropped objects", activity: "Drilling operations", barrier: "Lifting plan", reports: 5 },
-  { name: "Jorajan", x: 87, y: 46, risk: 55, fatigue: "MEDIUM", hazard: "Vehicle movement", activity: "Field logistics", barrier: "Journey management", reports: 4 },
-  { name: "Kumchai", x: 90, y: 42, risk: 48, fatigue: "LOW", hazard: "Pressure release", activity: "Well intervention", barrier: "Isolation verification", reports: 3 },
-  { name: "Bhaghewala", x: 45, y: 54, risk: 45, fatigue: "MEDIUM", hazard: "Manual handling", activity: "Field operations", barrier: "Task risk assessment", reports: 3 },
-  { name: "Dandewala", x: 43, y: 61, risk: 39, fatigue: "LOW", hazard: "Vehicle movement", activity: "Site transport", barrier: "Journey management", reports: 2 },
-  { name: "Madhuban Central Tank Farm", x: 83, y: 48, risk: 71, fatigue: "HIGH", hazard: "Tank overfill", activity: "Tank farm operations", barrier: "Level alarm response", reports: 6 },
-  { name: "Tengakhat", x: 78, y: 45, risk: 51, fatigue: "MEDIUM", hazard: "Electrical contact", activity: "Equipment maintenance", barrier: "LOTO", reports: 4 },
-  { name: "Barekhuri", x: 80, y: 49, risk: 42, fatigue: "LOW", hazard: "Fall from height", activity: "Inspection", barrier: "Work-at-height control", reports: 2 },
-  { name: "Shalmari", x: 85, y: 51, risk: 33, fatigue: "LOW", hazard: "Pressure release", activity: "Well operations", barrier: "Pressure testing", reports: 1 },
+  { name: "Numaligarh Refinery Limited (NRL)", category: "Refinery & petrochemical", mapX: 520, mapY: 281, risk: 88, sif: 8, psifHigh: 5, fatigue: "HIGH", workers: { veryHigh: 12, high: 24, medium: 38, low: 61 }, lastReviewed: "18 Sep 2026", hazard: "Energy isolation", activity: "Maintenance and hot work", barrier: "Permit verification", reports: 12 },
+  { name: "Brahmaputra Cracker and Polymer Limited (BCPL)", category: "Refinery & petrochemical", mapX: 545, mapY: 251, risk: 77, sif: 6, psifHigh: 4, fatigue: "MEDIUM", workers: { veryHigh: 7, high: 19, medium: 42, low: 75 }, lastReviewed: "12 Sep 2026", hazard: "Gas release", activity: "Process operations", barrier: "Gas detection", reports: 8 },
+  { name: "Duliajan Liquid Petroleum Gas (LPG) Plant", category: "Refinery & petrochemical", mapX: 535, mapY: 256, risk: 72, sif: 5, psifHigh: 3, fatigue: "HIGH", workers: { veryHigh: 9, high: 21, medium: 31, low: 48 }, lastReviewed: "09 Sep 2026", hazard: "Fire and explosion", activity: "LPG transfer", barrier: "Ignition control", reports: 7 },
+  { name: "Naharkatiya Oilfield", category: "Onshore field & production hub", mapX: 530, mapY: 266, risk: 66, sif: 4, psifHigh: 2, fatigue: "MEDIUM", workers: { veryHigh: 5, high: 14, medium: 28, low: 63 }, lastReviewed: "21 Aug 2026", hazard: "Line of fire", activity: "Well servicing", barrier: "Exclusion zone", reports: 6 },
+  { name: "Moran Field", category: "Onshore field & production hub", mapX: 520, mapY: 276, risk: 61, sif: 3, psifHigh: 1, fatigue: "LOW", workers: { veryHigh: 3, high: 9, medium: 24, low: 72 }, lastReviewed: "04 Sep 2026", hazard: "Dropped objects", activity: "Drilling operations", barrier: "Lifting plan", reports: 5 },
+  { name: "Jorajan Oilfield", category: "Onshore field & production hub", mapX: 535, mapY: 261, risk: 55, sif: 2, psifHigh: 1, fatigue: "MEDIUM", workers: { veryHigh: 4, high: 11, medium: 26, low: 54 }, lastReviewed: "26 Aug 2026", hazard: "Vehicle movement", activity: "Field logistics", barrier: "Journey management", reports: 4 },
+  { name: "Kumchai Field", category: "Onshore field & production hub", mapX: 545, mapY: 246, risk: 48, sif: 2, psifHigh: 0, fatigue: "LOW", workers: { veryHigh: 2, high: 6, medium: 18, low: 49 }, lastReviewed: "30 Aug 2026", hazard: "Pressure release", activity: "Well intervention", barrier: "Isolation verification", reports: 3 },
+  { name: "Bhaghewala Field", category: "Onshore field & production hub", mapX: 91, mapY: 260, risk: 45, sif: 1, psifHigh: 0, fatigue: "MEDIUM", workers: { veryHigh: 3, high: 7, medium: 17, low: 38 }, lastReviewed: "15 Aug 2026", hazard: "Manual handling", activity: "Field operations", barrier: "Task risk assessment", reports: 3 },
+  { name: "Dandewala Field", category: "Onshore field & production hub", mapX: 116, mapY: 286, risk: 39, sif: 1, psifHigh: 0, fatigue: "LOW", workers: { veryHigh: 1, high: 4, medium: 12, low: 43 }, lastReviewed: "02 Sep 2026", hazard: "Vehicle movement", activity: "Site transport", barrier: "Journey management", reports: 2 },
+  { name: "Madhuban Central Tank Farm (CTF)", category: "Processing & collection station", mapX: 525, mapY: 271, risk: 71, sif: 4, psifHigh: 2, fatigue: "HIGH", workers: { veryHigh: 8, high: 17, medium: 29, low: 52 }, lastReviewed: "19 Sep 2026", hazard: "Tank overfill", activity: "Tank farm operations", barrier: "Level alarm response", reports: 6 },
+  { name: "Tengakhat Oil Collecting Station (OCS)", category: "Processing & collection station", mapX: 515, mapY: 286, risk: 51, sif: 2, psifHigh: 0, fatigue: "MEDIUM", workers: { veryHigh: 2, high: 8, medium: 20, low: 44 }, lastReviewed: "11 Aug 2026", hazard: "Electrical contact", activity: "Equipment maintenance", barrier: "LOTO", reports: 4 },
+  { name: "Barekhuri Gas Compressor Station (GCS)", category: "Processing & collection station", mapX: 510, mapY: 296, risk: 42, sif: 1, psifHigh: 0, fatigue: "LOW", workers: { veryHigh: 1, high: 5, medium: 16, low: 41 }, lastReviewed: "25 Aug 2026", hazard: "Fall from height", activity: "Inspection", barrier: "Work-at-height control", reports: 2 },
+  { name: "Shalmari Early Production System (EPS)", category: "Processing & collection station", mapX: 505, mapY: 306, risk: 33, sif: 1, psifHigh: 0, fatigue: "LOW", workers: { veryHigh: 0, high: 3, medium: 13, low: 37 }, lastReviewed: "05 Sep 2026", hazard: "Pressure release", activity: "Well operations", barrier: "Pressure testing", reports: 1 },
 ];
 
 const siteRiskLevel = (score) => score >= 70 ? "HIGH" : score >= 45 ? "MEDIUM" : "LOW";
 const riskMarkerColor = (level) => level === "HIGH" ? "#F24B45" : level === "MEDIUM" ? "#F4C95D" : "#2FCF88";
 
-function IndiaLiveRiskMap({ dashboard = null, onSiteAnalysis }) {
-  const [selectedSite, setSelectedSite] = useState(null);
+export function IndiaLiveRiskMap({ dashboard = null, onSiteAnalysis }) {
+  const [selectedSite, setSelectedSite] = useState(oilSites[0]);
+  const [mapZoom, setMapZoom] = useState(1);
+  const [mapPan, setMapPan] = useState({ x: 0, y: 0 });
+  const dragRef = useRef(null);
+  const networkLinks = [[0, 1], [0, 2], [2, 3], [3, 4], [3, 5], [5, 6], [7, 8], [8, 9], [2, 9], [9, 10], [10, 11], [11, 12]];
   const riskLocations = dashboard?.highest_risk_locations || [];
   const sites = oilSites.map((site) => {
     const live = riskLocations.find((item) => item.site.toLowerCase().includes(site.name.toLowerCase()) || site.name.toLowerCase().includes(item.site.toLowerCase()));
@@ -1083,6 +954,40 @@ function IndiaLiveRiskMap({ dashboard = null, onSiteAnalysis }) {
   });
   const highestAttention = [...sites].sort((a, b) => b.risk - a.risk)[0];
   const fatigueColor = (level) => level === "HIGH" ? "#F24B45" : level === "MEDIUM" ? "#F4C95D" : "#2FCF88";
+  const updateMapZoom = (delta) => setMapZoom((current) => {
+    const next = Math.min(2.4, Math.max(1, Number((current + delta).toFixed(2))));
+    if (next === 1) setMapPan({ x: 0, y: 0 });
+    return next;
+  });
+  const handleMapWheel = (event) => {
+    updateMapZoom(event.deltaY < 0 ? 0.15 : -0.15);
+  };
+  const handleMapPointerDown = (event) => {
+    if (event.button !== 0 || event.target.closest("button, select, option, label")) return;
+    dragRef.current = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, originX: mapPan.x, originY: mapPan.y };
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+  const handleMapPointerMove = (event) => {
+    if (!dragRef.current) return;
+    const limit = Math.max(24, (mapZoom - 1) * 260);
+    const nextX = dragRef.current.originX + event.clientX - dragRef.current.startX;
+    const nextY = dragRef.current.originY + event.clientY - dragRef.current.startY;
+    setMapPan({ x: Math.max(-limit, Math.min(limit, nextX)), y: Math.max(-limit * .62, Math.min(limit * .62, nextY)) });
+  };
+  const stopMapDrag = (event) => {
+    if (dragRef.current?.pointerId === event.pointerId) dragRef.current = null;
+  };
+  const handleMapMouseDown = (event) => {
+    if (event.button !== 0 || event.target.closest("button, select, option, label")) return;
+    dragRef.current = { pointerId: "mouse", startX: event.clientX, startY: event.clientY, originX: mapPan.x, originY: mapPan.y };
+  };
+  const handleMapMouseMove = (event) => {
+    if (dragRef.current?.pointerId !== "mouse") return;
+    handleMapPointerMove({ clientX: event.clientX, clientY: event.clientY, pointerId: "mouse" });
+  };
+  const handleMapMouseUp = () => {
+    if (dragRef.current?.pointerId === "mouse") dragRef.current = null;
+  };
 
   return (
     <section id="live-risk" className="cc-map-workspace">
@@ -1092,84 +997,97 @@ function IndiaLiveRiskMap({ dashboard = null, onSiteAnalysis }) {
           <h2>India Live Risk Map</h2>
           <p>OIL locations · Site risk and aggregate workforce fatigue</p>
         </div>
-        <div className="cc-map-live"><span /> LIVE MONITORING</div>
+        <div className="cc-map-title-actions">
+          <label className="cc-site-selector"><MapPinned size={14} /><span>SITE</span><select value={selectedSite.name} onChange={(event) => { const site = sites.find((item) => item.name === event.target.value); if (site) { setSelectedSite(site); setMapZoom(1.25); setMapPan({ x: 0, y: 0 }); } }} aria-label="Select an operations site">
+            {sites.map((site) => <option key={site.name} value={site.name}>{site.name}</option>)}
+          </select></label>
+          <div className="cc-map-live"><span /> LIVE MONITORING</div>
+        </div>
       </div>
 
-      <div className="cc-india-map" role="group" aria-label="India live risk map">
+      <div className="cc-map-layout">
+      <div className="cc-india-map" role="group" aria-label="India live risk map" onWheel={handleMapWheel} onPointerDown={handleMapPointerDown} onPointerMove={handleMapPointerMove} onPointerUp={stopMapDrag} onPointerCancel={stopMapDrag} onMouseDown={handleMapMouseDown} onMouseMove={handleMapMouseMove} onMouseUp={handleMapMouseUp} onMouseLeave={handleMapMouseUp}>
+        <div className="cc-map-zoom-controls" aria-label="Map zoom controls">
+          <button type="button" onClick={() => updateMapZoom(0.2)} aria-label="Zoom in"><Plus size={17} /></button>
+          <span>{Math.round(mapZoom * 100)}%</span>
+          <button type="button" onClick={() => updateMapZoom(-0.2)} aria-label="Zoom out"><Minus size={17} /></button>
+          <button type="button" className="cc-map-reset" onClick={() => { setMapZoom(1); setMapPan({ x: 0, y: 0 }); }} aria-label="Reset map view"><MapPinned size={15} /></button>
+        </div>
         <div className="cc-map-coordinate cc-map-coordinate-north">ASSAM · ARUNACHAL PRADESH</div>
         <div className="cc-map-coordinate cc-map-coordinate-west">RAJASTHAN</div>
-        <svg className="cc-india-outline" viewBox="0 0 600 640" aria-hidden="true">
+        <svg className="cc-india-outline" viewBox={indiaMap.viewBox} preserveAspectRatio="xMidYMid meet" aria-hidden="true" style={{ transform: `translate(${mapPan.x}px, ${mapPan.y}px) scale(${mapZoom})` }}>
           <defs>
             <linearGradient id="india-fill" x1="0" y1="0" x2="1" y2="1">
               <stop offset="0" stopColor="#24363a" />
               <stop offset="1" stopColor="#111a1e" />
             </linearGradient>
-            <pattern id="india-grid" width="28" height="28" patternUnits="userSpaceOnUse">
-              <path d="M 28 0 L 0 0 0 28" fill="none" stroke="#d5e1dd" strokeOpacity=".08" strokeWidth="1" />
-            </pattern>
           </defs>
-          <path className="cc-india-shadow" d="M198 30 251 48 293 37 330 56 349 87 386 100 404 131 437 146 455 176 444 201 477 220 456 244 468 271 446 293 453 326 432 349 419 385 396 410 386 452 357 475 341 517 310 544 284 592 258 570 245 531 224 507 210 463 191 436 177 398 154 369 133 326 115 296 121 263 102 231 113 200 96 178 108 151 141 140 159 107 183 93Z" />
-          <path className="cc-india-land" d="M198 30 251 48 293 37 330 56 349 87 386 100 404 131 437 146 455 176 444 201 477 220 456 244 468 271 446 293 453 326 432 349 419 385 396 410 386 452 357 475 341 517 310 544 284 592 258 570 245 531 224 507 210 463 191 436 177 398 154 369 133 326 115 296 121 263 102 231 113 200 96 178 108 151 141 140 159 107 183 93Z" />
-          <path className="cc-india-lines" d="M127 230 212 224 291 239 366 210 447 223M130 295 217 286 299 301 386 280 453 286M164 362 235 350 312 368 415 344M194 421 263 408 351 430M221 472 289 458 375 467M160 148 231 165 307 148 380 171M209 102 272 116 339 103" />
-          <path className="cc-india-grid-clip" d="M198 30 251 48 293 37 330 56 349 87 386 100 404 131 437 146 455 176 444 201 477 220 456 244 468 271 446 293 453 326 432 349 419 385 396 410 386 452 357 475 341 517 310 544 284 592 258 570 245 531 224 507 210 463 191 436 177 398 154 369 133 326 115 296 121 263 102 231 113 200 96 178 108 151 141 140 159 107 183 93Z" />
+          {indiaMap.locations.map((state) => <path key={state.id} className="cc-india-state" d={state.path} />)}
+          <g className="cc-india-network" aria-hidden="true">
+            {networkLinks.map(([from, to]) => {
+              const start = sites[from];
+              const end = sites[to];
+              return <path key={`${start.name}-${end.name}`} d={`M ${start.mapX} ${start.mapY} L ${end.mapX} ${end.mapY}`} />;
+            })}
+            {sites.map((site) => <circle key={site.name} cx={site.mapX} cy={site.mapY} r="2.2" />)}
+          </g>
+          <text className="cc-map-region-text" x="493" y="226">ASSAM</text>
+          <text className="cc-map-region-text" x="48" y="193">RAJASTHAN</text>
+          {sites.map((site) => {
+            const level = siteRiskLevel(site.risk);
+            return (
+              <g key={`site-${site.name}`} className="cc-svg-site-pin" role="button" tabIndex="0" aria-label={`${site.name}, ${level} risk`} aria-pressed={selectedSite.name === site.name} onClick={() => setSelectedSite(site)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelectedSite(site); } }}>
+                <title>{site.name} · {level} risk · SIF/PSIF profile</title>
+                <circle className="cc-svg-site-halo" cx={site.mapX} cy={site.mapY} r="10" style={{ "--site-color": riskMarkerColor(level) }} />
+                <circle className="cc-svg-site-core" cx={site.mapX} cy={site.mapY} r="5.5" style={{ "--site-color": riskMarkerColor(level) }} />
+              </g>
+            );
+          })}
+          {sites.map((site) => (
+            <g key={`worker-${site.name}`} className="cc-svg-worker-pin" role="button" tabIndex="0" aria-label={`Worker fatigue at ${site.name}: ${site.fatigue}`} onClick={() => setSelectedSite(site)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelectedSite(site); } }}>
+              <title>{site.workers.veryHigh} very high fatigue · {site.workers.high} high fatigue workers at {site.name}</title>
+              <rect x={site.mapX + 9} y={site.mapY - 19} width="15" height="15" rx="2" style={{ "--fatigue-color": fatigueColor(site.fatigue) }} />
+              <text x={site.mapX + 16.5} y={site.mapY - 8} textAnchor="middle">W</text>
+            </g>
+          ))}
         </svg>
 
-        {sites.map((site) => {
-          const level = siteRiskLevel(site.risk);
-          return (
-            <button key={site.name} type="button" className={`cc-india-site cc-india-site--${level.toLowerCase()}`} style={{ left: `${site.x}%`, top: `${site.y}%`, "--site-color": riskMarkerColor(level) }} onClick={() => setSelectedSite(site)} aria-label={`${site.name}, ${level} risk, fatigue ${site.fatigue}`} title={`${site.name} · ${level} risk · fatigue ${site.fatigue}`}>
-              <span className="cc-site-pulse" />
-              <span className="cc-site-tooltip"><strong>{site.name}</strong><small>{level} RISK · FATIGUE {site.fatigue}</small></span>
-            </button>
-          );
-        })}
-
-        {sites.filter((_, index) => index % 3 === 0).map((site) => (
-          <div key={`worker-${site.name}`} className="cc-worker-marker" style={{ left: `${site.x + 1.3}%`, top: `${site.y + 2.5}%`, "--fatigue-color": fatigueColor(site.fatigue) }} title={`Aggregate fatigue: ${site.fatigue} · ${site.name}`} aria-label={`Worker fatigue marker, ${site.fatigue}, near ${site.name}`}>
-            <HardHat size={13} />
-          </div>
-        ))}
-        <div className="cc-map-region-label cc-map-region-label--assam">UPPER ASSAM</div>
-        <div className="cc-map-region-label cc-map-region-label--rajasthan">RAJASTHAN</div>
-
         <div className="cc-map-legend">
-          <span><i style={{ background: C.redBright }} /> High risk</span>
-          <span><i style={{ background: C.yellow }} /> Medium risk</span>
-          <span><i style={{ background: C.greenGood }} /> Low risk</span>
-          <span><HardHat size={13} /> Fatigue marker</span>
+          <span><i style={{ background: C.redBright }} /> High site risk</span>
+          <span><i style={{ background: C.yellow }} /> Medium site risk</span>
+          <span><i style={{ background: C.greenGood }} /> Low site risk</span>
+          <span><HardHat size={13} /> Worker fatigue</span>
         </div>
-
-        <div className="cc-critical-attention">
-          <div className="cc-critical-attention-kicker"><Activity size={13} /> CRITICAL ATTENTION</div>
-          <strong>{highestAttention.name}</strong>
-          <span>{highestAttention.risk}/100 · {highestAttention.hazard}</span>
-          <button type="button" onClick={() => setSelectedSite(highestAttention)}>Open intelligence <ArrowRight size={13} /></button>
+        <div className="cc-map-credit">Map geometry: SVG Maps / MapSVG · CC BY 4.0</div>
+      </div>
+      <aside className="cc-selected-site" aria-live="polite" aria-label={`${selectedSite.name} intelligence`}>
+        <div className="cc-selected-site-heading">
+          <div><p className="cc-panel-kicker">{selectedSite.category} · {siteRiskLevel(selectedSite.risk)} RISK</p><h3>{selectedSite.name}</h3></div>
+          <span className={`cc-risk-stamp cc-risk-stamp--${siteRiskLevel(selectedSite.risk).toLowerCase()}`}>{selectedSite.risk}<small>/100</small></span>
         </div>
-
-        {selectedSite && (
-          <div className="cc-site-overlay" role="dialog" aria-modal="true" aria-label={`${selectedSite.name} site intelligence`}>
-            <button type="button" className="cc-site-overlay-close" onClick={() => setSelectedSite(null)} aria-label="Close site intelligence"><X size={18} /></button>
-            <p className="cc-panel-kicker">SITE INTELLIGENCE · {siteRiskLevel(selectedSite.risk)} RISK</p>
-            <h3>{selectedSite.name}</h3>
-            {selectedSite.isSample && <div className="cc-representative-label">REPRESENTATIVE PROFILE · NOT YET LINKED TO LIVE SITE REPORTS</div>}
-            <div className="cc-site-score"><strong>{selectedSite.risk}</strong><span>/ 100<br />RISK SCORE</span><em>Fatigue {selectedSite.fatigue}</em></div>
-            <div className="cc-site-intel-grid">
-              <div><small>SIF POTENTIAL</small><strong>{Math.max(1, Math.round(selectedSite.reports * 0.4))}</strong></div>
-              <div><small>PSIF / HIGH POTENTIAL</small><strong>{selectedSite.reports}</strong></div>
-              <div><small>NON-SIF REPORTS</small><strong>{Math.max(0, selectedSite.reports - Math.round(selectedSite.reports * 0.4))}</strong></div>
-              <div><small>LAST HSE REVIEW</small><strong>Pending review</strong></div>
-              <div><small>TOP HAZARD</small><strong>{selectedSite.hazard}</strong></div>
-              <div><small>TOP ACTIVITY</small><strong>{selectedSite.activity}</strong></div>
-              <div><small>CRITICAL BARRIER</small><strong>{selectedSite.barrier}</strong></div>
-              <div><small>RECURRING PRECURSOR</small><strong>{selectedSite.hazard}</strong></div>
-              <div><small>RECENT TREND</small><strong>{selectedSite.risk >= 70 ? "Elevated · monitor" : "Stable · monitor"}</strong></div>
-              <div><small>PENDING ACTIONS</small><strong>HSE review · control verification</strong></div>
-            </div>
-            <div className="cc-fatigue-scale"><span>WORKFORCE FATIGUE</span>{["VERY HIGH", "HIGH", "MEDIUM", "LOW"].map((level) => <i key={level} className={selectedSite.fatigue === level ? `active fatigue-${level.toLowerCase().replace(" ", "-")}` : ""}>{level}</i>)}</div>
-            <div className="cc-site-review-meta">HSE status: <b>Pending</b><span>Reviewer not assigned · {selectedSite.reports} linked reports</span></div>
-            <button type="button" className="cc-site-analysis-button" onClick={() => { setSelectedSite(null); onSiteAnalysis?.(selectedSite); }}>View full site analysis <ArrowRight size={15} /></button>
-          </div>
-        )}
+        <div className="cc-representative-label">Risk and report totals may reflect live data; SIF/PSIF counts, review dates, and worker fatigue profiles are representative.</div>
+        <p className="cc-site-about">SIF signals identify exposure with potential for life-altering harm. PSIF tracks high-potential events and near misses before a serious outcome occurs.</p>
+        <div className="cc-selected-site-stats">
+          <div><span>SIF PRECURSORS</span><strong>{selectedSite.sif}</strong></div>
+          <div><span>HIGH PSIF SIGNALS</span><strong>{selectedSite.psifHigh}</strong></div>
+          <div><span>LINKED REPORTS</span><strong>{selectedSite.reports}</strong></div>
+        </div>
+        <div className="cc-site-risk-track"><span>COMPOSITE RISK</span><i><b className={`cc-ranking-fill--${siteRiskLevel(selectedSite.risk).toLowerCase()}`} style={{ width: `${selectedSite.risk}%` }} /></i></div>
+        <div className="cc-selected-site-facts">
+          <div><span>TOP HAZARD</span><strong>{selectedSite.hazard}</strong></div>
+          <div><span>LAST REVIEWED</span><strong>{selectedSite.lastReviewed}</strong></div>
+          <div><span>CRITICAL BARRIER</span><strong>{selectedSite.barrier}</strong></div>
+          <div><span>PRIMARY ACTIVITY</span><strong>{selectedSite.activity}</strong></div>
+        </div>
+        <div className="cc-worker-breakdown">
+          <div className="cc-worker-breakdown-head"><strong>Worker concentration</strong><span>FATIGUE SIGNALS</span></div>
+          {[ ["Very high", "veryHigh", "very-high"], ["High", "high", "high"], ["Medium", "medium", "medium"], ["Low", "low", "low"] ].map(([label, key, tone]) => (
+            <div className="cc-worker-breakdown-row" key={key}><span><i className={`cc-fatigue-dot cc-fatigue-dot--${tone}`} />{label}</span><b>{selectedSite.workers[key]}</b><small>workers</small></div>
+          ))}
+          <p>Representative workforce profile · confirm against the current roster.</p>
+        </div>
+        <button type="button" className="cc-site-analysis-button" onClick={() => onSiteAnalysis?.(selectedSite)}>View full site analysis <ArrowRight size={15} /></button>
+      </aside>
       </div>
     </section>
   );
@@ -1458,31 +1376,6 @@ export default function CommandCenter({ setView, onIngest }) {
     return () => { active = false; };
   }, []);
 
-  const severity = Object.fromEntries(
-    (dashboard?.sif_breakdown || []).map((item) => [item.label, item.count]),
-  );
-  const todayLabel = new Date().toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-
-  const highRiskSites = dashboard?.highest_risk_locations?.filter((site) => site.level === "HIGH").length ?? oilSites.filter((site) => siteRiskLevel(site.risk) === "HIGH").length;
-  const trend = dashboard?.trends?.[0];
-  const trendLabel = trend
-    ? trend.percentage_change === null
-      ? `${trend.current_count} this month`
-      : `${trend.direction} ${Math.abs(trend.percentage_change)}% this month`
-    : "Awaiting trend data";
-
-  const kpiData = [
-    { label: "Total Sites", value: "13", subtext: "Representative OIL facilities", icon: MapPinned },
-    { label: "High-Risk Sites", value: String(highRiskSites), subtext: "Across available site signals", icon: ShieldAlert },
-    { label: "SIF Potential", value: (dashboard?.high_sif_precursors ?? severity.HIGH ?? 0).toLocaleString(), subtext: `${dashboard?.period_label || todayLabel} · analyzed reports`, icon: Activity },
-    { label: "PSIF / High-Potential", value: (dashboard?.recent_high_sif_reports?.length ?? 0).toLocaleString(), subtext: "Priority reports in current feed", icon: FileText },
-    { label: "Precursor Trend", value: trend?.direction?.toUpperCase() || "--", subtext: trendLabel, icon: TrendingUp },
-  ];
-
   const highSIFReports = dashboard?.recent_high_sif_reports || [];
 
   useEffect(() => {
@@ -1513,27 +1406,20 @@ export default function CommandCenter({ setView, onIngest }) {
 
   const renderOverview = activeTab === "overview";
   const siteRiskData = useMemo(() => {
-    const fallback = [
-      { site: "Startup Check", risk: 92, level: "HIGH", reports: 12 },
-      { site: "Drilling Rig", risk: 88, level: "HIGH", reports: 10 },
-      { site: "Oil Well", risk: 81, level: "HIGH", reports: 9 },
-      { site: "Numaligarh Pipeline Sec 2", risk: 76, level: "MEDIUM", reports: 8 },
-      { site: "Guwahati Refinery", risk: 72, level: "MEDIUM", reports: 7 },
-    ];
-
-    const source = dashboard?.highest_risk_locations && dashboard.highest_risk_locations.length ? dashboard.highest_risk_locations : fallback;
-
-    return source.map((site, index) => {
-      const recentForSite = dashboard?.recent_high_sif_reports?.filter((x) => x.site === site.site).length || 0;
-      const psifProxy = Math.min(100, Math.round(site.risk * 0.72 + recentForSite * 9 + (index + 1) * 3));
-      const combined = Math.min(100, Math.round((site.risk + psifProxy) / 2));
-
+    return oilSites.map((site) => {
+      const live = dashboard?.highest_risk_locations?.find((item) => {
+        const liveName = item.site.toLowerCase();
+        const siteName = site.name.toLowerCase();
+        return siteName.includes(liveName) || liveName.includes(siteName);
+      });
+      const risk = live?.risk ?? site.risk;
       return {
-        ...site,
-        risk: combined,
-        level: combined >= 75 ? "HIGH" : combined >= 45 ? "MEDIUM" : "LOW",
+        site: site.name,
+        risk,
+        level: live?.level || siteRiskLevel(risk),
+        reports: live?.reports ?? site.reports,
       };
-    });
+    }).sort((left, right) => right.risk - left.risk).slice(0, 5);
   }, [dashboard]);
 
   return (
@@ -1542,7 +1428,6 @@ export default function CommandCenter({ setView, onIngest }) {
       style={{
         minHeight: "100vh",
         width: "100%",
-        background: "transparent",
         fontFamily: "'Inter', sans-serif",
         display: "flex",
         flexDirection: "column",
@@ -1568,28 +1453,22 @@ export default function CommandCenter({ setView, onIngest }) {
 
         <div key={activeTab} className="cc-workspace-page" role="tabpanel" aria-label={workspaceTitle}>
           {renderOverview && <>
-            <div className="cc-kpi-grid">{kpiData.map((item) => <KPICard key={item.label} {...item} />)}</div>
-            {loading && <p style={emptyTextStyle}>Loading live dashboard data...</p>}
-            {error && <p className="cc-error-message">{error}</p>}
             <IndiaLiveRiskMap dashboard={dashboard} onSiteAnalysis={(site) => { setFocusedSite(site); setActiveTab("sites"); }} />
-            <SiteRiskComparison data={siteRiskData} />
-            <HighSIFReports reports={highSIFReports} setView={setView} />
           </>}
           {activeTab === "analyze-report" && <CommandUpload setView={setView} onIngest={refreshDashboard} />}
-          {activeTab === "sites" && <SiteIntelligenceWorkspace dashboard={dashboard} selectedSite={focusedSite} patterns={patterns} />}
+          {activeTab === "sites" && <><SiteRiskComparison data={siteRiskData} /><SiteIntelligenceWorkspace dashboard={dashboard} selectedSite={focusedSite} patterns={patterns} /></>}
           {["historical", "precursors", "workforce", "hse-review"].includes(activeTab) && <IntelligenceLayers dashboard={dashboard} barriers={barriers} patterns={patterns} reports={highSIFReports} mode={activeTab} similarReports={similarReports} />}
           {activeTab === "models" && <ModelPerformance metrics={evaluationMetrics} />}
         </div>
 
-        <div className="cc-primary-actions">
+        {!renderOverview && <div className="cc-primary-actions">
           <button type="button" onClick={() => setActiveTab("analyze-report")}>Analyze report <ArrowRight size={15} /></button>
           <button type="button" onClick={() => setActiveTab("sites")}>Site intelligence <ArrowRight size={15} /></button>
           <button type="button" onClick={() => setActiveTab("hse-review")}>HSE review <ArrowRight size={15} /></button>
-        </div>
-        <AboutOilSentinel />
+        </div>}
       </main>
 
-      <CommandFooter />
+      {!renderOverview && <CommandFooter />}
     </div>
   );
 }

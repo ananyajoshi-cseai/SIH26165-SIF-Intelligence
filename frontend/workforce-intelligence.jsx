@@ -190,7 +190,7 @@ function WorkerDetail({ worker, onClose, onReport, onReview }) {
   );
 }
 
-function WorkerReportDialog({ worker, onClose, onSaved }) {
+function WorkerReportDialog({ worker, onClose, onSaved, embedded = false }) {
   const [inputMode, setInputMode] = useState("text");
   const [text, setText] = useState("");
   const [site, setSite] = useState(worker?.site || "Duliajan");
@@ -205,6 +205,10 @@ function WorkerReportDialog({ worker, onClose, onSaved }) {
   const hasSiteSignal = intent !== "WORKER CONDITION";
 
   useEffect(() => () => recognitionRef.current?.stop(), []);
+  useEffect(() => {
+    setSite(worker?.site || "Duliajan");
+    setError("");
+  }, [worker?.id]);
 
   const startSpeech = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -257,13 +261,20 @@ function WorkerReportDialog({ worker, onClose, onSaved }) {
     }
     if (signals.length) onSaved(signals);
     setBusy(false);
-    onClose();
+    if (embedded) {
+      setText("");
+      setPhoto(null);
+      setPhotoName("");
+      setInputMode("text");
+    } else {
+      onClose();
+    }
   };
 
   return (
-    <div className="wi-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !busy) onClose(); }}>
-      <section className="wi-report-dialog" role="dialog" aria-modal="true" aria-labelledby="wi-report-title">
-        <button className="wi-icon-button wi-modal-close" type="button" onClick={onClose} aria-label="Close report"><X size={18} /></button>
+    <div id={embedded ? "worker-intake" : undefined} className={embedded ? "wi-report-inline" : "wi-modal-backdrop"} role={embedded ? undefined : "presentation"} onMouseDown={embedded ? undefined : (event) => { if (event.target === event.currentTarget && !busy) onClose(); }}>
+      <section className={`wi-report-dialog ${embedded ? "wi-report-composer" : ""}`} role={embedded ? undefined : "dialog"} aria-modal={embedded ? undefined : "true"} aria-labelledby="wi-report-title">
+        {!embedded && <button className="wi-icon-button wi-modal-close" type="button" onClick={onClose} aria-label="Close report"><X size={18} /></button>}
         <div className="wi-kicker">FRONTLINE SIGNAL INTAKE</div>
         <h2 id="wi-report-title">Report something</h2>
         <p className="wi-report-lede">Worker condition and site hazard reports are routed separately. A mixed report can create both signals.</p>
@@ -297,24 +308,17 @@ function WorkerReportDialog({ worker, onClose, onSaved }) {
 }
 
 export default function WorkforceIntelligence({ onBack }) {
-  const [workers, setWorkers] = useState(readSavedWorkers);
+  const [workers, setWorkers] = useState(() => {
+    const savedWorkers = readSavedWorkers();
+    return savedWorkers.length ? savedWorkers : SAMPLE_WORKERS;
+  });
   const [inputs, setInputs] = useState(readSavedInputs);
+  const [activeWorkerId, setActiveWorkerId] = useState(() => readSavedWorkers()[0]?.id || SAMPLE_WORKERS[0].id);
   const [selectedWorkerId, setSelectedWorkerId] = useState(null);
-  const [reportingWorkerId, setReportingWorkerId] = useState(null);
-  const [search, setSearch] = useState("");
-  const [siteFilter, setSiteFilter] = useState("All sites");
   const [notice, setNotice] = useState("");
   const selectedWorker = workers.find((worker) => worker.id === selectedWorkerId);
-  const reportingWorker = workers.find((worker) => worker.id === reportingWorkerId);
-  const sites = ["All sites", ...new Set(workers.map((worker) => worker.site))];
-  const filteredWorkers = workers.filter((worker) => {
-    const matchesSearch = `${worker.id} ${worker.site} ${worker.role}`.toLowerCase().includes(search.toLowerCase());
-    return matchesSearch && (siteFilter === "All sites" || worker.site === siteFilter);
-  });
-  const veryHighCount = workers.filter((worker) => worker.fatigueLevel === "VERY HIGH").length;
-  const highCount = workers.filter((worker) => worker.fatigueLevel === "HIGH").length;
-  const consecutiveCount = workers.filter((worker) => worker.consecutiveShifts >= 6).length;
-  const pendingInputs = inputs.filter((input) => input.status.includes("PENDING") || input.status.includes("ANALYSIS PENDING")).length;
+  const activeWorker = workers.find((worker) => worker.id === activeWorkerId) || workers[0];
+  const workerInputs = inputs.filter((input) => input.workerId === activeWorker?.id);
 
   useEffect(() => {
     try {
@@ -343,11 +347,13 @@ export default function WorkforceIntelligence({ onBack }) {
     setInputs((previous) => [...savedSignals, ...previous]);
 
     const fatigueSignal = savedSignals.find((signal) => signal.type === "WORKER CONDITION");
-    if (fatigueSignal?.workerId !== "ANONYMOUS") {
+    if (fatigueSignal && fatigueSignal.workerId !== "ANONYMOUS") {
+      setActiveWorkerId(fatigueSignal.workerId);
       setWorkers((previous) => previous.map((worker) => worker.id === fatigueSignal.workerId ? {
         ...worker,
         fatigueLevel: fatigueSignal.fatigueLevel,
         fatigueSignal: `Self-reported signal: ${fatigueSignal.fatigueLevel.toLowerCase()}`,
+        factors: [...new Set([...worker.factors, `Self-reported fatigue: ${fatigueSignal.fatigueLevel.toLowerCase()}`])],
         review: "Pending",
         reviewedBy: "Unassigned",
       } : worker));
@@ -360,56 +366,44 @@ export default function WorkforceIntelligence({ onBack }) {
     <main className="wi-root">
       <header className="wi-header">
         <div className="wi-brand"><div className="wi-brand-mark"><ShieldAlert size={19} /></div><div><div className="wi-kicker">OIL SENTINEL · FRONTLINE SAFETY</div><h1>Workforce Intelligence</h1></div></div>
-        <div className="wi-header-right"><span className="wi-authority"><span /> AUTHORIZED HSE VIEW</span><button className="wi-back-button" type="button" onClick={onBack}><ArrowLeft size={15} /> Command Center</button></div>
+        <div className="wi-header-right">
+          <label className="wi-worker-switcher"><span>WORKER PROFILE</span><select value={activeWorker.id} onChange={(event) => setActiveWorkerId(event.target.value)}>{workers.map((worker) => <option key={worker.id} value={worker.id}>{worker.id} · {worker.site}</option>)}</select></label>
+          <span className="wi-authority"><span /> AUTHORIZED HSE VIEW</span>
+          <button className="wi-back-button" type="button" onClick={onBack}><ArrowLeft size={15} /> Command Center</button>
+        </div>
       </header>
 
       <div className="wi-content">
-        <div className="wi-page-heading"><div><p className="wi-kicker">WORKFORCE RISK · FATIGUE · FIELD SIGNALS</p><h2>How are our people doing?</h2><p>Aggregate fatigue trends, individual HSE follow-up, and frontline safety reports.</p></div><button className="wi-primary-button" type="button" onClick={() => setReportingWorkerId(selectedWorker?.id || workers[0]?.id || null)}><AlertTriangle size={16} /> Report something</button></div>
-
-        <div className="wi-demo-banner"><span>DEMONSTRATION DATA</span><p>Worker profiles and roster indicators are sample records. No calibrated fatigue model or production workforce feed is connected.</p><b>Fatigue score: not calibrated</b></div>
-
         {notice && <div className="wi-notice" role="status"><Check size={15} /> {notice}</div>}
+        <WorkerReportDialog worker={activeWorker} embedded onSaved={saveSignals} onClose={() => {}} />
 
-        <section className="wi-summary-grid" aria-label="Workforce summary">
-          <article className="wi-summary-card wi-summary-card--total"><div><UsersRound size={17} /><span>Total workers</span></div><strong>1,284</strong><small>Aggregate demo roster</small></article>
-          <article className="wi-summary-card wi-summary-card--very-high"><div><AlertTriangle size={17} /><span>Very high fatigue</span></div><strong>{veryHighCount}</strong><small>Requires prompt HSE review</small></article>
-          <article className="wi-summary-card wi-summary-card--high"><div><Activity size={17} /><span>High fatigue</span></div><strong>{highCount}</strong><small>Sample profiles in this view</small></article>
-          <article className="wi-summary-card wi-summary-card--shifts"><div><Clock3 size={17} /><span>Extended consecutive shifts</span></div><strong>{consecutiveCount}</strong><small>6+ consecutive shifts · sample view</small></article>
-          <article className="wi-summary-card wi-summary-card--pending"><div><ShieldAlert size={17} /><span>Signals awaiting review</span></div><strong>{pendingInputs}</strong><small>Worker and site signal queue</small></article>
+        <section className="wi-individual-profile" aria-label={`Worker profile ${activeWorker.id}`}>
+          <div className="wi-individual-heading">
+            <div><p className="wi-kicker">WORKER PROFILE · {activeWorker.id}</p><h2>{activeWorker.role}</h2><p>{activeWorker.site} · {activeWorker.camp}</p></div>
+            <div className="wi-fatigue-summary"><span className={`wi-level wi-level--${levelTone(activeWorker.fatigueLevel)}`}>{activeWorker.fatigueLevel} FATIGUE</span><strong>Score not calibrated</strong><small>Multi-factor signals are shown; no arbitrary numeric score is assigned.</small></div>
+          </div>
+          <div className="wi-profile-facts">
+            <div><span>NO. OF SHIFTS</span><strong>{activeWorker.shifts}</strong></div>
+            <div><span>HOURS WORKED</span><strong>{activeWorker.hours} h</strong></div>
+            <div><span>CONSECUTIVE SHIFTS</span><strong>{activeWorker.consecutiveShifts}</strong></div>
+            <div><span>NIGHT SHIFTS</span><strong>{activeWorker.nightShifts}</strong></div>
+            <div><span>OVERTIME</span><strong>{activeWorker.overtime} h</strong></div>
+            <div><span>REST BETWEEN SHIFTS</span><strong>{activeWorker.restHours} h avg</strong></div>
+            <div><span>RECENT LEAVE / REST</span><strong>{activeWorker.lastRest}</strong></div>
+            <div><span>TRAINING / CERTIFICATION</span><strong>{activeWorker.training}</strong></div>
+            <div><span>ACCIDENTS / NEAR MISSES</span><strong>{activeWorker.accidents} / {activeWorker.nearMisses}</strong></div>
+            <div><span>SAFETY OBSERVATIONS</span><strong>{activeWorker.observations}</strong></div>
+          </div>
+          <div className="wi-profile-lower">
+            <section className="wi-profile-panel"><h3>Fatigue contributing signals</h3><div className="wi-factor-list">{activeWorker.factors.map((factor) => <div key={factor}><span className="wi-factor-dot" />{factor}</div>)}</div><p className="wi-disclaimer">Self-reported fatigue is a safety signal, not a medical diagnosis. Fatigue scoring requires validation and calibration before a numeric score is shown.</p></section>
+            <section className="wi-profile-panel wi-hse-action"><p className="wi-kicker">HSE ACTION · LAST REVIEW {activeWorker.reviewedBy === "Unassigned" ? "NOT RECORDED" : `BY ${activeWorker.reviewedBy}`}</p><h3>{activeWorker.review === "Pending" ? "Review required" : "Currently monitored"}</h3><p>{activeWorker.review === "Pending" ? "Confirm the worker-reported signal, roster, rest interval, and task assignment." : "Review the roster and worker inputs again if the fatigue signal changes."}</p><div className="wi-hse-actions"><button className="wi-primary-button" type="button" onClick={() => setWorkers((previous) => previous.map((worker) => worker.id === activeWorker.id ? { ...worker, review: worker.review === "Pending" ? "Reviewed" : "Pending", reviewedBy: worker.review === "Pending" ? "HSE-OFFICER" : "Unassigned" } : worker))}>{activeWorker.review === "Pending" ? "Mark HSE review complete" : "Reopen HSE review"}</button><button className="wi-secondary-button" type="button" onClick={() => setSelectedWorkerId(activeWorker.id)}>Full worker record</button></div></section>
+          </div>
+          <section className="wi-worker-recent"><div className="wi-section-heading"><div><p className="wi-kicker">THIS WORKER</p><h2>Recent inputs</h2></div><span>{workerInputs.length} signals</span></div>{workerInputs.length ? workerInputs.slice(0, 5).map((input) => <article className="wi-worker-signal" key={input.id}><div><strong>{input.type}</strong><small>{input.created} · {input.site}</small></div><p>{input.description || input.text}</p><span className={`wi-feed-status ${input.status.includes("PENDING") ? "pending" : "complete"}`}>{input.status}</span>{input.analysis?.risk_score != null && <small>Site assessment: {input.analysis.risk_level} · {input.analysis.risk_score}/100</small>}</article>) : <p className="wi-empty-priority">No reports from this worker yet.</p>}</section>
         </section>
-
-        <section className="wi-correlation-strip">
-          <div className="wi-correlation-label"><span className="wi-kicker">SITE CORRELATION</span><strong>Fatigue concentration ↔ safety precursors</strong></div>
-          {[
-            { site: "Duliajan", fatigue: "HIGH", precursors: 5 },
-            { site: "Moran", fatigue: "MEDIUM", precursors: 2 },
-            { site: "Naharkatiya", fatigue: "LOW", precursors: 1 },
-          ].map((row) => <div className="wi-correlation-site" key={row.site}><strong>{row.site}</strong><span className={`wi-level wi-level--${levelTone(row.fatigue)}`}>{row.fatigue} fatigue</span><span>{row.precursors} precursor signals</span></div>)}
-          <small>Illustrative association only · not causal or live workforce data</small>
-        </section>
-
-        <section className="wi-register-section">
-          <div className="wi-section-heading"><div><span className="wi-kicker">AUTHORIZED PERSONNEL</span><h2>Worker risk register</h2><p>Identity is limited to worker ID; no personal names are displayed.</p></div><button className="wi-secondary-button" type="button" onClick={() => setReportingWorkerId(workers[0]?.id || null)}><Mic size={15} /> Speak / report</button></div>
-          <div className="wi-table-controls"><label className="wi-search"><Search size={15} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Find worker, site, role" /></label><label className="wi-select-label">SITE<select value={siteFilter} onChange={(event) => setSiteFilter(event.target.value)}>{sites.map((site) => <option key={site}>{site}</option>)}</select></label><span className="wi-result-count">{filteredWorkers.length} sample profiles</span></div>
-
-          <div className="wi-table-scroll"><table className="wi-worker-table"><thead><tr><th>Worker ID</th><th>Site / camp</th><th>Role</th><th>Shifts</th><th>Hours</th><th>Night</th><th>Near misses</th><th>Fatigue</th><th>HSE status</th><th /></tr></thead><tbody>
-            {filteredWorkers.map((worker) => <tr key={worker.id} onClick={() => setSelectedWorkerId(worker.id)} tabIndex={0} onKeyDown={(event) => { if (event.key === "Enter") setSelectedWorkerId(worker.id); }}>
-              <td><strong>{worker.id}</strong></td><td><span>{worker.site}</span><small>{worker.camp}</small></td><td>{worker.role}</td><td>{worker.shifts}</td><td>{worker.hours} h</td><td>{worker.nightShifts}</td><td>{worker.nearMisses}</td><td><span className={`wi-level wi-level--${levelTone(worker.fatigueLevel)}`}>{worker.fatigueLevel}</span><small className="wi-score-unavailable">Score uncalibrated</small></td><td><span className={`wi-review-status ${worker.review === "Pending" ? "pending" : "reviewed"}`}>{worker.review}</span></td><td><button className="wi-row-action" type="button" onClick={(event) => { event.stopPropagation(); setSelectedWorkerId(worker.id); }} aria-label={`Open ${worker.id} profile`}><ChevronRight size={17} /></button></td>
-            </tr>)}
-            {!filteredWorkers.length && <tr><td className="wi-empty-cell" colSpan={10}>No workers match those filters.</td></tr>}
-          </tbody></table></div>
-        </section>
-
-        <section className="wi-input-feed">
-          <div className="wi-section-heading"><div><span className="wi-kicker">ONE INPUT · TWO INTELLIGENCE PATHS</span><h2>Worker voice &amp; text signals</h2><p>Worker condition reports update fatigue signals. Equipment reports are sent to site-risk analysis.</p></div><span className="wi-queue-count">{inputs.length} recent inputs</span></div>
-          <div className="wi-feed-list">{inputs.slice(0, 6).map((input) => <article className="wi-feed-item" key={input.id}><div className={`wi-feed-icon ${input.type.includes("SITE") ? "site" : "worker"}`}>{input.type.includes("SITE") ? <AlertTriangle size={16} /> : <UsersRound size={16} />}</div><div className="wi-feed-copy"><div><strong>{input.type}</strong><span>{input.created}</span></div><p>{input.description || input.text}</p><small>{input.workerId} · {input.site}{input.fatigueLevel ? ` · Fatigue signal: ${input.fatigueLevel}` : ""}</small>{input.analysis?.risk_score != null && <small>Site analysis: {input.analysis.risk_level} · {input.analysis.risk_score}/100 · HSE review required</small>}{input.error && <small className="wi-alert-error">Analysis pending: {input.error}</small>}</div><span className={`wi-feed-status ${input.status.includes("PENDING") ? "pending" : "complete"}`}>{input.status}</span></article>)}</div>
-        </section>
-
-        <footer className="wi-footer-note"><ShieldAlert size={14} /> Self-reported fatigue is treated as a safety signal, not a medical diagnosis. HSE review remains the decision authority.</footer>
+        <p className="wi-demo-note">Demonstration profile · roster and fatigue categories are sample records. The fatigue model is not calibrated.</p>
       </div>
 
-      {selectedWorker && <WorkerDetail worker={selectedWorker} onClose={() => setSelectedWorkerId(null)} onReport={(workerId) => { setSelectedWorkerId(null); setReportingWorkerId(workerId); }} onReview={(workerId) => setWorkers((previous) => previous.map((worker) => worker.id === workerId ? { ...worker, review: "Reviewed", reviewedBy: "HSE-OFFICER" } : worker))} />}
-      {reportingWorkerId !== null && <WorkerReportDialog worker={reportingWorker} onClose={() => setReportingWorkerId(null)} onSaved={saveSignals} />}
+      {selectedWorker && <WorkerDetail worker={selectedWorker} onClose={() => setSelectedWorkerId(null)} onReport={(workerId) => { setSelectedWorkerId(null); setActiveWorkerId(workerId); document.getElementById("worker-intake")?.scrollIntoView({ behavior: "smooth" }); }} onReview={(workerId) => setWorkers((previous) => previous.map((worker) => worker.id === workerId ? { ...worker, review: "Reviewed", reviewedBy: "HSE-OFFICER" } : worker))} />}
     </main>
   );
 }

@@ -9,7 +9,9 @@
     "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {
+    "@svg-maps/india": "^2.0.0",
     "install": "^0.13.0",
+    "leaflet": "^1.9.4",
     "lucide-react": "^0.468.0",
     "pdfjs-dist": "^6.3.289",
     "react": "^18.3.1",
@@ -18,7 +20,7 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.3.4",
+    "@vitejs/plugin-react": "^6.1.1",
     "vite": "^8.3.1"
   }
 }

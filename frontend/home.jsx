@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ArrowDownRight, ArrowRight, ChevronRight, Play, UsersRound } from "lucide-react";
+import { ArrowDownRight, ArrowRight, ChevronLeft, ChevronRight, MapPinned, Play, ShieldCheck, UsersRound } from "lucide-react";
 import FlipCard from "./FlipCard.jsx";
 import "./home.css";
 import featureImage1 from "./img&vid/img1.png";
@@ -43,27 +43,49 @@ export default function Home({ onStart, onWorkforce }) {
 
   return (
     <main className="home-shell">
-      <section className="home-hero">
+      <section className="home-hero" id="top">
         <video className="home-hero-media" autoPlay muted loop playsInline preload="metadata" aria-label="Oil Sentinel title animation">
           <source src={heroVideo} type="video/mp4" />
         </video>
         <div className="home-hero-grid" />
-        <div className="home-content">
-          <div className="home-kicker">OIL INDIA LIMITED · SAFETY INTELLIGENCE SYSTEM</div>
-          <h1 className="home-title">OIL <span>SENTINEL</span></h1>
-          <p className="home-lede">AI-powered SIF precursor and safety intelligence. From safety observations to proactive intelligence.</p>
-          <div className="home-actions">
-            <button className="primary-action" onClick={onStart}><Play size={15} fill="currentColor" /> Start Sentinel <ArrowRight size={15} /></button>
-            <button className="workforce-action" onClick={onWorkforce}><UsersRound size={16} /> Workforce Intelligence <ArrowRight size={15} /></button>
-            <a className="ghost-action" href="#intelligence"><ArrowDownRight size={15} /> Explore intelligence</a>
+        <header className="sentinel-home-nav">
+          <a className="sentinel-home-brand" href="#top" aria-label="Oil Sentinel home">
+            <span className="sentinel-home-monogram">OS</span>
+            <span><strong>OIL SENTINEL</strong><small>SAFETY INTELLIGENCE</small></span>
+          </a>
+          <nav className="sentinel-home-links" aria-label="Main navigation">
+            <a href="#intelligence">Capabilities</a>
+            <a href="#evolution">Our approach</a>
+          </nav>
+          <button className="sentinel-home-enter" type="button" onClick={onStart}><MapPinned size={16} /> Command center <ArrowRight size={15} /></button>
+        </header>
+
+        <div className="home-hero-layout">
+          <div className="home-content">
+            <div className="home-kicker">OIL INDIA LIMITED · SAFETY INTELLIGENCE SYSTEM</div>
+            <h1 className="home-title">OIL <span>SENTINEL</span></h1>
+            <p className="home-lede">See the signals behind serious risk. Connect field observations to the controls that prevent harm.</p>
+            <div className="home-actions">
+              <button className="primary-action" onClick={onStart}><Play size={15} fill="currentColor" /> Enter operations <ArrowRight size={15} /></button>
+              <button className="workforce-action" onClick={onWorkforce}><UsersRound size={16} /> Workforce intelligence <ArrowRight size={15} /></button>
+              <a className="ghost-action" href="#intelligence"><ArrowDownRight size={15} /> Explore capabilities</a>
+            </div>
+            <div className="home-scroll">Scroll to explore</div>
           </div>
-          <div className="home-scroll">Scroll to enter the system</div>
+
+          <div className="home-hero-visual" aria-label="Field safety intelligence">
+            <div className="home-visual-index"><span>FIELD SIGNALS</span><b>01 — 04</b></div>
+            <figure className="home-photo home-photo--left"><img src={featureImage1} alt="Industrial field operations" /></figure>
+            <figure className="home-photo home-photo--right"><img src={featureImage3} alt="Oil and gas safety operations" /></figure>
+            <figure className="home-photo home-photo--main"><img src={featureImage2} alt="Frontline industrial worksite" /><figcaption><span>OIL INDIA · OPERATIONS</span><strong>Signals before incidents.</strong></figcaption></figure>
+            <div className="home-visual-readout"><span><i /> LIVE INTELLIGENCE</span><strong><ShieldCheck size={16} /> Human-led decisions</strong></div>
+          </div>
         </div>
       </section>
 
       <section className="home-section" id="intelligence">
         <div className="home-section-head">
-          <div><div className="eyebrow">01 · Intelligence architecture</div><h2>From observation to intervention.</h2></div>
+          <div><div className="eyebrow">02 · Intelligence architecture</div><h2>From observation to intervention.</h2></div>
           <p className="home-section-intro">OIL SENTINEL keeps HSE personnel in control while connecting the signals that are usually separated across reports, sites, and time.</p>
         </div>
         <div className="feature-stage">
@@ -82,19 +104,18 @@ export default function Home({ onStart, onWorkforce }) {
         </div>
       </section>
 
-      <section className="home-section timeline-section">
+      <section className="home-section timeline-section" id="evolution">
         <div className="timeline-showcase">
           <div className="timeline-rail-left">
-            <div className="eyebrow">02 · The evolution</div>
+            <div className="eyebrow">03 · The evolution</div>
             <h2 className="timeline-headline">The <br />Journey<br /> so far</h2>
             <div className="timeline-brief">
               
               <p>Oil Safety Journey from 2015 to now</p>
             </div>
             <div className="timeline-controls" aria-label="Timeline controls">
-              <button type="button" aria-label="Previous milestone">↑</button>
-              <button type="button" aria-label="List view">II</button>
-              <button type="button" aria-label="Next milestone">↓</button>
+              <button type="button" aria-label="Previous milestone" onClick={() => setActiveTimeline((activeTimeline + TIMELINE.length - 1) % TIMELINE.length)}><ChevronLeft size={18} /></button>
+              <button type="button" aria-label="Next milestone" onClick={() => setActiveTimeline((activeTimeline + 1) % TIMELINE.length)}><ChevronRight size={18} /></button>
             </div>
           </div>
 
