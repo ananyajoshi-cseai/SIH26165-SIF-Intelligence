@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import indiaMap from "@svg-maps/india";
+import mapboxgl from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
 import {
   AlertTriangle,
   FileText,
@@ -7,8 +8,6 @@ import {
   TrendingUp,
   ShieldCheck,
   MapPinned,
-  Minus,
-  Plus,
   RadioTower,
   Gauge,
   ArrowRight,
@@ -923,71 +922,139 @@ function ModelPerformance({ metrics }) {
 }
 
 const oilSites = [
-  { name: "Numaligarh Refinery Limited (NRL)", category: "Refinery & petrochemical", mapX: 520, mapY: 281, risk: 88, sif: 8, psifHigh: 5, fatigue: "HIGH", workers: { veryHigh: 12, high: 24, medium: 38, low: 61 }, lastReviewed: "18 Sep 2026", hazard: "Energy isolation", activity: "Maintenance and hot work", barrier: "Permit verification", reports: 12 },
-  { name: "Brahmaputra Cracker and Polymer Limited (BCPL)", category: "Refinery & petrochemical", mapX: 545, mapY: 251, risk: 77, sif: 6, psifHigh: 4, fatigue: "MEDIUM", workers: { veryHigh: 7, high: 19, medium: 42, low: 75 }, lastReviewed: "12 Sep 2026", hazard: "Gas release", activity: "Process operations", barrier: "Gas detection", reports: 8 },
-  { name: "Duliajan Liquid Petroleum Gas (LPG) Plant", category: "Refinery & petrochemical", mapX: 535, mapY: 256, risk: 72, sif: 5, psifHigh: 3, fatigue: "HIGH", workers: { veryHigh: 9, high: 21, medium: 31, low: 48 }, lastReviewed: "09 Sep 2026", hazard: "Fire and explosion", activity: "LPG transfer", barrier: "Ignition control", reports: 7 },
-  { name: "Naharkatiya Oilfield", category: "Onshore field & production hub", mapX: 530, mapY: 266, risk: 66, sif: 4, psifHigh: 2, fatigue: "MEDIUM", workers: { veryHigh: 5, high: 14, medium: 28, low: 63 }, lastReviewed: "21 Aug 2026", hazard: "Line of fire", activity: "Well servicing", barrier: "Exclusion zone", reports: 6 },
-  { name: "Moran Field", category: "Onshore field & production hub", mapX: 520, mapY: 276, risk: 61, sif: 3, psifHigh: 1, fatigue: "LOW", workers: { veryHigh: 3, high: 9, medium: 24, low: 72 }, lastReviewed: "04 Sep 2026", hazard: "Dropped objects", activity: "Drilling operations", barrier: "Lifting plan", reports: 5 },
-  { name: "Jorajan Oilfield", category: "Onshore field & production hub", mapX: 535, mapY: 261, risk: 55, sif: 2, psifHigh: 1, fatigue: "MEDIUM", workers: { veryHigh: 4, high: 11, medium: 26, low: 54 }, lastReviewed: "26 Aug 2026", hazard: "Vehicle movement", activity: "Field logistics", barrier: "Journey management", reports: 4 },
-  { name: "Kumchai Field", category: "Onshore field & production hub", mapX: 545, mapY: 246, risk: 48, sif: 2, psifHigh: 0, fatigue: "LOW", workers: { veryHigh: 2, high: 6, medium: 18, low: 49 }, lastReviewed: "30 Aug 2026", hazard: "Pressure release", activity: "Well intervention", barrier: "Isolation verification", reports: 3 },
-  { name: "Bhaghewala Field", category: "Onshore field & production hub", mapX: 91, mapY: 260, risk: 45, sif: 1, psifHigh: 0, fatigue: "MEDIUM", workers: { veryHigh: 3, high: 7, medium: 17, low: 38 }, lastReviewed: "15 Aug 2026", hazard: "Manual handling", activity: "Field operations", barrier: "Task risk assessment", reports: 3 },
-  { name: "Dandewala Field", category: "Onshore field & production hub", mapX: 116, mapY: 286, risk: 39, sif: 1, psifHigh: 0, fatigue: "LOW", workers: { veryHigh: 1, high: 4, medium: 12, low: 43 }, lastReviewed: "02 Sep 2026", hazard: "Vehicle movement", activity: "Site transport", barrier: "Journey management", reports: 2 },
-  { name: "Madhuban Central Tank Farm (CTF)", category: "Processing & collection station", mapX: 525, mapY: 271, risk: 71, sif: 4, psifHigh: 2, fatigue: "HIGH", workers: { veryHigh: 8, high: 17, medium: 29, low: 52 }, lastReviewed: "19 Sep 2026", hazard: "Tank overfill", activity: "Tank farm operations", barrier: "Level alarm response", reports: 6 },
-  { name: "Tengakhat Oil Collecting Station (OCS)", category: "Processing & collection station", mapX: 515, mapY: 286, risk: 51, sif: 2, psifHigh: 0, fatigue: "MEDIUM", workers: { veryHigh: 2, high: 8, medium: 20, low: 44 }, lastReviewed: "11 Aug 2026", hazard: "Electrical contact", activity: "Equipment maintenance", barrier: "LOTO", reports: 4 },
-  { name: "Barekhuri Gas Compressor Station (GCS)", category: "Processing & collection station", mapX: 510, mapY: 296, risk: 42, sif: 1, psifHigh: 0, fatigue: "LOW", workers: { veryHigh: 1, high: 5, medium: 16, low: 41 }, lastReviewed: "25 Aug 2026", hazard: "Fall from height", activity: "Inspection", barrier: "Work-at-height control", reports: 2 },
-  { name: "Shalmari Early Production System (EPS)", category: "Processing & collection station", mapX: 505, mapY: 306, risk: 33, sif: 1, psifHigh: 0, fatigue: "LOW", workers: { veryHigh: 0, high: 3, medium: 13, low: 37 }, lastReviewed: "05 Sep 2026", hazard: "Pressure release", activity: "Well operations", barrier: "Pressure testing", reports: 1 },
+  { name: "Numaligarh Refinery Limited (NRL)", coordinates: [93.72, 26.65], category: "Refinery & petrochemical", mapX: 520, mapY: 281, risk: 88, sif: 8, psifHigh: 5, fatigue: "HIGH", workers: { veryHigh: 12, high: 24, medium: 38, low: 61 }, lastReviewed: "18 Sep 2026", hazard: "Energy isolation", activity: "Maintenance and hot work", barrier: "Permit verification", reports: 12 },
+  { name: "Brahmaputra Cracker and Polymer Limited (BCPL)", coordinates: [94.95, 27.40], category: "Refinery & petrochemical", mapX: 545, mapY: 251, risk: 77, sif: 6, psifHigh: 4, fatigue: "MEDIUM", workers: { veryHigh: 7, high: 19, medium: 42, low: 75 }, lastReviewed: "12 Sep 2026", hazard: "Gas release", activity: "Process operations", barrier: "Gas detection", reports: 8 },
+  { name: "Duliajan Liquid Petroleum Gas (LPG) Plant", coordinates: [95.32, 27.35], category: "Refinery & petrochemical", mapX: 535, mapY: 256, risk: 72, sif: 5, psifHigh: 3, fatigue: "HIGH", workers: { veryHigh: 9, high: 21, medium: 31, low: 48 }, lastReviewed: "09 Sep 2026", hazard: "Fire and explosion", activity: "LPG transfer", barrier: "Ignition control", reports: 7 },
+  { name: "Naharkatiya Oilfield", coordinates: [95.33, 27.28], category: "Onshore field & production hub", mapX: 530, mapY: 266, risk: 66, sif: 4, psifHigh: 2, fatigue: "MEDIUM", workers: { veryHigh: 5, high: 14, medium: 28, low: 63 }, lastReviewed: "21 Aug 2026", hazard: "Line of fire", activity: "Well servicing", barrier: "Exclusion zone", reports: 6 },
+  { name: "Moran Field", coordinates: [94.93, 27.18], category: "Onshore field & production hub", mapX: 520, mapY: 276, risk: 61, sif: 3, psifHigh: 1, fatigue: "LOW", workers: { veryHigh: 3, high: 9, medium: 24, low: 72 }, lastReviewed: "04 Sep 2026", hazard: "Dropped objects", activity: "Drilling operations", barrier: "Lifting plan", reports: 5 },
+  { name: "Jorajan Oilfield", coordinates: [95.02, 27.04], category: "Onshore field & production hub", mapX: 535, mapY: 261, risk: 55, sif: 2, psifHigh: 1, fatigue: "MEDIUM", workers: { veryHigh: 4, high: 11, medium: 26, low: 54 }, lastReviewed: "26 Aug 2026", hazard: "Vehicle movement", activity: "Field logistics", barrier: "Journey management", reports: 4 },
+  { name: "Kumchai Field", coordinates: [95.35, 27.42], category: "Onshore field & production hub", mapX: 545, mapY: 246, risk: 48, sif: 2, psifHigh: 0, fatigue: "LOW", workers: { veryHigh: 2, high: 6, medium: 18, low: 49 }, lastReviewed: "30 Aug 2026", hazard: "Pressure release", activity: "Well intervention", barrier: "Isolation verification", reports: 3 },
+  { name: "Bhaghewala Field", coordinates: [70.72, 27.00], category: "Onshore field & production hub", mapX: 91, mapY: 260, risk: 45, sif: 1, psifHigh: 0, fatigue: "MEDIUM", workers: { veryHigh: 3, high: 7, medium: 17, low: 38 }, lastReviewed: "15 Aug 2026", hazard: "Manual handling", activity: "Field operations", barrier: "Task risk assessment", reports: 3 },
+  { name: "Dandewala Field", coordinates: [70.48, 27.20], category: "Onshore field & production hub", mapX: 116, mapY: 286, risk: 39, sif: 1, psifHigh: 0, fatigue: "LOW", workers: { veryHigh: 1, high: 4, medium: 12, low: 43 }, lastReviewed: "02 Sep 2026", hazard: "Vehicle movement", activity: "Site transport", barrier: "Journey management", reports: 2 },
+  { name: "Madhuban Central Tank Farm (CTF)", coordinates: [95.30, 27.30], category: "Processing & collection station", mapX: 525, mapY: 271, risk: 71, sif: 4, psifHigh: 2, fatigue: "HIGH", workers: { veryHigh: 8, high: 17, medium: 29, low: 52 }, lastReviewed: "19 Sep 2026", hazard: "Tank overfill", activity: "Tank farm operations", barrier: "Level alarm response", reports: 6 },
+  { name: "Tengakhat Oil Collecting Station (OCS)", coordinates: [95.28, 27.40], category: "Processing & collection station", mapX: 515, mapY: 286, risk: 51, sif: 2, psifHigh: 0, fatigue: "MEDIUM", workers: { veryHigh: 2, high: 8, medium: 20, low: 44 }, lastReviewed: "11 Aug 2026", hazard: "Electrical contact", activity: "Equipment maintenance", barrier: "LOTO", reports: 4 },
+  { name: "Barekhuri Gas Compressor Station (GCS)", coordinates: [95.12, 27.35], category: "Processing & collection station", mapX: 510, mapY: 296, risk: 42, sif: 1, psifHigh: 0, fatigue: "LOW", workers: { veryHigh: 1, high: 5, medium: 16, low: 41 }, lastReviewed: "25 Aug 2026", hazard: "Fall from height", activity: "Inspection", barrier: "Work-at-height control", reports: 2 },
+  { name: "Shalmari Early Production System (EPS)", coordinates: [95.30, 27.25], category: "Processing & collection station", mapX: 505, mapY: 306, risk: 33, sif: 1, psifHigh: 0, fatigue: "LOW", workers: { veryHigh: 0, high: 3, medium: 13, low: 37 }, lastReviewed: "05 Sep 2026", hazard: "Pressure release", activity: "Well operations", barrier: "Pressure testing", reports: 1 },
 ];
 
 const siteRiskLevel = (score) => score >= 70 ? "HIGH" : score >= 45 ? "MEDIUM" : "LOW";
 const riskMarkerColor = (level) => level === "HIGH" ? "#F24B45" : level === "MEDIUM" ? "#F4C95D" : "#2FCF88";
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || "pk.eyJ1Ijoic2hyZXlhYTA4MDciLCJhIjoiY211bXhjcGR3MDFqeDJ5czh5cGpmYTE3YyJ9.8VS06ZvvreFKLnmONcX8lA";
+
+function siteCoordinates(site) {
+  return site.coordinates;
+}
+
+function MapboxOperationsMap({ sites, selectedSite, onSelectSite }) {
+  const mapContainerRef = useRef(null);
+  const mapRef = useRef(null);
+  const workerMarkersRef = useRef([]);
+  const is3dRef = useRef(false);
+  const sitesRef = useRef(sites);
+  const selectedSiteRef = useRef(selectedSite);
+  const onSelectSiteRef = useRef(onSelectSite);
+  const [is3d, setIs3d] = useState(false);
+  const [mapError, setMapError] = useState("");
+
+  useEffect(() => {
+    sitesRef.current = sites;
+    selectedSiteRef.current = selectedSite;
+    onSelectSiteRef.current = onSelectSite;
+  }, [onSelectSite, selectedSite, sites]);
+
+  useEffect(() => {
+    if (!mapContainerRef.current || !MAPBOX_TOKEN) return undefined;
+    mapboxgl.accessToken = MAPBOX_TOKEN;
+    const map = new mapboxgl.Map({
+      container: mapContainerRef.current,
+      style: "mapbox://styles/mapbox/navigation-night-v1",
+      center: [82, 24],
+      zoom: 4.25,
+      minZoom: 3.4,
+      maxZoom: 16,
+      attributionControl: true,
+    });
+    mapRef.current = map;
+    map.addControl(new mapboxgl.NavigationControl({ showCompass: true }), "top-right");
+    map.on("error", (event) => {
+      const message = event.error?.message || "Mapbox could not load the map tiles.";
+      if (!message.toLowerCase().includes("styleimagemissing")) setMapError(message);
+    });
+
+    map.on("load", () => {
+      map.setLight({ anchor: "viewport", color: "#b9dcff", intensity: 0.38, position: [1.5, 180, 80] });
+      const firstSymbolLayer = map.getStyle().layers.find((layer) => layer.type === "symbol")?.id;
+      map.addLayer({ id: "night-3d-buildings", source: "composite", "source-layer": "building", filter: ["==", "extrude", "true"], type: "fill-extrusion", minzoom: 10.5, paint: { "fill-extrusion-color": "#173b4a", "fill-extrusion-height": ["interpolate", ["linear"], ["zoom"], 10.5, 0, 16, ["get", "height"]], "fill-extrusion-base": ["get", "min_height"], "fill-extrusion-opacity": 0.84, "fill-extrusion-vertical-gradient": true } }, firstSymbolLayer);
+      const update3dMode = () => {
+        const nextIs3d = map.getZoom() >= 10.5;
+        if (nextIs3d === is3dRef.current) return;
+        is3dRef.current = nextIs3d;
+        setIs3d(nextIs3d);
+        map.easeTo({ pitch: nextIs3d ? 52 : 0, bearing: nextIs3d ? 18 : 0, duration: 800, essential: true });
+      };
+      map.on("zoom", update3dMode);
+      const features = sitesRef.current.map((site) => ({
+        type: "Feature",
+        properties: { name: site.name, level: siteRiskLevel(site.risk), selected: site.name === selectedSiteRef.current.name, fatigue: site.fatigue },
+        geometry: { type: "Point", coordinates: siteCoordinates(site) },
+      }));
+      map.addSource("oil-sites", { type: "geojson", data: { type: "FeatureCollection", features } });
+      map.addLayer({ id: "site-glow", type: "circle", source: "oil-sites", paint: { "circle-radius": 15, "circle-color": ["match", ["get", "level"], "HIGH", "#F24B45", "MEDIUM", "#F4C95D", "#2FCF88"], "circle-opacity": 0.2, "circle-blur": 0.8 } });
+      map.addLayer({ id: "site-points", type: "circle", source: "oil-sites", paint: { "circle-radius": 6, "circle-color": ["match", ["get", "level"], "HIGH", "#F24B45", "MEDIUM", "#F4C95D", "#2FCF88"], "circle-stroke-color": "#fff4da", "circle-stroke-width": 1.5 } });
+      map.addLayer({ id: "selected-site-ring", type: "circle", source: "oil-sites", filter: ["==", ["get", "selected"], true], paint: { "circle-radius": 12, "circle-color": "rgba(0,0,0,0)", "circle-stroke-color": "#fff", "circle-stroke-width": 1.5, "circle-opacity": 0.9 } });
+      workerMarkersRef.current = sitesRef.current.map((site) => {
+        const markerElement = document.createElement("button");
+        markerElement.type = "button";
+        markerElement.className = `cc-mapbox-worker-marker cc-mapbox-worker-marker--${site.fatigue.toLowerCase().replace(" ", "-")}`;
+        markerElement.setAttribute("aria-label", `Worker fatigue at ${site.name}: ${site.fatigue}`);
+        markerElement.title = `${site.name} · ${site.fatigue} fatigue signal`;
+        markerElement.innerHTML = "<span aria-hidden=\"true\">⛑</span>";
+        markerElement.addEventListener("click", (event) => {
+          event.stopPropagation();
+          onSelectSiteRef.current(site);
+        });
+        return new mapboxgl.Marker({ element: markerElement, anchor: "center", offset: [18, -18] }).setLngLat(siteCoordinates(site)).addTo(map);
+      });
+      map.on("click", "site-points", (event) => {
+        const name = event.features?.[0]?.properties?.name;
+        const site = sitesRef.current.find((item) => item.name === name);
+        if (site) onSelectSiteRef.current(site);
+      });
+      map.on("mouseenter", "site-points", () => { map.getCanvas().style.cursor = "pointer"; });
+      map.on("mouseleave", "site-points", () => { map.getCanvas().style.cursor = ""; });
+    });
+
+    return () => {
+      workerMarkersRef.current.forEach((marker) => marker.remove());
+      workerMarkersRef.current = [];
+      map.remove();
+      mapRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map?.isStyleLoaded() || !map.getSource("oil-sites")) return;
+    const features = sites.map((site) => ({ type: "Feature", properties: { name: site.name, level: siteRiskLevel(site.risk), selected: site.name === selectedSite.name, fatigue: site.fatigue }, geometry: { type: "Point", coordinates: siteCoordinates(site) } }));
+    map.getSource("oil-sites").setData({ type: "FeatureCollection", features });
+    map.flyTo({ center: siteCoordinates(selectedSite), zoom: Math.max(map.getZoom(), 5.4), duration: 700, essential: true });
+  }, [selectedSite, sites]);
+
+  return <div className="cc-mapbox-shell" role="group" aria-label="Mapbox India live risk map">
+    <div ref={mapContainerRef} className="cc-mapbox-canvas" />
+    {mapError && <div className="cc-mapbox-error" role="status">Mapbox map error: {mapError}</div>}
+    <div className={`cc-mapbox-badge ${is3d ? "cc-mapbox-badge--3d" : ""}`} aria-live="polite"><span /> MAPBOX · NIGHT OPERATIONS{is3d ? " · 3D VIEW" : ""}</div>
+    <div className="cc-map-legend cc-mapbox-legend"><span><i style={{ background: C.redBright }} /> High risk</span><span><i style={{ background: C.yellow }} /> Medium risk</span><span><i style={{ background: C.greenGood }} /> Low risk</span><span><HardHat size={13} /> Worker helmet</span></div>
+  </div>;
+}
 
 export function IndiaLiveRiskMap({ dashboard = null, onSiteAnalysis }) {
   const [selectedSite, setSelectedSite] = useState(oilSites[0]);
-  const [mapZoom, setMapZoom] = useState(1);
-  const [mapPan, setMapPan] = useState({ x: 0, y: 0 });
-  const dragRef = useRef(null);
-  const networkLinks = [[0, 1], [0, 2], [2, 3], [3, 4], [3, 5], [5, 6], [7, 8], [8, 9], [2, 9], [9, 10], [10, 11], [11, 12]];
   const riskLocations = dashboard?.highest_risk_locations || [];
   const sites = oilSites.map((site) => {
     const live = riskLocations.find((item) => item.site.toLowerCase().includes(site.name.toLowerCase()) || site.name.toLowerCase().includes(item.site.toLowerCase()));
     return live ? { ...site, risk: live.risk, reports: live.reports, isSample: false } : { ...site, isSample: true };
   });
-  const highestAttention = [...sites].sort((a, b) => b.risk - a.risk)[0];
-  const fatigueColor = (level) => level === "HIGH" ? "#F24B45" : level === "MEDIUM" ? "#F4C95D" : "#2FCF88";
-  const updateMapZoom = (delta) => setMapZoom((current) => {
-    const next = Math.min(2.4, Math.max(1, Number((current + delta).toFixed(2))));
-    if (next === 1) setMapPan({ x: 0, y: 0 });
-    return next;
-  });
-  const handleMapWheel = (event) => {
-    updateMapZoom(event.deltaY < 0 ? 0.15 : -0.15);
-  };
-  const handleMapPointerDown = (event) => {
-    if (event.button !== 0 || event.target.closest("button, select, option, label")) return;
-    dragRef.current = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, originX: mapPan.x, originY: mapPan.y };
-    event.currentTarget.setPointerCapture?.(event.pointerId);
-  };
-  const handleMapPointerMove = (event) => {
-    if (!dragRef.current) return;
-    const limit = Math.max(24, (mapZoom - 1) * 260);
-    const nextX = dragRef.current.originX + event.clientX - dragRef.current.startX;
-    const nextY = dragRef.current.originY + event.clientY - dragRef.current.startY;
-    setMapPan({ x: Math.max(-limit, Math.min(limit, nextX)), y: Math.max(-limit * .62, Math.min(limit * .62, nextY)) });
-  };
-  const stopMapDrag = (event) => {
-    if (dragRef.current?.pointerId === event.pointerId) dragRef.current = null;
-  };
-  const handleMapMouseDown = (event) => {
-    if (event.button !== 0 || event.target.closest("button, select, option, label")) return;
-    dragRef.current = { pointerId: "mouse", startX: event.clientX, startY: event.clientY, originX: mapPan.x, originY: mapPan.y };
-  };
-  const handleMapMouseMove = (event) => {
-    if (dragRef.current?.pointerId !== "mouse") return;
-    handleMapPointerMove({ clientX: event.clientX, clientY: event.clientY, pointerId: "mouse" });
-  };
-  const handleMapMouseUp = () => {
-    if (dragRef.current?.pointerId === "mouse") dragRef.current = null;
-  };
 
   return (
     <section id="live-risk" className="cc-map-workspace">
@@ -998,7 +1065,7 @@ export function IndiaLiveRiskMap({ dashboard = null, onSiteAnalysis }) {
           <p>OIL locations · Site risk and aggregate workforce fatigue</p>
         </div>
         <div className="cc-map-title-actions">
-          <label className="cc-site-selector"><MapPinned size={14} /><span>SITE</span><select value={selectedSite.name} onChange={(event) => { const site = sites.find((item) => item.name === event.target.value); if (site) { setSelectedSite(site); setMapZoom(1.25); setMapPan({ x: 0, y: 0 }); } }} aria-label="Select an operations site">
+          <label className="cc-site-selector"><MapPinned size={14} /><span>SITE</span><select value={selectedSite.name} onChange={(event) => { const site = sites.find((item) => item.name === event.target.value); if (site) setSelectedSite(site); }} aria-label="Select an operations site">
             {sites.map((site) => <option key={site.name} value={site.name}>{site.name}</option>)}
           </select></label>
           <div className="cc-map-live"><span /> LIVE MONITORING</div>
@@ -1006,60 +1073,7 @@ export function IndiaLiveRiskMap({ dashboard = null, onSiteAnalysis }) {
       </div>
 
       <div className="cc-map-layout">
-      <div className="cc-india-map" role="group" aria-label="India live risk map" onWheel={handleMapWheel} onPointerDown={handleMapPointerDown} onPointerMove={handleMapPointerMove} onPointerUp={stopMapDrag} onPointerCancel={stopMapDrag} onMouseDown={handleMapMouseDown} onMouseMove={handleMapMouseMove} onMouseUp={handleMapMouseUp} onMouseLeave={handleMapMouseUp}>
-        <div className="cc-map-zoom-controls" aria-label="Map zoom controls">
-          <button type="button" onClick={() => updateMapZoom(0.2)} aria-label="Zoom in"><Plus size={17} /></button>
-          <span>{Math.round(mapZoom * 100)}%</span>
-          <button type="button" onClick={() => updateMapZoom(-0.2)} aria-label="Zoom out"><Minus size={17} /></button>
-          <button type="button" className="cc-map-reset" onClick={() => { setMapZoom(1); setMapPan({ x: 0, y: 0 }); }} aria-label="Reset map view"><MapPinned size={15} /></button>
-        </div>
-        <div className="cc-map-coordinate cc-map-coordinate-north">ASSAM · ARUNACHAL PRADESH</div>
-        <div className="cc-map-coordinate cc-map-coordinate-west">RAJASTHAN</div>
-        <svg className="cc-india-outline" viewBox={indiaMap.viewBox} preserveAspectRatio="xMidYMid meet" aria-hidden="true" style={{ transform: `translate(${mapPan.x}px, ${mapPan.y}px) scale(${mapZoom})` }}>
-          <defs>
-            <linearGradient id="india-fill" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stopColor="#24363a" />
-              <stop offset="1" stopColor="#111a1e" />
-            </linearGradient>
-          </defs>
-          {indiaMap.locations.map((state) => <path key={state.id} className="cc-india-state" d={state.path} />)}
-          <g className="cc-india-network" aria-hidden="true">
-            {networkLinks.map(([from, to]) => {
-              const start = sites[from];
-              const end = sites[to];
-              return <path key={`${start.name}-${end.name}`} d={`M ${start.mapX} ${start.mapY} L ${end.mapX} ${end.mapY}`} />;
-            })}
-            {sites.map((site) => <circle key={site.name} cx={site.mapX} cy={site.mapY} r="2.2" />)}
-          </g>
-          <text className="cc-map-region-text" x="493" y="226">ASSAM</text>
-          <text className="cc-map-region-text" x="48" y="193">RAJASTHAN</text>
-          {sites.map((site) => {
-            const level = siteRiskLevel(site.risk);
-            return (
-              <g key={`site-${site.name}`} className="cc-svg-site-pin" role="button" tabIndex="0" aria-label={`${site.name}, ${level} risk`} aria-pressed={selectedSite.name === site.name} onClick={() => setSelectedSite(site)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelectedSite(site); } }}>
-                <title>{site.name} · {level} risk · SIF/PSIF profile</title>
-                <circle className="cc-svg-site-halo" cx={site.mapX} cy={site.mapY} r="10" style={{ "--site-color": riskMarkerColor(level) }} />
-                <circle className="cc-svg-site-core" cx={site.mapX} cy={site.mapY} r="5.5" style={{ "--site-color": riskMarkerColor(level) }} />
-              </g>
-            );
-          })}
-          {sites.map((site) => (
-            <g key={`worker-${site.name}`} className="cc-svg-worker-pin" role="button" tabIndex="0" aria-label={`Worker fatigue at ${site.name}: ${site.fatigue}`} onClick={() => setSelectedSite(site)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelectedSite(site); } }}>
-              <title>{site.workers.veryHigh} very high fatigue · {site.workers.high} high fatigue workers at {site.name}</title>
-              <rect x={site.mapX + 9} y={site.mapY - 19} width="15" height="15" rx="2" style={{ "--fatigue-color": fatigueColor(site.fatigue) }} />
-              <text x={site.mapX + 16.5} y={site.mapY - 8} textAnchor="middle">W</text>
-            </g>
-          ))}
-        </svg>
-
-        <div className="cc-map-legend">
-          <span><i style={{ background: C.redBright }} /> High site risk</span>
-          <span><i style={{ background: C.yellow }} /> Medium site risk</span>
-          <span><i style={{ background: C.greenGood }} /> Low site risk</span>
-          <span><HardHat size={13} /> Worker fatigue</span>
-        </div>
-        <div className="cc-map-credit">Map geometry: SVG Maps / MapSVG · CC BY 4.0</div>
-      </div>
+      <MapboxOperationsMap sites={sites} selectedSite={selectedSite} onSelectSite={setSelectedSite} />
       <aside className="cc-selected-site" aria-live="polite" aria-label={`${selectedSite.name} intelligence`}>
         <div className="cc-selected-site-heading">
           <div><p className="cc-panel-kicker">{selectedSite.category} · {siteRiskLevel(selectedSite.risk)} RISK</p><h3>{selectedSite.name}</h3></div>
@@ -1446,8 +1460,8 @@ export default function CommandCenter({ setView, onIngest }) {
           flex: 1,
         }}
       >
-        <div className="cc-command-intro">
-          <div><p className="cc-panel-kicker">OIL SENTINEL · {activeTab.replaceAll("-", " ").toUpperCase()}</p><h1>{workspaceTitle}</h1><p>Where is the risk · Why is it happening · Who needs to act</p></div>
+        <div className={`cc-command-intro ${renderOverview ? "cc-command-intro--operations" : ""}`}>
+          {!renderOverview && <div><p className="cc-panel-kicker">OIL SENTINEL · {activeTab.replaceAll("-", " ").toUpperCase()}</p><h1>{workspaceTitle}</h1><p>Where is the risk · Why is it happening · Who needs to act</p></div>}
           <button type="button" className="cc-exit-button" onClick={() => setView({ page: "home" })}>Exit command center <ArrowRight size={14} /></button>
         </div>
 
