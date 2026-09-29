@@ -215,14 +215,45 @@
 .wi-photo-chip { width: fit-content; gap: 6px; margin-top: 8px; padding: 5px 7px; border: 1px solid var(--wi-line); border-radius: 3px; color: #d1dcde; font-size: 8px; }
 .wi-photo-chip button { display: flex; padding: 0; border: 0; background: none; color: #aab7bf; cursor: pointer; }
 .wi-error { color: #ff8e84; font-size: 9px; }
-.wi-submit-report { width: 100%; margin-top: 11px; }
+.wi-report-composer .wi-submit-report {
+  min-height: 48px;
+  margin-top: 14px;
+  font-size: 11px !important;
+
+  background: #7f1d2d;
+  border: 1px solid #a52a3a;
+  color: #ffffff;
+  opacity: 1;
+}
+
+.wi-report-composer .wi-submit-report:hover {
+  background: #922337;
+}
 .wi-submit-report:disabled { opacity: .45; cursor: not-allowed; }
 
 .wi-report-inline { margin-bottom: 20px; }
 .wi-report-composer { position: relative; width: 100%; max-width: none; overflow: hidden; padding: clamp(20px, 3vw, 34px); border: 1px solid rgba(255,107,74,.28); border-radius: 4px; background: radial-gradient(circle at 93% 0%,rgba(255,107,74,.16),transparent 28%), linear-gradient(145deg,rgba(23,30,34,.98),rgba(8,13,16,.98)); box-shadow: 0 24px 55px -36px rgba(242,75,69,.8); }
-.wi-report-composer::before { content: ""; position: absolute; top: 0; left: 0; width: 31%; height: 100%; background: repeating-linear-gradient(135deg,rgba(242,75,69,.92) 0 5px,rgba(101,18,29,.86) 5px 10px); clip-path: polygon(0 0,100% 0,72% 100%,0 100%); opacity: .78; pointer-events: none; }
+.wi-report-composer::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  left: 0;
+  width: 31%;
+  height: 100%;
+
+  background: repeating-linear-gradient(
+    135deg,
+    rgba(242,75,69,.28) 0 5px,
+    rgba(101,18,29,.20) 5px 10px
+  );
+
+  clip-path: polygon(0 0,100% 0,72% 100%,0 100%);
+  opacity: .75;
+  pointer-events: none;
+}
 .wi-report-composer::after { content: "FIELD INPUT / 01"; position: absolute; right: 24px; bottom: 16px; color: rgba(255,255,255,.12); font: 800 9px 'Manrope',sans-serif; letter-spacing: .16em; pointer-events: none; }
-.wi-report-composer > * { position: relative; z-index: 1; }
+.wi-report-composer > * { position: relative; z-index: 2; }
 .wi-report-composer .wi-kicker { color: #ffb083; }
 .wi-report-composer h2 { margin-top: 7px; font-size: clamp(30px,4vw,43px); }
 .wi-report-composer .wi-report-lede { max-width: 680px; font-size: 11px; }
@@ -233,7 +264,31 @@
 .wi-report-composer form .wi-form-label:nth-of-type(3),.wi-report-composer form .wi-route-preview,.wi-report-composer form .wi-photo-chip,.wi-report-composer form .wi-error,.wi-report-composer form .wi-submit-report { grid-column: 1 / -1; }
 .wi-report-composer form .wi-form-label:nth-of-type(3) textarea { min-height: 132px; font-size: 12px; }
 .wi-report-composer .wi-route-preview { margin-top: 14px; }
-.wi-report-composer .wi-submit-report { min-height: 48px; margin-top: 14px; font-size: 11px !important; }
+
+.wi-report-composer .wi-submit-report {
+  min-height: 48px;
+  margin-top: 14px;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+
+  background: #ff1744 !important;
+  border: 1px solid #ff1744 !important;
+  color: #ffffff !important;
+
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+.wi-report-composer .wi-submit-report:hover {
+  background: #ff003c !important;
+  border-color: #ff003c !important;
+  color: #ffffff !important;
+}
+
+.wi-submit-report:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
 .wi-individual-profile { padding: clamp(18px,3vw,30px); border: 1px solid rgba(255,255,255,.1); border-radius: 9px; background: linear-gradient(145deg,rgba(20,28,32,.96),rgba(8,13,16,.96)); box-shadow: 0 24px 50px -38px rgba(0,0,0,.9); }
 .wi-individual-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 22px; padding-bottom: 20px; border-bottom: 1px solid var(--wi-line); }
 .wi-individual-heading h2 { margin: 5px 0 4px; color: #fff; font-size: clamp(26px,3vw,38px); line-height: .95; }
@@ -322,4 +377,109 @@
   .wi-detail-heading { align-items: flex-start; flex-direction: column; }
   .wi-detail-list { grid-template-columns: 1fr; }
   .wi-route-paths { grid-template-columns: 1fr; }
+}
+
+/* Workforce Intelligence - Input Intent readability */
+.wi-report-composer .wi-route-preview,
+.wi-report-composer .wi-route-preview * {
+  color: #e8eef0 !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  line-height: 1.6 !important;
+}
+
+/* Input intent heading */
+.wi-report-composer .wi-route-preview strong {
+  color: #ffb083 !important;
+  font-size: 14px !important;
+  font-weight: 800 !important;
+}
+
+/* Smaller supporting text */
+.wi-report-composer .wi-route-preview small {
+  color: #dce5e8 !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  line-height: 1.6 !important;
+}
+
+/* Workforce Intelligence - improve grey text readability */
+.wi-report-composer {
+  color: #e5ebed;
+}
+
+.wi-report-composer p,
+.wi-report-composer span,
+.wi-report-composer label,
+.wi-report-composer small {
+  color: #dce4e7 !important;
+  font-weight: 600 !important;
+}
+
+.wi-report-composer .wi-report-lede {
+  color: #dce4e7 !important;
+  font-weight: 600 !important;
+  line-height: 1.6;
+}
+
+.wi-report-composer .wi-form-label {
+  color: #e1e8ea !important;
+  font-weight: 700 !important;
+}
+
+.wi-report-composer input,
+.wi-report-composer textarea {
+  color: #f2f6f7 !important;
+  font-weight: 600 !important;
+}
+
+.wi-report-composer input::placeholder,
+.wi-report-composer textarea::placeholder {
+  color: #aebbc0 !important;
+  opacity: 1 !important;
+}
+
+/* Workforce Intelligence - landing page readability */
+
+.wi-root .wi-action-grid {
+  gap: 12px !important;
+}
+
+.wi-root .wi-action-card {
+  min-height: 90px !important;
+  padding: 18px 20px !important;
+}
+
+.wi-root .wi-action-card h3 {
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  color: #f4f7f8 !important;
+}
+
+.wi-root .wi-action-card p {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #cbd5d8 !important;
+  line-height: 1.5 !important;
+}
+
+/* Hello worker */
+.wi-root .wi-page-kicker {
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  letter-spacing: .09em !important;
+  color: #ffb083 !important;
+}
+
+.wi-root .wi-page-heading {
+  font-size: clamp(30px, 4vw, 42px) !important;
+  font-weight: 800 !important;
+  color: #f7f9fa !important;
+}
+
+.wi-root .wi-page-subtitle {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #cbd5d8 !important;
+  line-height: 1.6 !important;
 }
