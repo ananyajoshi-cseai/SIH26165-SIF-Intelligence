@@ -173,7 +173,7 @@ function WorkerRecentInputs({ workerInputs }) {
   return <section className="wi-worker-recent"><div className="wi-section-heading"><div><p className="wi-kicker">MY SAFETY INPUTS</p><h2>Recent inputs</h2></div><span>{workerInputs.length} signals</span></div>{workerInputs.length ? workerInputs.slice(0, 5).map((input) => <article className="wi-worker-signal" key={input.id}><div><strong>{input.type}</strong><small>{input.created} · {input.site}</small></div><p>{input.description || input.text}</p><span className={`wi-feed-status ${input.status.includes("PENDING") ? "pending" : "complete"}`}>{input.status}</span>{input.analysis?.risk_score != null && <small>Site assessment: {input.analysis.risk_level} · {input.analysis.risk_score}/100</small>}</article>) : <p className="wi-empty-priority">No reports from you yet.</p>}</section>;
 }
 
-function WorkerDetail({ worker, onClose, onReport, onReview }) {
+function WorkerDetail({ worker, onClose, onReport, onReview, onAction }) {
   return (
     <div className="wi-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <section className="wi-worker-detail" role="dialog" aria-modal="true" aria-labelledby="wi-detail-title">
@@ -183,16 +183,44 @@ function WorkerDetail({ worker, onClose, onReport, onReview }) {
 
         <div className="wi-detail-metrics">
           <div><span>ROLE / JOB TYPE</span><strong>{worker.role}</strong></div>
-          <div><span>CURRENT FATIGUE SCORE</span><strong>Not calibrated</strong><small>Validated model weights required</small></div>
-          <div><span>LAST HSE REVIEW</span><strong>{worker.review}</strong><small>{worker.reviewedBy}</small></div>
-          <div><span>SELF-REPORTED SIGNAL</span><strong>{worker.fatigueSignal}</strong></div>
+          <div><span>INDICATIVE FATIGUE SCORE</span><strong>{fatiguePoint(worker.fatigueLevel)} / 100</strong><small>Representative signal, not a calibrated model score</small></div>
+          <div><span>HSE FOLLOW-UP</span><strong>{worker.review === "Pending" ? "Pending" : worker.review}</strong><small>{worker.reviewedBy}</small></div>
+          <div><span>WORKER CONDITION SIGNAL</span><strong>{worker.fatigueSignal}</strong></div>
         </div>
 
           <div className="wi-detail-columns">
           <div className="wi-detail-section"><h3><Activity size={15} /> Contributing factors</h3><div className="wi-factor-list">{worker.factors.map((factor) => <div key={factor}><span className="wi-factor-dot" />{factor}</div>)}</div><p className="wi-disclaimer">Fatigue is a safety signal, not a medical diagnosis. The point shown on your profile is a representative safety signal.</p></div>
           <div className="wi-detail-section"><h3><FileText size={15} /> Safety history</h3><dl className="wi-detail-list"><div><dt>Shifts / roster</dt><dd>{worker.shifts}</dd></div><div><dt>Hours worked</dt><dd>{worker.hours} h</dd></div><div><dt>Consecutive shifts</dt><dd>{worker.consecutiveShifts}</dd></div><div><dt>Night shifts</dt><dd>{worker.nightShifts}</dd></div><div><dt>Overtime</dt><dd>{worker.overtime} h</dd></div><div><dt>Rest between shifts</dt><dd>{worker.restHours} h avg</dd></div><div><dt>Last rest period</dt><dd>{worker.lastRest}</dd></div><div><dt>Training / certification</dt><dd>{worker.training}</dd></div><div><dt>Accidents / near misses</dt><dd>{worker.accidents} / {worker.nearMisses}</dd></div><div><dt>Safety observations</dt><dd>{worker.observations}</dd></div></dl></div>
         </div>
-        <div className="wi-detail-footer"><div><span className="wi-kicker">RECOMMENDED HSE ACTION</span><strong>{worker.review === "Pending" ? "Review required · confirm roster, rest, and worker-reported signals." : "Continue monitoring · verify training and shift-rest controls."}</strong></div><div className="wi-detail-actions">{worker.review === "Pending" && <button className="wi-review-button" type="button" onClick={() => onReview(worker.id)}><Check size={14} /> Mark reviewed</button>}<button className="wi-primary-button" type="button" onClick={() => onReport(worker.id)}>Report / Speak <ArrowRight size={15} /></button></div></div>
+        <div className="wi-detail-footer"><div><span className="wi-kicker">HSE RESPONSE</span><strong>{worker.action ? `${worker.action}${worker.actionAt ? ` · ${worker.actionAt}` : ""}` : worker.review === "Pending" ? "Follow up with the worker and verify rest before safety-critical duties." : "No active response recorded · continue monitoring roster and rest controls."}</strong></div><div className="wi-detail-actions">{worker.review === "Pending" && <button className="wi-review-button" type="button" onClick={() => onReview(worker.id)}><Check size={14} /> Mark reviewed</button>}<button className="wi-primary-button" type="button" onClick={() => onAction(worker.id)}>Record HSE action <ArrowRight size={15} /></button><button className="wi-secondary-button" type="button" onClick={() => onReport(worker.id)}>Log signal</button></div></div>
+      </section>
+    </div>
+  );
+}
+
+function HSEActionDialog({ worker, onClose, onSave }) {
+  const [action, setAction] = useState("Arrange immediate rest and relief cover");
+  const [note, setNote] = useState("");
+  const actions = [
+    "Arrange immediate rest and relief cover",
+    "Temporarily remove from safety-critical duty",
+    "Conduct supervisor welfare check",
+    "Review next shift and rest plan",
+  ];
+
+  return (
+    <div className="wi-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+      <section className="wi-report-dialog wi-action-dialog" role="dialog" aria-modal="true" aria-labelledby="wi-action-title">
+        <button className="wi-icon-button wi-modal-close" type="button" onClick={onClose} aria-label="Close HSE action"><X size={18} /></button>
+        <div className="wi-kicker">HSE FOLLOW-UP · {worker.site}</div>
+        <h2 id="wi-action-title">Record action for {worker.id}</h2>
+        <p className="wi-report-lede">{worker.role} · indicative fatigue signal {fatiguePoint(worker.fatigueLevel)}/100 ({worker.fatigueLevel}). Confirm the worker’s condition directly and apply site procedure.</p>
+        <form onSubmit={(event) => { event.preventDefault(); onSave(worker.id, action, note); }}>
+          <label className="wi-form-label">RESPONSE<select value={action} onChange={(event) => setAction(event.target.value)}>{actions.map((option) => <option key={option}>{option}</option>)}</select></label>
+          <label className="wi-form-label">HANDOVER NOTE · OPTIONAL<textarea rows={3} value={note} onChange={(event) => setNote(event.target.value)} placeholder="Add an owner, due time, or follow-up detail." /></label>
+          <div className="wi-action-caution"><AlertTriangle size={15} /><span>Fatigue indicators are safety signals, not medical diagnoses. Follow site escalation and fitness-for-duty procedures.</span></div>
+          <div className="wi-action-dialog-buttons"><button className="wi-secondary-button" type="button" onClick={onClose}>Cancel</button><button className="wi-primary-button" type="submit"><Check size={14} /> Save HSE action</button></div>
+        </form>
       </section>
     </div>
   );
@@ -321,13 +349,31 @@ export default function WorkforceIntelligence({ onBack }) {
     return savedWorkers.length ? savedWorkers : SAMPLE_WORKERS;
   });
   const [inputs, setInputs] = useState(readSavedInputs);
-  const [activeWorkerId, setActiveWorkerId] = useState(() => readSavedWorkers()[0]?.id || SAMPLE_WORKERS[0].id);
-  const [activeTab, setActiveTab] = useState("input");
+  const [siteFilter, setSiteFilter] = useState("All sites");
+  const [fatigueFilter, setFatigueFilter] = useState("All levels");
+  const [query, setQuery] = useState("");
   const [selectedWorkerId, setSelectedWorkerId] = useState(null);
+  const [actionWorkerId, setActionWorkerId] = useState(null);
+  const [reportWorkerId, setReportWorkerId] = useState(null);
   const [notice, setNotice] = useState("");
   const selectedWorker = workers.find((worker) => worker.id === selectedWorkerId);
-  const activeWorker = workers.find((worker) => worker.id === activeWorkerId) || workers[0];
-  const workerInputs = inputs.filter((input) => input.workerId === activeWorker?.id);
+  const actionWorker = workers.find((worker) => worker.id === actionWorkerId);
+  const reportWorker = workers.find((worker) => worker.id === reportWorkerId);
+  const siteNames = [...new Set(workers.map((worker) => worker.site))].sort();
+  const highFatigueCount = workers.filter((worker) => fatiguePoint(worker.fatigueLevel) >= 70).length;
+  const urgentCount = workers.filter((worker) => fatiguePoint(worker.fatigueLevel) >= 90).length;
+  const pendingCount = workers.filter((worker) => worker.review === "Pending").length;
+  const filteredWorkers = workers
+    .filter((worker) => siteFilter === "All sites" || worker.site === siteFilter)
+    .filter((worker) => {
+      const score = fatiguePoint(worker.fatigueLevel);
+      if (fatigueFilter === "High or above") return score >= 70;
+      if (fatigueFilter === "Medium") return score >= 40 && score < 70;
+      if (fatigueFilter === "Low") return score < 40;
+      return true;
+    })
+    .filter((worker) => `${worker.id} ${worker.role} ${worker.site} ${worker.camp}`.toLowerCase().includes(query.trim().toLowerCase()))
+    .sort((left, right) => fatiguePoint(right.fatigueLevel) - fatiguePoint(left.fatigueLevel));
 
   useEffect(() => {
     try {
@@ -371,56 +417,106 @@ export default function WorkforceIntelligence({ onBack }) {
     window.setTimeout(() => setNotice(""), 5000);
   };
 
+  const markReviewed = (workerId) => {
+    setWorkers((previous) => previous.map((worker) => worker.id === workerId ? { ...worker, review: "Reviewed", reviewedBy: "HSE-OFFICER" } : worker));
+    setInputs((previous) => previous.map((input) => input.workerId === workerId && input.status.includes("PENDING") ? { ...input, status: "HSE REVIEWED" } : input));
+    setNotice(`Worker ${workerId} marked reviewed.`);
+  };
+
+  const saveAction = (workerId, action, note) => {
+    const timestamp = new Date().toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
+    setWorkers((previous) => previous.map((worker) => worker.id === workerId ? {
+      ...worker,
+      action,
+      actionNote: note.trim(),
+      actionAt: timestamp,
+      review: "Action assigned",
+      reviewedBy: "HSE-OFFICER",
+    } : worker));
+    setInputs((previous) => previous.map((input) => input.workerId === workerId && input.status.includes("PENDING") ? { ...input, status: "HSE ACTION ASSIGNED" } : input));
+    setActionWorkerId(null);
+    setNotice(`HSE action recorded for worker ${workerId}.`);
+    window.setTimeout(() => setNotice(""), 5000);
+  };
+
   return (
     <main className="wi-root">
       <header className="wi-header">
-        <div className="wi-brand"><div className="wi-brand-mark"><ShieldAlert size={19} /></div><div><div className="wi-kicker">OIL SENTINEL · FRONTLINE SAFETY</div><h1>Workforce Intelligence</h1></div></div>
+        <div className="wi-brand"><div className="wi-brand-mark"><ShieldAlert size={19} /></div><div><div className="wi-kicker">OIL SENTINEL · HSE OPERATIONS</div><h1>Workforce Risk Monitor</h1></div></div>
         <div className="wi-header-right">
-          <label className="wi-worker-switcher"><span>WORKER PROFILE</span><select value={activeWorker.id} onChange={(event) => setActiveWorkerId(event.target.value)}>{workers.map((worker) => <option key={worker.id} value={worker.id}>{worker.id} · {worker.site}</option>)}</select></label>
-          <span className="wi-worker-mode"><span /> MY SAFETY SPACE</span>
+          <span className="wi-authority"><span /> HSE OFFICER VIEW</span>
           <button className="wi-back-button" type="button" onClick={onBack}><ArrowLeft size={15} /> Command Center</button>
         </div>
       </header>
 
       <div className="wi-content">
         {notice && <div className="wi-notice" role="status"><Check size={15} /> {notice}</div>}
-        <nav className="wi-worker-tabs" role="tablist" aria-label="Worker dashboard sections">
-          <button type="button" role="tab" aria-selected={activeTab === "input"} className={activeTab === "input" ? "active" : ""} onClick={() => setActiveTab("input")}><Mic size={17} /><span>Submit input</span><small>Speak, type, or send a photo</small></button>
-          <button type="button" role="tab" aria-selected={activeTab === "profile"} className={activeTab === "profile" ? "active" : ""} onClick={() => setActiveTab("profile")}><UsersRound size={17} /><span>My profile</span><small>Shifts, rest, and fatigue point</small></button>
-        </nav>
+        <section className="wi-page-heading wi-hse-heading">
+          <div><p className="wi-kicker">HSE WORKFORCE · SITE-WISE CONDITION MONITORING</p><h2>Worker condition by site</h2><p>Review fatigue signals, shift and rest exposure, and open follow-up across the workforce.</p></div>
+          <div className="wi-live-indicator"><span /> ROSTER MONITORING</div>
+        </section>
 
-        {activeTab === "input" && <>
-          <div className="wi-worker-welcome"><p className="wi-kicker">HELLO, WORKER {activeWorker.id}</p><h2>What did you see or feel today?</h2><p>Use your voice, type a few words, or take a photo. You do not need perfect spelling.</p></div>
-          <WorkerReportDialog worker={activeWorker} embedded onSaved={saveSignals} onClose={() => {}} />
-          <WorkerRecentInputs workerInputs={workerInputs} />
-        </>}
+        <div className="wi-demo-banner"><span>DEMONSTRATION DATA</span><p>Roster and fatigue indicators are sample signals for this prototype. Verify conditions with the worker and site procedure before acting.</p><b>Indicative score · not a diagnosis</b></div>
 
-        {activeTab === "profile" && <section className="wi-individual-profile" aria-label={`Worker profile ${activeWorker.id}`}>
-          <div className="wi-individual-heading">
-            <div><p className="wi-kicker">WORKER PROFILE · {activeWorker.id}</p><h2>{activeWorker.role}</h2><p>{activeWorker.site} · {activeWorker.camp}</p></div>
-            <div className={`wi-fatigue-summary wi-fatigue-summary--${levelTone(activeWorker.fatigueLevel)}`}><span className="wi-kicker">MY FATIGUE POINT</span><strong>{fatiguePoint(activeWorker.fatigueLevel)}<small>/100</small></strong><span className={`wi-level wi-level--${levelTone(activeWorker.fatigueLevel)}`}>{activeWorker.fatigueLevel} FATIGUE</span><small>Representative signal score from shifts, rest, and your inputs.</small></div>
+        <section className="wi-summary-grid wi-hse-summary" aria-label="Workforce overview">
+          <article className="wi-summary-card wi-summary-card--workers"><div><UsersRound size={15} /> WORKERS MONITORED</div><strong>{workers.length}</strong><small>Across {siteNames.length} active sites</small></article>
+          <article className="wi-summary-card wi-summary-card--high"><div><AlertTriangle size={15} /> HIGH FATIGUE · 70+</div><strong>{highFatigueCount}</strong><small>Prioritize direct HSE follow-up</small></article>
+          <article className="wi-summary-card wi-summary-card--very-high"><div><Activity size={15} /> URGENT · 90+</div><strong>{urgentCount}</strong><small>Review before safety-critical work</small></article>
+          <article className="wi-summary-card wi-summary-card--pending"><div><Clock3 size={15} /> FOLLOW-UP PENDING</div><strong>{pendingCount}</strong><small>Workers awaiting HSE review</small></article>
+        </section>
+
+        <section className="wi-site-overview" aria-labelledby="wi-site-overview-title">
+          <div className="wi-section-heading"><div><p className="wi-kicker">SITE BREAKDOWN</p><h2 id="wi-site-overview-title">Where attention is needed</h2></div><span className="wi-site-hint">Select a site to filter the worker register</span></div>
+          <div className="wi-site-grid">
+            {siteNames.map((site) => {
+              const siteWorkers = workers.filter((worker) => worker.site === site);
+              const siteHigh = siteWorkers.filter((worker) => fatiguePoint(worker.fatigueLevel) >= 70).length;
+              const average = Math.round(siteWorkers.reduce((total, worker) => total + fatiguePoint(worker.fatigueLevel), 0) / siteWorkers.length);
+              return <button className={`wi-site-card ${siteFilter === site ? "active" : ""}`} type="button" key={site} onClick={() => setSiteFilter(siteFilter === site ? "All sites" : site)}>
+                <span className="wi-site-card-name"><MapPin size={14} /> {site}</span><strong>{siteWorkers.length}<small> workers</small></strong><div className="wi-site-card-bottom"><span>{siteHigh} high fatigue</span><span>Avg {average}/100</span></div><span className="wi-site-meter"><i style={{ width: `${average}%` }} /></span>
+              </button>;
+            })}
           </div>
-          <div className="wi-profile-facts">
-            <div><span>NO. OF SHIFTS</span><strong>{activeWorker.shifts}</strong></div>
-            <div><span>HOURS WORKED</span><strong>{activeWorker.hours} h</strong></div>
-            <div><span>CONSECUTIVE SHIFTS</span><strong>{activeWorker.consecutiveShifts}</strong></div>
-            <div><span>NIGHT SHIFTS</span><strong>{activeWorker.nightShifts}</strong></div>
-            <div><span>OVERTIME</span><strong>{activeWorker.overtime} h</strong></div>
-            <div><span>REST BETWEEN SHIFTS</span><strong>{activeWorker.restHours} h avg</strong></div>
-            <div><span>RECENT LEAVE / REST</span><strong>{activeWorker.lastRest}</strong></div>
-            <div><span>TRAINING / CERTIFICATION</span><strong>{activeWorker.training}</strong></div>
-            <div><span>ACCIDENTS / NEAR MISSES</span><strong>{activeWorker.accidents} / {activeWorker.nearMisses}</strong></div>
-            <div><span>SAFETY OBSERVATIONS</span><strong>{activeWorker.observations}</strong></div>
+        </section>
+
+        <section className="wi-register-section wi-hse-register" aria-labelledby="wi-register-title">
+          <div className="wi-section-heading"><div><p className="wi-kicker">WORKER REGISTER · SORTED BY FATIGUE</p><h2 id="wi-register-title">Individual condition and HSE follow-up</h2></div><span className="wi-queue-count">{highFatigueCount} high-risk workers</span></div>
+          <div className="wi-table-controls wi-hse-controls">
+            <label className="wi-search"><Search size={14} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search worker, role, or site" aria-label="Search workers" /></label>
+            <label className="wi-select-label">SITE<select value={siteFilter} onChange={(event) => setSiteFilter(event.target.value)}><option>All sites</option>{siteNames.map((site) => <option key={site}>{site}</option>)}</select></label>
+            <label className="wi-select-label">FATIGUE<select value={fatigueFilter} onChange={(event) => setFatigueFilter(event.target.value)}><option>All levels</option><option>High or above</option><option>Medium</option><option>Low</option></select></label>
+            <span className="wi-result-count">Showing {filteredWorkers.length} of {workers.length}</span>
           </div>
-          <div className="wi-profile-lower">
-            <section className="wi-profile-panel"><h3>Fatigue contributing signals</h3><div className="wi-factor-list">{activeWorker.factors.map((factor) => <div key={factor}><span className="wi-factor-dot" />{factor}</div>)}</div><p className="wi-disclaimer">This is a representative safety signal, not a medical diagnosis. Share a new input when your tiredness or working conditions change.</p></section>
-            <section className="wi-profile-panel wi-hse-action"><p className="wi-kicker">YOUR SAFETY SNAPSHOT</p><h3>{activeWorker.review === "Pending" ? "Your input is waiting for review" : "Your input is being monitored"}</h3><p>Keep sharing what you see, how rested you feel, and anything that could make the work unsafe.</p><div className="wi-hse-actions"><button className="wi-primary-button" type="button" onClick={() => setActiveTab("input")}><Mic size={14} /> Share another input</button></div></section>
-          </div>
-        </section>}
-        <p className="wi-demo-note">Demonstration worker profile · roster and fatigue points are representative safety signals.</p>
+          <div className="wi-table-scroll"><table className="wi-worker-table wi-hse-table"><thead><tr><th>Worker / condition signal</th><th>Site / role</th><th>Roster / rest</th><th>Fatigue indicator</th><th>HSE follow-up</th><th>Officer action</th></tr></thead><tbody>
+            {filteredWorkers.map((worker) => {
+              const score = fatiguePoint(worker.fatigueLevel);
+              return <tr key={worker.id}>
+                <td><strong>{worker.id}</strong><small>{worker.fatigueSignal}</small><small>{worker.factors.slice(0, 2).join(" · ")}</small></td>
+                <td>{worker.site}<small>{worker.role}</small></td>
+                <td>{worker.hours} h · {worker.shifts} shifts<small>{worker.restHours} h avg rest · {worker.nightShifts} night shifts</small></td>
+                <td><div className={`wi-table-score wi-table-score--${levelTone(worker.fatigueLevel)}`}><strong>{score}</strong><span>/100</span><b>{worker.fatigueLevel}</b></div><span className="wi-score-track"><i style={{ width: `${score}%` }} /></span></td>
+                <td><span className={`wi-review-status ${worker.review === "Pending" ? "pending" : worker.review === "Action assigned" ? "assigned" : "reviewed"}`}>{worker.review === "Pending" ? "Pending review" : worker.review}</span>{worker.action && <small className="wi-assigned-action">{worker.action}</small>}</td>
+                <td><div className="wi-hse-row-actions"><button type="button" className="wi-row-action wi-profile-action" onClick={() => setSelectedWorkerId(worker.id)} aria-label={`View worker ${worker.id}`}>View</button><button type="button" className={`wi-primary-button wi-row-action-button ${score >= 70 ? "urgent" : ""}`} onClick={() => setActionWorkerId(worker.id)}>{worker.action ? "Update action" : "Record action"}</button></div></td>
+              </tr>;
+            })}
+            {!filteredWorkers.length && <tr><td className="wi-empty-cell" colSpan="6">No workers match these filters.</td></tr>}
+          </tbody></table></div>
+        </section>
+
+        <section className="wi-input-feed wi-hse-feed" aria-labelledby="wi-input-feed-title">
+          <div className="wi-section-heading"><div><p className="wi-kicker">FRONTLINE REPORTS</p><h2 id="wi-input-feed-title">Latest worker and site signals</h2></div><span className="wi-queue-count">{inputs.length} signals</span></div>
+          <div className="wi-feed-list">{inputs.length ? inputs.slice(0, 4).map((input) => <article className="wi-feed-item" key={input.id}>
+            <div className={`wi-feed-icon ${input.type.includes("SITE") ? "site" : ""}`}>{input.type.includes("SITE") ? <AlertTriangle size={15} /> : <Activity size={15} />}</div>
+            <div className="wi-feed-copy"><div><strong>{input.type}</strong><span>{input.created} · {input.site}</span></div><p>{input.description || input.text}</p><small>Worker {input.workerId} · {input.status}</small></div>
+            {input.workerId !== "ANONYMOUS" && workers.some((worker) => worker.id === input.workerId) && <button type="button" className="wi-row-action" onClick={() => setSelectedWorkerId(input.workerId)} aria-label={`Review worker ${input.workerId}`}><ChevronRight size={15} /></button>}
+          </article>) : <p className="wi-empty-priority">No frontline signals have been submitted.</p>}</div>
+        </section>
+        <p className="wi-footer-note"><ShieldAlert size={14} /> Use fatigue indicators to prompt a direct welfare check and site-procedure response. Do not treat the indicative score as a medical or fitness-for-duty determination.</p>
       </div>
 
-      {selectedWorker && <WorkerDetail worker={selectedWorker} onClose={() => setSelectedWorkerId(null)} onReport={(workerId) => { setSelectedWorkerId(null); setActiveWorkerId(workerId); document.getElementById("worker-intake")?.scrollIntoView({ behavior: "smooth" }); }} onReview={(workerId) => setWorkers((previous) => previous.map((worker) => worker.id === workerId ? { ...worker, review: "Reviewed", reviewedBy: "HSE-OFFICER" } : worker))} />}
+      {selectedWorker && <WorkerDetail worker={selectedWorker} onClose={() => setSelectedWorkerId(null)} onReport={(workerId) => { setSelectedWorkerId(null); setReportWorkerId(workerId); }} onReview={(workerId) => { markReviewed(workerId); setSelectedWorkerId(null); }} onAction={(workerId) => { setSelectedWorkerId(null); setActionWorkerId(workerId); }} />}
+      {actionWorker && <HSEActionDialog worker={actionWorker} onClose={() => setActionWorkerId(null)} onSave={saveAction} />}
+      {reportWorker && <WorkerReportDialog worker={reportWorker} onSaved={(signals) => { saveSignals(signals); setReportWorkerId(null); }} onClose={() => setReportWorkerId(null)} />}
     </main>
   );
 }
