@@ -25,7 +25,13 @@ class MockNLPService:
             "seriously injured", "severely injured", "serious injury",
             "fractures", "fractured", "broken leg", "breaks leg",
             "leg was broken", "arm was broken", "bone was broken",
-            "injured",
+        ]):
+            consequence = "Serious injury"
+        elif "injured" in text_lower and not any(p in text_lower for p in [
+            "without being injured", "without falling or being injured",
+            "without injury", "not injured", "not been injured",
+            "no one was injured", "no injury occurred", "no injuries",
+            "uninjured",
         ]):
             consequence = "Serious injury"
         elif any(p in text_lower for p in [
@@ -53,6 +59,9 @@ class MockNLPService:
             "falling from", "fell from",
             "employee falls from", "worker falls from",
             "employee falls into sink hole", "employee falls into sinkhole",
+            "nearly stepped into an open excavation",
+            "nearly stepped into excavation", "open excavation edge",
+            "almost stepped into excavation",
         ]):
             return ExtractionData(
                 activity="Work at height",
@@ -99,6 +108,7 @@ class MockNLPService:
             "sink hole", "sinkhole", "trench collapse", "trench collapsed",
             "excavation collapse", "excavation collapsed", "cave-in", "cave in",
             "soil collapse", "ground collapse", "without shoring", "missing shoring",
+            "open excavation", "excavation edge", "stepped into excavation",
         ]):
             return ExtractionData(
                 activity="Excavation / earthwork",
@@ -174,7 +184,8 @@ class MockNLPService:
             "backed over by a truck", "backed over by truck", "backed over",
             "run over by", "struck by truck", "truck strikes",
             "vehicle strikes", "vehicle struck", "vehicle collision",
-            "vehicle rollover",
+            "vehicle rollover", "forklift", "reversed toward a pedestrian",
+            "reversed toward pedestrian", "vehicle entered the work area",
         ]):
             return ExtractionData(
                 activity="Vehicle / mobile equipment operation",
@@ -189,7 +200,8 @@ class MockNLPService:
         if any(p in text_lower for p in [
             "unguarded rotating machine", "unguarded machine",
             "rotating machinery", "rotating machine",
-            "machine guarding", "guard missing",
+            "machine guarding", "guard missing", "rotating coupling",
+            "protective guard absent", "guard was absent",
         ]):
             return ExtractionData(
                 activity="Machine maintenance",
@@ -229,7 +241,9 @@ class MockNLPService:
         if any(p in text_lower for p in [
             "drill bit", "500-pound drill bit", "falling load",
             "falling pipe", "falling equipment", "struck by a falling pipe",
-            "struck by falling pipe",
+            "struck by falling pipe", "tool dropped from platform",
+            "dropped from platform", "object dropped from height",
+            "landed beside the worker",
         ]):
             return ExtractionData(
                 activity="Material handling / lifting",
@@ -287,6 +301,7 @@ class MockNLPService:
         if any(p in text_lower for p in [
             "high pressure mud hose", "high-pressure mud hose",
             "mud hose sheared", "hose sheared", "pressure hose",
+            "hydraulic hose", "hydraulic hose leaking", "hydraulic leak",
             "pressure release", "high pressure release",
             "high-pressure release", "pressure manifold",
             "pressurized line", "pressurized equipment",
@@ -305,6 +320,11 @@ class MockNLPService:
             "double block and bleed", "double block bleed", "dbb isolation",
             "dbb", "isolation not verified", "isolation not confirmed",
             "opened without verifying isolation",
+            "without verifying that the energy source was isolated",
+            "without verifying energy isolation",
+            "before confirming that the equipment was isolated",
+            "before confirming isolation",
+            "started maintenance without verifying",
         ]):
             return ExtractionData(
                 activity="Process isolation",

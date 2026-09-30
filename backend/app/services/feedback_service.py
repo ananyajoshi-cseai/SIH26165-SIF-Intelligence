@@ -22,8 +22,11 @@ def validate_analysis(
     if analysis is None:
         raise ValueError("Analysis not found")
 
-    extracted_dict = corrected_data.model_dump()
-
+    # Preserve classification metadata while applying HSE extraction corrections.
+    extracted_dict = {
+        **(analysis.extracted_data or {}),
+        **corrected_data.model_dump(),
+    }
     risk_score = calculate_risk_score(extracted_dict)
     sif_level = get_sif_level(risk_score)
 

@@ -39,6 +39,11 @@ _NM_STRONG = [
     "near miss", "near-miss", "close call", "narrowly avoided",
     "no injury occurred", "incident was avoided", "potential incident avoided",
     "almost hit", "almost struck", "nearly hit", "nearly struck",
+    "moved clear before contact", "stopped just before reaching",
+    "nearly stepped", "almost contacted", "almost exposed",
+    "before anyone was struck", "landed beside", "no contact",
+    "regained balance", "without falling", "separated briefly",
+    "entered the work area unexpectedly", "moved unexpectedly toward",
 ]
 
 # Tier-2: moderate signals (weight 2)
@@ -76,6 +81,9 @@ _UA_STRONG = [
     "did not follow", "didn't follow", "failed to isolate",
     "failed to lock out", "loto not applied", "loto violation",
     "worked without permit", "no permit to work", "ptw not obtained",
+    "entered the restricted area", "crossed the lifting exclusion zone",
+    "before confirming that the equipment was isolated",
+    "before confirming isolation",
 ]
 
 _UA_MODERATE = [

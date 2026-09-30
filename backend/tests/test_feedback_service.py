@@ -30,6 +30,10 @@ def test_validate_analysis_updates_extraction_and_risk():
             "barrier": "Unknown",
             "barrier_failure": "Unknown",
             "potential_consequence": "Unknown",
+            "report_type": "Near Miss",
+            "report_type_confidence": 0.87,
+            "sif_potential": "SIF Potential",
+            "sif_confidence": 0.92,
         },
         risk_score=0,
         sif_level="LOW",
@@ -54,8 +58,13 @@ def test_validate_analysis_updates_extraction_and_risk():
             report_id=report.id,
             corrected_data=corrected_data,
         )
+        for field, value in corrected_data.model_dump().items():
+            assert result.extracted_data[field] == value
 
-        assert result.extracted_data == corrected_data.model_dump()
+        assert result.extracted_data["report_type"] == "Near Miss"
+        assert result.extracted_data["report_type_confidence"] == 0.87
+        assert result.extracted_data["sif_potential"] == "SIF Potential"
+        assert result.extracted_data["sif_confidence"] == 0.92
         assert result.risk_score == 100
         assert result.sif_level == "HIGH"
         assert result.status == "VALIDATED"
