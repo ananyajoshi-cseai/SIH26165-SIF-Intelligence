@@ -19,6 +19,7 @@ from app.services.analysis_service import analyze_report
 from app.services.barrier_service import get_barrier_failure_intelligence
 from app.services.csv_service import import_reports_from_csv
 from app.services.dashboard_service import get_dashboard_summary
+from app.services.evaluation_service import run_evaluation
 from app.services.feedback_service import validate_analysis
 from app.services.graph_service import build_causal_graph
 from app.services.pattern_service import detect_emerging_patterns

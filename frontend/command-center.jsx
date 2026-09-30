@@ -43,6 +43,7 @@ import {
   getDashboardSummary,
   getEmergingPatterns,
   getEvaluationMetrics,
+  getReports,
   getSimilarReports,
   submitFeedback,
   uploadReports,
@@ -989,7 +990,7 @@ function SiteIntelligenceWorkspace({ dashboard, selectedSite, onSiteChange, patt
   );
 }
 
-function ModelPerformance({ metrics, status }) {
+function ModelPerformance({ metrics, status, reports, reportsStatus }) {
   const panels = [
     { key: "report_type_classification", label: "Report Type Classification" },
     { key: "sif_potential_classification", label: "SIF Potential Classification" },
@@ -1009,6 +1010,17 @@ function ModelPerformance({ metrics, status }) {
           {result?.confusion_matrix && <div className="cc-confusion-wrap"><h4>Confusion matrix</h4><table className="cc-confusion-matrix"><thead><tr><th>Actual ↓ / Predicted →</th>{labels.map((label) => <th key={label}>{label}</th>)}</tr></thead><tbody>{labels.map((actual) => <tr key={actual}><th>{actual}</th>{labels.map((predicted) => <td key={predicted}>{result.confusion_matrix[actual]?.[predicted] ?? 0}</td>)}</tr>)}</tbody></table></div>}
         </article>;
       })}</div>}
+      <div className="cc-model-reports">
+        <div className="cc-model-reports-heading"><div><h3>Reports evaluated by the model</h3><p>Live records returned by the backend report service.</p></div><strong>{reportsStatus === "ready" ? reports.length : "--"}<small>reports</small></strong></div>
+        {reportsStatus === "loading" && <p className="cc-model-empty">Loading reports from the backend…</p>}
+        {reportsStatus === "error" && <p className="cc-model-empty">Reports could not be loaded from the backend.</p>}
+        {reportsStatus === "empty" && <p className="cc-model-empty">No reports have been returned by the backend.</p>}
+        {reportsStatus === "ready" && <div className="cc-model-report-table-wrap"><table className="cc-model-report-table"><thead><tr><th>Report</th><th>Site</th><th>Report type</th><th>SIF potential</th><th>Risk</th><th>Status</th></tr></thead><tbody>{reports.map((report) => {
+          const analysis = report.analysis;
+          const extraction = analysis?.extracted_data || {};
+          return <tr key={report.id}><th title={report.id}>{report.id.slice(0, 8)}</th><td>{report.metadata?.site || "Unknown"}</td><td>{analysis?.report_type || extraction.report_type || "Unknown"}</td><td>{analysis?.sif_potential || extraction.sif_potential || "Unknown"}</td><td><b>{analysis?.risk_score ?? "--"}</b>{analysis?.sif_level ? ` · ${analysis.sif_level}` : ""}</td><td>{analysis?.status || "UNANALYZED"}</td></tr>;
+        })}</tbody></table></div>}
+      </div>
       {status === "loading" && <p className="cc-model-empty">Loading evaluation metrics…</p>}
       {status === "empty" && <p className="cc-model-empty">The evaluator returned no classification results.</p>}
     </section>
@@ -1448,6 +1460,8 @@ export default function CommandCenter({ setView, onIngest, reports = [], results
   const [patterns, setPatterns] = useState([]);
   const [evaluationMetrics, setEvaluationMetrics] = useState(null);
   const [evaluationStatus, setEvaluationStatus] = useState("loading");
+  const [modelReports, setModelReports] = useState([]);
+  const [modelReportsStatus, setModelReportsStatus] = useState("loading");
   const [focusedSite, setFocusedSite] = useState(null);
   const [similarReports, setSimilarReports] = useState([]);
   const refreshDashboard = async () => {
@@ -1491,7 +1505,7 @@ export default function CommandCenter({ setView, onIngest, reports = [], results
 
   useEffect(() => {
     let active = true;
-    Promise.allSettled([getBarrierIntelligence(), getEmergingPatterns(), getEvaluationMetrics()]).then(([barrierResult, patternResult, metricsResult]) => {
+    Promise.allSettled([getBarrierIntelligence(), getEmergingPatterns(), getEvaluationMetrics(), getReports()]).then(([barrierResult, patternResult, metricsResult, reportsResult]) => {
       if (!active) return;
       if (barrierResult.status === "fulfilled") setBarriers(barrierResult.value?.barrier_failures || []);
       if (patternResult.status === "fulfilled") setPatterns(patternResult.value?.patterns || []);
@@ -1500,6 +1514,13 @@ export default function CommandCenter({ setView, onIngest, reports = [], results
         setEvaluationStatus(Object.keys(metricsResult.value).some((key) => metricsResult.value[key]?.total_samples) ? "ready" : "empty");
       } else {
         setEvaluationStatus("error");
+      }
+      if (reportsResult.status === "fulfilled" && Array.isArray(reportsResult.value)) {
+        setModelReports(reportsResult.value);
+        setModelReportsStatus(reportsResult.value.length ? "ready" : "empty");
+      } else {
+        setModelReports([]);
+        setModelReportsStatus("error");
       }
     });
     return () => { active = false; };
@@ -1591,7 +1612,7 @@ export default function CommandCenter({ setView, onIngest, reports = [], results
             <IntelligenceLayers dashboard={dashboard} barriers={barriers} patterns={patterns} reports={highSIFReports} mode="intelligence" similarReports={similarReports} />
           </>}
           {activeTab === "workforce" && <WorkforceIntelligence onBack={() => setActiveTab("overview")} />}
-          {activeTab === "models" && <ModelPerformance metrics={evaluationMetrics} status={evaluationStatus} />}
+          {activeTab === "models" && <ModelPerformance metrics={evaluationMetrics} status={evaluationStatus} reports={modelReports} reportsStatus={modelReportsStatus} />}
         </div>
 
         {!renderOverview && activeTab !== "workforce" && <div className="cc-primary-actions">

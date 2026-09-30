@@ -66,6 +66,26 @@ class Analysis(Base):
         onupdate=lambda: datetime.now(timezone.utc),
         nullable=False,
     )
+    
+    @property
+    def report_type(self) -> str:
+        value = (self.extracted_data or {}).get("report_type", "Unknown")
+        return value if isinstance(value, str) else str(value)
+    
+    @property
+    def report_type_confidence(self) -> float:
+        return (self.extracted_data or {}).get("report_type_confidence", 0.0)
+    
+    @property
+    def sif_potential(self) -> str:
+        value = (self.extracted_data or {}).get("sif_potential", "Unknown")
+        if isinstance(value, bool):
+            return "SIF Potential" if value else "Non-SIF Potential"
+        return value if isinstance(value, str) else str(value)
+    
+    @property
+    def sif_confidence(self) -> float:
+        return (self.extracted_data or {}).get("sif_confidence", 0.0)
 
     report: Mapped["Report"] = relationship(
         back_populates="analysis",
