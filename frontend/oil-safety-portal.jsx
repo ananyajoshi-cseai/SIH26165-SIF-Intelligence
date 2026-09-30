@@ -817,7 +817,7 @@ function TopSites({ setView, data }) {
 }
 
 function Heatmap({ setView, data }) {
-  const [riskScope, setRiskScope] = useState("Critical + High");
+  const [riskScope, setRiskScope] = useState("All");
   const [hoveredCell, setHoveredCell] = useState(null);
   const highRiskLevels = new Set(["Critical", "High"]);
   const heatmapData = useMemo(() => {
@@ -853,22 +853,28 @@ function Heatmap({ setView, data }) {
   }, [data.reports, riskScope]);
 
   const cellColor = (count, maxCount) => {
-    if (!count) return { background: "#F5F3ED", color: C.inkSoft, border: C.line };
-    const intensity = count / maxCount;
-    const palette = ["#FFF4D6", "#FDD49E", "#FC8D59", "#E34A33", "#B30000"];
-    const paletteIndex = Math.min(palette.length - 1, Math.ceil(intensity * palette.length) - 1);
-    const background = palette[paletteIndex];
-    return {
-      background,
-      color: paletteIndex >= 2 ? "#fff" : C.red,
-      border: `1px solid ${paletteIndex >= 2 ? background : "#E6B36A"}`,
-    };
+    if (!count) return { bg: "rgba(16,185,129,0.10)", text: "rgba(255,255,255,0.22)", border: "rgba(16,185,129,0.20)" };
+    const r = count / maxCount;
+    if (r <= 0.15) return { bg: "#d1fae5", text: "#065f46", border: "#6ee7b7" };
+    if (r <= 0.30) return { bg: "#fef9c3", text: "#713f12", border: "#fde68a" };
+    if (r <= 0.50) return { bg: "#fde68a", text: "#78350f", border: "#fbbf24" };
+    if (r <= 0.70) return { bg: "#fb923c", text: "#fff",    border: "#ea580c" };
+    if (r <= 0.88) return { bg: "#ef4444", text: "#fff",    border: "#b91c1c" };
+    return                { bg: "#7f1d1d", text: "#fecaca", border: "#991b1b" };
   };
+
+  const LEGEND = [
+    { label: "None",     bg: "rgba(16,185,129,0.10)", border: "rgba(16,185,129,0.20)" },
+    { label: "Low",      bg: "#fef9c3",               border: "#fde68a" },
+    { label: "Medium",   bg: "#fde68a",               border: "#fbbf24" },
+    { label: "High",     bg: "#fb923c",               border: "#ea580c" },
+    { label: "Critical", bg: "#7f1d1d",               border: "#991b1b" },
+  ];
 
   return (
     <div style={{ marginBottom: 34 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 12, flexWrap: "wrap" }}>
-        <SectionLabel sub="Rows show sites and columns show the seven most concentrated hazards. Cell values are report counts.">
+        <SectionLabel sub="Rows show sites · Columns show the seven most concentrated hazards · Cell intensity = report count">
           Site × Hazard Risk Heatmap
         </SectionLabel>
         <select value={riskScope} onChange={(e) => setRiskScope(e.target.value)} aria-label="Heatmap risk filter"
@@ -877,25 +883,39 @@ function Heatmap({ setView, data }) {
           <option>All</option>
         </select>
       </div>
-      <div style={{ background: C.navyDeep, border: `1px solid ${C.line}`, borderRadius: 4, overflowX: "auto" }}>
+
+      {/* Intensity legend */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
+        <span style={{ fontSize: 11, fontFamily: "'Inter',sans-serif", color: C.inkSoft, fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase" }}>Intensity:</span>
+        {LEGEND.map(({ label, bg, border }) => (
+          <div key={label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+            <div style={{ width: 16, height: 16, borderRadius: 3, background: bg, border: `1.5px solid ${border}` }} />
+            <span style={{ fontSize: 11.5, fontFamily: "'Inter',sans-serif", color: C.ink }}>{label}</span>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ background: "#071626", border: `1px solid ${C.line}`, borderRadius: 6, overflowX: "auto", boxShadow: "0 4px 24px rgba(0,0,0,0.22)" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "'Inter',sans-serif" }}>
           <thead>
-            <tr style={{ background: "#051220" }}>
-              <th style={{ textAlign: "left", padding: "10px 16px", color: "#EFE6C8", fontSize: 12.5, fontWeight: 600 }}>Site</th>
+            <tr style={{ background: "rgba(5,18,32,0.98)" }}>
+              <th style={{ textAlign: "left", padding: "12px 16px", color: "#EFE6C8", fontSize: 11.5, fontWeight: 700, letterSpacing: 0.5, borderBottom: "1px solid rgba(255,255,255,0.08)", whiteSpace: "nowrap" }}>
+                SITE / HAZARD
+              </th>
               {heatmapData.hazards.map((hazard) => (
-                <th key={hazard} style={{ padding: "10px 8px", color: "#fff", fontSize: 12.5, fontWeight: 700, minWidth: 96 }}>
+                <th key={hazard} style={{ padding: "12px 8px", color: "#94a3b8", fontSize: 11, fontWeight: 700, minWidth: 88, maxWidth: 120, wordBreak: "break-word", textAlign: "center", borderBottom: "1px solid rgba(255,255,255,0.08)", letterSpacing: 0.3, lineHeight: 1.35 }}>
                   {hazard}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {heatmapData.sites.map(({ site }) => {
+            {heatmapData.sites.map(({ site }, rowIdx) => {
               const siteId = Object.entries(data.siteIds).find(([, name]) => name === site)?.[0];
               return (
-                <tr key={site}>
+                <tr key={site} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", background: rowIdx % 2 === 0 ? "rgba(255,255,255,0.025)" : "transparent" }}>
                   <td onClick={() => siteId && setView({ page: "site-drill", siteId })}
-                    style={{ padding: "9px 16px", fontSize: 13, color: "#E7EEF2", whiteSpace: "nowrap", cursor: siteId ? "pointer" : "default", fontWeight: 700 }}>
+                    style={{ padding: "10px 16px", fontSize: 12.5, color: "#E7EEF2", whiteSpace: "nowrap", cursor: siteId ? "pointer" : "default", fontWeight: 700 }}>
                     {site}
                   </td>
                   {heatmapData.hazards.map((hazard) => {
@@ -904,21 +924,34 @@ function Heatmap({ setView, data }) {
                     const cellKey = `${site}-${hazard}`;
                     return (
                       <td key={hazard} style={{ textAlign: "center", padding: 5, position: "relative" }}>
-                        <button type="button" disabled={!cell.count} onClick={() => setView({ page: "reports", siteFilter: site, hazardFilter: hazard, riskFilter: "All" })}
+                        <button type="button" disabled={!cell.count}
+                          onClick={() => cell.count && setView({ page: "reports", siteFilter: site, hazardFilter: hazard, riskFilter: "All" })}
                           onMouseEnter={() => setHoveredCell(cellKey)} onMouseLeave={() => setHoveredCell(null)}
-                          aria-label={`${site}, ${hazard}, ${cell.count} reports`} style={{ width: "100%", minHeight: 36, background: cs.background, color: cs.color, border: cs.border, borderRadius: 3, padding: "7px 0", fontSize: 13, fontWeight: 800, cursor: cell.count ? "pointer" : "default" }}>
-                          {cell.count}
+                          aria-label={`${site}, ${hazard}, ${cell.count} reports`}
+                          style={{ width: "100%", minHeight: 40, background: cs.bg, color: cs.text, border: `1.5px solid ${cs.border}`, borderRadius: 4, padding: "6px 4px", fontSize: 14, fontWeight: 800, cursor: cell.count ? "pointer" : "default", boxShadow: cell.count ? "0 2px 6px rgba(0,0,0,0.25)" : "none" }}>
+                          {cell.count || "·"}
                         </button>
-                        {hoveredCell === cellKey && <div style={{ position: "absolute", zIndex: 3, left: "50%", bottom: "calc(100% - 2px)", transform: "translateX(-50%)", width: 190, padding: "8px 10px", background: C.navy, color: "#fff", borderRadius: 3, textAlign: "left", fontSize: 12, lineHeight: 1.45, pointerEvents: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.2)" }}>
-                          <b>{site}</b><br />{hazard}<br />Total reports: <b>{cell.total}</b><br />Critical + High: <b>{cell.highCritical}</b>
-                        </div>}
+                        {hoveredCell === cellKey && cell.count > 0 && (
+                          <div style={{ position: "absolute", zIndex: 30, left: "50%", bottom: "calc(100% + 6px)", transform: "translateX(-50%)", width: 205, padding: "10px 12px", background: "#0f1923", color: "#fff", borderRadius: 5, textAlign: "left", fontSize: 12, lineHeight: 1.55, pointerEvents: "none", boxShadow: "0 8px 28px rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                            <b style={{ color: C.saffron }}>{site}</b><br />
+                            <span style={{ color: "#94a3b8" }}>{hazard}</span><br />
+                            Total reports: <b style={{ color: "#e2e8f0" }}>{cell.total}</b><br />
+                            Critical + High: <b style={{ color: cell.highCritical ? "#f87171" : "#94a3b8" }}>{cell.highCritical}</b>
+                          </div>
+                        )}
                       </td>
                     );
                   })}
                 </tr>
               );
             })}
-            {!heatmapData.sites.length && <tr><td colSpan={heatmapData.hazards.length + 1} style={{ padding: 18, textAlign: "center", color: "#E7EEF2" }}>No reports match this risk filter.</td></tr>}
+            {!heatmapData.sites.length && (
+              <tr>
+                <td colSpan={heatmapData.hazards.length + 1} style={{ padding: 28, textAlign: "center", color: "#94a3b8", fontSize: 13 }}>
+                  No reports match this risk filter.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -1638,7 +1671,15 @@ function ReportDetail({ reportId, setView, reports, onIngest }) {
 /* ROOT                                                                 */
 /* ------------------------------------------------------------------ */
 export default function App() {
-  const [view, setView] = useState({ page: "home" });
+  const [view, setView] = useState(() => {
+    try {
+      const savedView = JSON.parse(window.localStorage.getItem("oil-sentinel-view"));
+      const validPages = ["home", "command-center", "workforce-intelligence", "dashboard", "site-drill", "reports", "report-detail"];
+      return validPages.includes(savedView?.page) ? savedView : { page: "home" };
+    } catch {
+      return { page: "home" };
+    }
+  });
   const [reports, setReports] = useState([]);
   const [demoMode, setDemoMode] = useState(false);
 
@@ -1718,7 +1759,7 @@ export default function App() {
         background: isFullWidthWorkspace ? "#05080a" : "transparent",
       }}>
         {view.page === "home" && <Home onStart={() => setView({ page: "command-center" })} onWorkforce={() => setView({ page: "workforce-intelligence" })} />}
-        {view.page === "command-center" && <CommandCenter setView={setView} onIngest={onIngest} />}
+        {view.page === "command-center" && <CommandCenter setView={setView} onIngest={onIngest} reports={reports} resultsData={dashboardData} />}
         {view.page === "workforce-intelligence" && <WorkforceIntelligence onBack={() => setView({ page: "home" })} />}
         {view.page === "dashboard" && <Dashboard setView={setView} onIngest={onIngest} data={dashboardData} demoMode={demoMode} />}
         {view.page === "site-drill" && <SiteDrilldown siteId={view.siteId} setView={setView} data={dashboardData} />}

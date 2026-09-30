@@ -1,10 +1,10 @@
 import uuid
 from datetime import datetime, timezone
 from app.models.analysis import Analysis
-from pgvector.sqlalchemy import Vector
 from sqlalchemy import Boolean, DateTime, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from app.services.evaluation_service import run_evaluation
 
 from app.db.database import Base
 
@@ -42,10 +42,12 @@ class Report(Base):
         nullable=False,
     )
 
-    embedding: Mapped[list[float] | None] = mapped_column(
-        Vector(384),
-        nullable=True,
-    )
+    # embedding disabled temporarily (requires pgvector)
+    # embedding: Mapped[list[float] | None] = mapped_column(
+    #     Vector(384),
+    #     nullable=True,
+    # )
+
     analysis: Mapped["Analysis | None"] = relationship(
         back_populates="report",
         uselist=False,

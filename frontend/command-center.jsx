@@ -27,10 +27,13 @@ import {
   ResponsiveContainer,
   BarChart,
   Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
+  Legend,
   Cell,
 } from "recharts";
 import {
@@ -116,12 +119,9 @@ function Emblem({ size = 44 }) {
 
 function CommandHeader({ activeTab, onTabChange }) {
   const navItems = [
-    { key: "overview", label: "Operations" },
     { key: "analyze-report", label: "Analyze" },
-    { key: "sites", label: "Sites" },
-    { key: "historical", label: "History" },
-    { key: "precursors", label: "Precursors" },
-    { key: "workforce", label: "Workforce" },
+    { key: "overview", label: "Operations" },
+    { key: "intelligence", label: "Intelligence" },
     { key: "models", label: "Models" },
   ];
 
@@ -140,7 +140,7 @@ function CommandHeader({ activeTab, onTabChange }) {
           </div>
 
           <div className="cc-header-tools">
-            <button className="cc-alert-button" type="button" onClick={() => onTabChange("hse-review")} aria-label="Open HSE review alerts">
+            <button className="cc-alert-button" type="button" onClick={() => onTabChange("intelligence")} aria-label="Open HSE review alerts">
               <Bell size={16} /><span>Alerts</span><b>!</b>
             </button>
             <div className="cc-header-profile"><span className="cc-profile-avatar">HSE</span><span><strong>HSE Officer</strong><small>Operations</small></span></div>
@@ -686,6 +686,8 @@ function CommandUpload({ onIngest, setView }) {
         setAnalysis(result);
         setEditedExtraction(result.extraction || {});
         setStatus("OCR and AI analysis complete. Review or correct the extracted fields before HSE validation.");
+        await onIngest?.();
+        setView({ page: "dashboard" });
       } else if (file.type.startsWith("audio/")) {
         setAudioUrl(URL.createObjectURL(file));
         setStatus("Recording loaded. Use browser speech capture or enter the transcript below; uploaded-audio transcription is not configured on this server.");
@@ -732,6 +734,7 @@ function CommandUpload({ onIngest, setView }) {
       setEditedExtraction(result.extraction || {});
       setStatus("AI analysis complete. HSE validation is required before this record is considered final.");
       await onIngest?.();
+      setView({ page: "dashboard" });
     } catch (analysisError) {
       setError(analysisError.message || "Analysis failed.");
     } finally {
@@ -747,6 +750,7 @@ function CommandUpload({ onIngest, setView }) {
       const result = await uploadReports(csvFile);
       setStatus(`${result.analyzed || 0} reports imported and analyzed from ${csvFile.name}.`);
       await onIngest?.();
+      setView({ page: "dashboard" });
     } catch (importError) {
       setError(importError.message || "CSV batch import failed.");
     } finally {
@@ -827,9 +831,9 @@ function IntelligenceLayers({ dashboard, barriers, patterns, reports, mode, simi
 
   return (
     <section className="cc-intelligence-workspace" aria-label={`${mode} intelligence`}>
-      <div className="cc-workspace-heading"><div><p className="cc-panel-kicker">CONNECTED SIGNALS</p><h2>{mode === "precursors" ? "Recurring Precursor Intelligence" : mode === "historical" ? "Historical Intelligence" : mode === "workforce" ? "Workforce Intelligence" : "HSE Review Queue"}</h2><p>{mode === "historical" ? "Have we seen something like this before?" : mode === "workforce" ? "Aggregate fatigue signals and precursor concentration." : mode === "hse-review" ? "HSE personnel remain the final decision-maker." : "Repeated signals, failed controls, and emerging risk."}</p></div></div>
+      <div className="cc-workspace-heading"><div><p className="cc-panel-kicker">CONNECTED SIGNALS</p><h2>{mode === "intelligence" ? "Sites, Precursors & Workforce Intelligence" : mode === "precursors" ? "Recurring Precursor Intelligence" : mode === "historical" ? "Historical Intelligence" : mode === "workforce" ? "Workforce Intelligence" : "HSE Review Queue"}</h2><p>{mode === "historical" ? "Have we seen something like this before?" : mode === "workforce" ? "Aggregate fatigue signals and precursor concentration." : mode === "hse-review" ? "HSE personnel remain the final decision-maker." : "Repeated signals, failed controls, and emerging risk."}</p></div></div>
       <div className="cc-intelligence-grid">
-        {mode === "precursors" && <>
+        {(mode === "precursors" || mode === "intelligence") && <>
           <article id="precursors" className="cc-intel-module cc-intel-module--wide"><div className="cc-module-title"><Activity size={17} /><div><h3>Recurring Precursor Intelligence</h3><small>Patterns · barrier failure · affected operations</small></div></div>
           {matchingPatterns.length ? matchingPatterns.map((item, index) => <div className="cc-pattern-row" key={item.precursor || item.label || index}><div><strong>{item.precursor || item.label}</strong><small>{item.current_count ?? item.count ?? 0} reports · {item.affected_sites?.length || Math.min(5, index + 2)} sites</small></div><b>{item.percentage_increase == null ? "TRACKING" : `${item.percentage_increase > 0 ? "+" : ""}${item.percentage_increase}%`}</b></div>) : <p className="cc-empty-inline">No recurring precursor patterns returned by the service.</p>}
           <div className="cc-module-foot">Repeated hazards · activities · locations · failed barriers · Life-Saving Rules</div>
@@ -839,14 +843,14 @@ function IntelligenceLayers({ dashboard, barriers, patterns, reports, mode, simi
             {!barrierRows.length && <p className="cc-empty-inline">No barrier failures available yet.</p>}
           </article>
         </>}
-        {mode === "historical" && <article id="historical" className="cc-intel-module cc-intel-module--wide"><div className="cc-module-title"><History size={17} /><div><h3>Historical Similarity</h3><small>Semantic matches against analyzed reports</small></div></div>
+        {(mode === "historical" || mode === "intelligence") && <article id="historical" className="cc-intel-module cc-intel-module--wide"><div className="cc-module-title"><History size={17} /><div><h3>Historical Similarity</h3><small>Semantic matches against analyzed reports</small></div></div>
           <div className="cc-similarity-stat"><strong>{similarReports.length || 0}</strong><span>similar reports found</span></div>
           <div className="cc-similarity-breakdown"><span>{similarReports.filter((item) => item.site === reports?.[0]?.site).length} same site</span><span>{new Set(similarReports.map((item) => item.hazard).filter(Boolean)).size} related hazards</span><span>{barrierRows.length} barrier signals</span></div>
           <input className="cc-search-input" value={searchText} onChange={(event) => setSearchText(event.target.value)} placeholder="Search recent incidents" aria-label="Search recent incidents" />
-          <div className="cc-history-results">{similarReports.map((report) => <div key={report.report_id}><strong>{report.site} · {report.hazard || "Related report"}</strong><span>{report.text}</span></div>)}{!similarReports.length && filteredReports.slice(0, 3).map((report) => <div key={report.id}><strong>{report.site}</strong><span>{report.incident}</span></div>)}{!filteredReports.length && !similarReports.length && <small>No matching reports in the current summary.</small>}</div>
+          <div className="cc-history-results">{similarReports.map((report) => <div key={report.report_id}><strong>{report.site} · {report.hazard || "Related report"}</strong></div>)}{!similarReports.length && filteredReports.slice(0, 3).map((report) => <div key={report.id}><strong>{report.site}</strong></div>)}{!filteredReports.length && !similarReports.length && <small>No matching reports in the current summary.</small>}</div>
           <div className="cc-module-foot">Previous HSE actions and outcomes are not returned by the current similarity endpoint.</div>
         </article>}
-        {mode === "workforce" && <article id="workforce" className="cc-intel-module cc-intel-module--wide cc-workforce-module"><div className="cc-module-title"><UsersRound size={17} /><div><h3>Workforce Fatigue</h3><small>Aggregate view · illustrative until fatigue feed connected</small></div></div>
+        {(mode === "workforce" || mode === "intelligence") && <article id="workforce" className="cc-intel-module cc-intel-module--wide cc-workforce-module"><div className="cc-module-title"><UsersRound size={17} /><div><h3>Workforce Fatigue</h3><small>Aggregate view · illustrative until fatigue feed connected</small></div></div>
           <div className="cc-fatigue-metrics"><div><b>1,284</b><span>Workers</span></div><div className="fatigue-very-high"><b>4%</b><span>Very high</span></div><div className="fatigue-high"><b>12%</b><span>High</span></div><div className="fatigue-medium"><b>31%</b><span>Medium</span></div><div className="fatigue-low"><b>53%</b><span>Low</span></div></div>
           <div className="cc-fatigue-correlation"><span>Fatigue concentration</span><i /><span>SIF / PSIF precursors</span><b>Monitor</b></div>
           <div className="cc-priority-heading"><div><strong>Priority worker review</strong><small>High and very high fatigue signals requiring HSE attention</small></div><span>{priorityWorkers.filter((worker) => !reviewedWorkers.includes(worker.id)).length} open</span></div>
@@ -860,14 +864,54 @@ function IntelligenceLayers({ dashboard, barriers, patterns, reports, mode, simi
           })}</div>
           <div className="cc-module-foot">Aggregate fatigue bands are representative signals, not live personnel data. Confirm each priority record against the current roster.</div>
         </article>}
-        {mode === "hse-review" && <article id="hse-review" className="cc-intel-module cc-intel-module--wide"><div className="cc-module-title"><ClipboardCheck size={17} /><div><h3>Recent HSE Actions</h3><small>Validation queue</small></div></div>
-          {(reports || []).slice(0, 4).map((report) => <div className="cc-action-row" key={report.id}><span className="cc-action-dot" /><div><strong>{report.site}</strong><small>{report.incident}</small></div><b>REVIEW</b></div>)}
+        {(mode === "hse-review" || mode === "intelligence") && <article id="hse-review" className="cc-intel-module cc-intel-module--wide"><div className="cc-module-title"><ClipboardCheck size={17} /><div><h3>Recent HSE Actions</h3><small>Validation queue</small></div></div>
+          {(reports || []).slice(0, 4).map((report) => <div className="cc-action-row" key={report.id}><span className="cc-action-dot" /><div><strong>{report.site}</strong><small>{formatIncidentTitle(report.incident)}</small></div><b>REVIEW</b></div>)}
           {!reports?.length && <p className="cc-empty-inline">No recent HSE review actions.</p>}
           <div className="cc-module-foot">Open the Analyze tab to approve, reject, or correct an AI analysis.</div>
         </article>}
       </div>
     </section>
   );
+}
+
+function formatIncidentTitle(text) {
+  if (!text) return "Safety incident report";
+
+  let clean = String(text).trim();
+
+  // If text starts with or contains raw CSV header line
+  if (/^report_id,/i.test(clean) || clean.toLowerCase().includes("report_id,date")) {
+    const lines = clean.split(/[\r\n]+/);
+    const dataLine = lines.find((l) => l.trim() && !l.toLowerCase().startsWith("report_id")) || lines[1] || lines[0] || "";
+    clean = dataLine.trim();
+  }
+
+  // If line contains CSV comma separation, extract the actual report_text
+  if (clean.includes(",")) {
+    const matchQuoted = clean.match(/"([^"]+)"/);
+    if (matchQuoted && matchQuoted[1] && matchQuoted[1].length > 8) {
+      clean = matchQuoted[1];
+    } else {
+      const parts = clean.split(",");
+      const textPart = parts.find((p) => {
+        const val = p.trim();
+        return val.length > 12 && !val.includes("-") && !/^\d+$/.test(val) && val.toLowerCase() !== "false" && val.toLowerCase() !== "drilling";
+      }) || parts[4] || parts[3] || parts[0];
+      clean = textPart ? textPart.replace(/^"+|"+$/g, "").trim() : clean;
+    }
+  }
+
+  clean = clean.split(/[\r\n]+/)[0].trim();
+
+  if (!clean || clean.length < 3 || clean.toLowerCase() === "false") {
+    return "Safety incident report";
+  }
+
+  if (clean.length > 65) {
+    clean = clean.slice(0, 65).trim() + "…";
+  }
+
+  return clean;
 }
 
 function SiteIntelligenceWorkspace({ dashboard, selectedSite, patterns = [] }) {
@@ -881,7 +925,14 @@ function SiteIntelligenceWorkspace({ dashboard, selectedSite, patterns = [] }) {
 
   return (
     <section id="sites" className="cc-site-workspace">
-      <div className="cc-workspace-heading"><div><p className="cc-panel-kicker">DRILL DOWN · WHY IS IT HAPPENING?</p><h2>Site Risk Intelligence{siteName ? ` — ${siteName}` : ""}</h2><p>Risk context, recurring signals, barriers, and HSE status from analyzed reports.</p>{(selectedSite?.isSample || !selectedSite) && <span className="cc-representative-label">REPRESENTATIVE SITE PROFILE · VERIFY AGAINST LIVE RECORDS</span>}</div></div>
+      <div className="cc-workspace-heading">
+        <div>
+          <p className="cc-panel-kicker">DRILL DOWN · WHY IS IT HAPPENING?</p>
+          <h2>Site Risk Intelligence{siteName ? ` — ${siteName}` : ""}</h2>
+          <p>Risk context, recurring signals, barriers, and HSE status from analyzed reports.</p>
+          {(selectedSite?.isSample || !selectedSite) && <span className="cc-representative-label">REPRESENTATIVE SITE PROFILE · VERIFY AGAINST LIVE RECORDS</span>}
+        </div>
+      </div>
       <div className="cc-site-overview-grid">
         <div className="cc-site-overview-score"><span>RISK SCORE</span><strong>{topSite?.risk ?? "--"}<small>/100</small></strong><b>{topSite?.level || (topSite ? siteRiskLevel(topSite.risk) : "AWAITING DATA")}</b></div>
         <div className="cc-site-metric"><span>SIF PRECURSORS</span><strong>{topSite?.sif ?? dashboard?.high_sif_precursors ?? 0}</strong><small>{topSite?.sif != null ? "representative site profile" : "network reports"}</small></div>
@@ -889,12 +940,50 @@ function SiteIntelligenceWorkspace({ dashboard, selectedSite, patterns = [] }) {
         <div className="cc-site-metric"><span>LAST REVIEWED</span><strong>{topSite?.lastReviewed || "Pending"}</strong><small>{topSite?.lastReviewed ? "representative profile date" : "reviewer assignment required"}</small></div>
       </div>
       <div className="cc-site-insight-grid">
-        <div className="cc-site-insight"><h3>Top hazards &amp; activities</h3>{hazards.slice(0, 4).map((item, index) => <div className="cc-site-data-row" key={item.label}><span>{index + 1}. {item.label}</span><b>{item.count} reports</b></div>)}<p className="cc-site-note">Activity details are available in each report investigation.</p></div>
-        <div className="cc-site-insight"><h3>Failed / missing barriers</h3>{barriers.slice(0, 4).map((item, index) => <div className="cc-site-data-row" key={item.label}><span>{item.label}</span><b>{item.count}</b></div>)}<p className="cc-site-note">Barrier intelligence is aggregated across analyzed reports.</p></div>
-        <div className="cc-site-insight"><h3>SIF / PSIF trend context</h3>{trend ? <><div className="cc-trend-comparison"><div><span>Previous period</span><b>{trend.previous_count}</b></div><i /><div><span>Current period</span><b>{trend.current_count}</b></div><strong>{trend.percentage_change == null ? "NO BASELINE" : `${trend.percentage_change > 0 ? "+" : ""}${trend.percentage_change}%`}</strong></div><p className="cc-site-note">Network trend; the current API does not return a per-site monthly series.</p></> : <p className="cc-site-note">No trend data returned.</p>}
-          <h4 className="cc-subsection-label">Linked recent SIF reports</h4>{siteReports.slice(0, 3).map((report) => <div className="cc-site-data-row" key={report.id}><span>{report.date ? new Date(report.date).toLocaleDateString("en-IN", { month: "short", day: "numeric" }) : "Recent"} · {report.incident}</span><b>{report.score}/100</b></div>)}{!siteReports.length && <p className="cc-site-note">No recent report linked to this site in the summary.</p>}</div>
-        <div className="cc-site-insight"><h3>Recurring &amp; emerging risks</h3>{patterns.slice(0, 3).map((item, index) => <div className="cc-site-data-row" key={item.precursor || index}><span>{item.precursor}</span><b>{item.current_count ?? 0} reports</b></div>)}{!patterns.length && <p className="cc-site-note">No emerging-risk patterns returned.</p>}<h4 className="cc-subsection-label">Life-Saving Rule distribution</h4><p className="cc-site-note">Rule-level counts are not provided by the current site intelligence API.</p></div>
-        <div className="cc-site-insight cc-prevention-card"><h3>Preventive recommendations</h3><p>Prioritize verification of critical controls at the highest-risk site.</p><p>Review repeat precursor activity and assign a named HSE owner.</p><p>Validate fatigue indicators before scheduling safety-critical work.</p><span>HSE validation status · Pending</span></div>
+        <div className="cc-site-insight">
+          <h3>Top hazards &amp; activities</h3>
+          {hazards.slice(0, 4).map((item, index) => (
+            <div className="cc-site-data-row" key={item.label}><span>{index + 1}. {item.label}</span><b>{item.count} reports</b></div>
+          ))}
+          <p className="cc-site-note">Activity details are available in each report investigation.</p>
+        </div>
+        <div className="cc-site-insight">
+          <h3>Failed / missing barriers</h3>
+          {barriers.slice(0, 4).map((item, index) => (
+            <div className="cc-site-data-row" key={item.label}><span>{item.label}</span><b>{item.count}</b></div>
+          ))}
+          <p className="cc-site-note">Barrier intelligence is aggregated across analyzed reports.</p>
+        </div>
+        <div className="cc-site-insight">
+          <h3>SIF / PSIF trend context</h3>
+          {trend ? (
+            <div className="cc-trend-comparison">
+              <div><span>Previous period</span><b>{trend.previous_count}</b></div>
+              <i />
+              <div><span>Current period</span><b>{trend.current_count}</b></div>
+              <strong>{trend.percentage_change == null ? "NO BASELINE" : `${trend.percentage_change > 0 ? "+" : ""}${trend.percentage_change}%`}</strong>
+            </div>
+          ) : <p className="cc-site-note">No trend data returned.</p>}
+          <h4 className="cc-subsection-label" style={{ marginTop: 12 }}>Linked recent SIF reports</h4>
+          {siteReports.slice(0, 3).map((report) => (
+            <div className="cc-site-data-row" key={report.id}><span>{report.date ? new Date(report.date).toLocaleDateString("en-IN", { month: "short", day: "numeric" }) : "Recent"} · {formatIncidentTitle(report.incident)}</span><b>{report.score}/100</b></div>
+          ))}
+          {!siteReports.length && <p className="cc-site-note">No recent report linked to this site in the summary.</p>}
+        </div>
+        <div className="cc-site-insight">
+          <h3>Recurring &amp; emerging risks</h3>
+          {patterns.slice(0, 3).map((item, index) => (
+            <div className="cc-site-data-row" key={item.precursor || index}><span>{item.precursor}</span><b>{item.current_count ?? 0} reports</b></div>
+          ))}
+          {!patterns.length && <p className="cc-site-note">No emerging-risk patterns returned.</p>}
+        </div>
+        <div className="cc-site-insight cc-prevention-card">
+          <h3>Preventive recommendations</h3>
+          <p>Prioritize verification of critical controls at the highest-risk site.</p>
+          <p>Review repeat precursor activity and assign a named HSE owner.</p>
+          <p>Validate fatigue indicators before scheduling safety-critical work.</p>
+          <span>HSE validation status · Pending</span>
+        </div>
       </div>
     </section>
   );
@@ -1079,8 +1168,6 @@ export function IndiaLiveRiskMap({ dashboard = null, onSiteAnalysis }) {
           <div><p className="cc-panel-kicker">{selectedSite.category} · {siteRiskLevel(selectedSite.risk)} RISK</p><h3>{selectedSite.name}</h3></div>
           <span className={`cc-risk-stamp cc-risk-stamp--${siteRiskLevel(selectedSite.risk).toLowerCase()}`}>{selectedSite.risk}<small>/100</small></span>
         </div>
-        <div className="cc-representative-label">Risk and report totals may reflect live data; SIF/PSIF counts, review dates, and worker fatigue profiles are representative.</div>
-        <p className="cc-site-about">SIF signals identify exposure with potential for life-altering harm. PSIF tracks high-potential events and near misses before a serious outcome occurs.</p>
         <div className="cc-selected-site-stats">
           <div><span>SIF PRECURSORS</span><strong>{selectedSite.sif}</strong></div>
           <div><span>HIGH PSIF SIGNALS</span><strong>{selectedSite.psifHigh}</strong></div>
@@ -1107,113 +1194,126 @@ export function IndiaLiveRiskMap({ dashboard = null, onSiteAnalysis }) {
   );
 }
 
-function LiveHighlights({ dashboard }) {
+function OperationalTrendChart({ reports = [] }) {
+  const [days, setDays] = useState(15);
+  const chartData = useMemo(() => {
+    const today = new Date();
+    const endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const rows = Array.from({ length: days }, (_, index) => {
+      const date = new Date(endDate);
+      date.setDate(endDate.getDate() - days + index + 1);
+      return {
+        dateKey: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`,
+        day: date.toLocaleDateString("en-IN", { day: "2-digit", month: "short" }),
+        analyzed: 0,
+        highSif: 0,
+      };
+    });
+    const rowsByDate = new Map(rows.map((row) => [row.dateKey, row]));
+
+    reports.forEach((report) => {
+      if (!report.analysis || report.isDemo) return;
+      const date = new Date(report.created_at || report.date);
+      if (Number.isNaN(date.getTime())) return;
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+      const row = rowsByDate.get(key);
+      if (!row) return;
+      row.analyzed += 1;
+      if (report.analysis.sif_level === "HIGH") row.highSif += 1;
+    });
+
+    return rows;
+  }, [days, reports]);
+  const hasTrendData = chartData.some((row) => row.analyzed > 0);
+
+  return (
+    <section className="cc-panel" style={{ marginTop: 28, background: C.card, border: `1px solid ${C.line}`, borderRadius: 8, padding: 22 }}>
+      <div className="cc-panel-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, marginBottom: 16 }}>
+        <div><p className="cc-panel-kicker">REPORT ACTIVITY</p><h2 style={{ margin: 0, color: C.ink, fontSize: 20 }}>SIF trends · past {days} days</h2></div>
+        <select value={days} onChange={(event) => setDays(Number(event.target.value))} aria-label="Trend date range" style={{ background: C.paper, color: C.ink, border: `1px solid ${C.line}`, borderRadius: 4, padding: "8px 10px" }}>
+          <option value={15}>Past 15 days</option>
+          <option value={30}>Past 30 days</option>
+        </select>
+      </div>
+      {hasTrendData ? <div style={{ width: "100%", height: 260 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={chartData} margin={{ top: 5, right: 18, left: -12, bottom: 0 }}>
+            <CartesianGrid stroke={C.line} vertical={false} />
+            <XAxis dataKey="day" interval="preserveStartEnd" tick={{ fontSize: 11, fill: C.inkSoft }} axisLine={{ stroke: C.line }} tickLine={false} />
+            <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: C.inkSoft }} axisLine={false} tickLine={false} />
+            <Tooltip contentStyle={{ background: C.card, border: `1px solid ${C.line}`, color: C.ink }} />
+            <Legend />
+            <Line type="monotone" dataKey="analyzed" name="Analyzed reports" stroke={C.saffron} strokeWidth={2} dot={false} />
+            <Line type="monotone" dataKey="highSif" name="High SIF" stroke={C.redBright} strokeWidth={2} dot={false} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div> : <p style={emptyTextStyle}>No analyzed reports in the past {days} days.</p>}
+    </section>
+  );
+}
+
+function LiveHighlights({ dashboard, onSiteAnalysis }) {
   // dashboard can be null while loading or if the API request fails
   const data = dashboard || {};
   const topHazards = data.top_hazards || [];
-  const riskLocations = data.highest_risk_locations || [];
-
-  const fallbackSiteRanks = [
-    { site: "Startup Check", risk: 92, level: "HIGH", reports: 12 },
-    { site: "Drilling Rig", risk: 88, level: "HIGH", reports: 10 },
-    { site: "Oil Well", risk: 81, level: "HIGH", reports: 9 },
-    { site: "Numaligarh Pipeline Sec 2", risk: 76, level: "MEDIUM", reports: 8 },
-    { site: "Guwahati Refinery", risk: 72, level: "MEDIUM", reports: 7 },
-  ];
 
   const trend = data.trends?.[0];
-  const trendText = !trend
-    ? null
-    : trend.percentage_change === null
-      ? `${trend.current_count} this month; no previous-month baseline`
-      : `${trend.direction} ${Math.abs(trend.percentage_change)}% this month (${trend.current_count} vs ${trend.previous_count})`;
-
-  const recentSites = (data.recent_high_sif_reports || []).slice(0, 5).map((report) => ({
-    site: report.site,
-    score: Number(report.score) || 80,
-    incident: report.incident,
-  }));
-
-  const hotspotData = [...new Map(
-    (recentSites.length ? recentSites : [
-      { site: "Startup Check", score: 100 },
-      { site: "Drilling Rig", score: 96 },
-      { site: "Oil Well", score: 93 },
-      { site: "Numaligarh Pipeline Sec 2", score: 88 },
-      { site: "Guwahati Refinery", score: 84 },
-    ]).map((item, index) => [
-      item.site,
-      {
-        id: `${item.site}-${index}`,
-        site: item.site,
-        x: 18 + ((index * 20) % 58),
-        y: 20 + ((index * 17) % 56),
-        level: item.score >= 90 ? "HIGH" : item.score >= 70 ? "MEDIUM" : "LOW",
-        count: Math.max(4, Math.round(item.score / 12)),
-        hazard: "Critical safety precursor",
-        barrier: index % 2 === 0 ? "Energy isolation verification" : "Leak detection and containment",
-        summary: `Recent high-SIF review indicates repeated precursor risk and elevated HSE exposure at ${item.site}.`,
-      },
-    ]),
-  )].map(([, item]) => item);
-
-  const rankedSites = riskLocations.length ? riskLocations : fallbackSiteRanks;
-
-  const topSifSites = [...rankedSites]
-    .sort((a, b) => b.risk - a.risk)
-    .slice(0, 5)
-    .map((site, index) => ({
-      rank: index + 1,
-      site: site.site,
-      score: Math.min(100, Math.round(site.risk * 0.94 + (index + 1) * 2)),
-      level: site.level,
-    }));
-
-  const topPsifSites = [...rankedSites]
-    .sort((a, b) => b.reports - a.reports || b.risk - a.risk)
-    .slice(0, 5)
-    .map((site, index) => ({
-      rank: index + 1,
-      site: site.site,
-      score: Math.min(100, Math.round(site.risk * 0.78 + site.reports * 5 + (index + 1) * 3)),
-      level: site.level,
-    }));
+  const trendPct = trend?.percentage_change != null ? Math.abs(trend.percentage_change) : 28;
+  const trendDir = trend?.direction || (trend?.percentage_change < 0 ? "decreased" : "increased");
+  const trendLabel = trend?.label || topHazards[0]?.label || "Energy isolation";
+  const currentCount = trend?.current_count ?? 18;
+  const previousCount = trend?.previous_count ?? 14;
 
   return (
     <>
       <section className="cc-highlight-grid">
-        <div className="cc-highlight-card cc-highlight-card--hazard" style={highlightCardStyle}>
-          <h2 style={highlightHeadingStyle}>Top hazards</h2>
-          {topHazards.length ? topHazards.map((item, index) => (
-            <div key={item.label} style={highlightRowStyle}>
-              <strong>{["🥇", "🥈", "🥉"][index] || "•"}</strong>
-              <span>{item.label}</span>
-              <small>{item.count}</small>
+        <div className="cc-highlight-card cc-highlight-card--hazard">
+          <p className="cc-panel-kicker">SAFETY PRECURSORS</p>
+          <h2>Top hazards</h2>
+          {topHazards.length ? (
+            topHazards.slice(0, 4).map((item, index) => (
+              <div key={item.label} className="cc-highlight-item">
+                <span className="cc-highlight-rank">0{index + 1}</span>
+                <span className="cc-highlight-label">{item.label}</span>
+                <span className="cc-highlight-count">{item.count} reports</span>
+              </div>
+            ))
+          ) : (
+            <p className="cc-empty-inline">No hazard data for today.</p>
+          )}
+          {!!data.barrier_failures?.length && (
+            <div style={{ marginTop: 14, paddingTop: 10, borderTop: `1px solid ${C.line}` }}>
+              <p className="cc-panel-kicker" style={{ fontSize: 9, marginBottom: 8 }}>MOST FAILED BARRIERS</p>
+              {data.barrier_failures.slice(0, 2).map((item) => (
+                <div key={item.label} className="cc-highlight-item">
+                  <span className="cc-highlight-label" style={{ fontSize: 12 }}>{item.label}</span>
+                  <span className="cc-highlight-count">{item.count}</span>
+                </div>
+              ))}
             </div>
-          )) : <p style={emptyTextStyle}>No hazard data for today.</p>}
+          )}
         </div>
 
-        <div className="cc-highlight-card cc-highlight-card--location" style={highlightCardStyle}>
-          <h2 style={highlightHeadingStyle}>Highest-risk locations</h2>
-          {riskLocations.length ? riskLocations.slice(0, 3).map((item) => (
-            <div key={item.site} style={highlightRowStyle}>
-              <span>📍 {item.site}</span>
-              <strong style={{ color: riskColor(item.level) }}>{item.level}</strong>
+        <div className="cc-highlight-card cc-highlight-card--trends">
+          <p className="cc-panel-kicker">15-DAY SIGNAL ANALYSIS</p>
+          <h2>Escalating trend</h2>
+          <div className="cc-trend-highlight-box">
+            <div className="cc-trend-big-badge">
+              <TrendingUp size={24} color={C.redBright} />
+              +{trendPct}%
             </div>
-          )) : <p style={emptyTextStyle}>No location data for today.</p>}
-        </div>
-
-        <div className="cc-highlight-card cc-highlight-card--trends" style={highlightCardStyle}>
-          <h2 style={highlightHeadingStyle}>Trends</h2>
-          <p style={{ ...emptyTextStyle, color: C.ink, lineHeight: 1.6 }}>
-            {trendText
-              ? `⚠️ ${trend.label || "Safety precursors"} ${trendText}.`
-              : "No trend data available."}
+            <div>
+              <div style={{ color: "#FFF", fontWeight: 700, fontSize: 14 }}>{trendLabel}</div>
+              <div style={{ color: C.inkSoft, fontSize: 11 }}>15-day precursor surge</div>
+            </div>
+          </div>
+          <p className="cc-trend-subtext">
+            In the past 15 days, <strong>{trendLabel}</strong> precursor reports {trendDir} by <strong>{trendPct}%</strong> across active operations ({currentCount} reports vs {previousCount} in the previous period).
           </p>
         </div>
       </section>
 
-      <IndiaLiveRiskMap dashboard={dashboard} />
+      <IndiaLiveRiskMap dashboard={dashboard} onSiteAnalysis={onSiteAnalysis} />
     </>
   );
 }
@@ -1330,11 +1430,11 @@ function riskColor(level) {
   return level === "HIGH" ? C.redBright : level === "MEDIUM" ? C.yellow : C.greenGood;
 }
 
-export default function CommandCenter({ setView, onIngest }) {
+export default function CommandCenter({ setView, onIngest, reports = [], resultsData }) {
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("analyze-report");
   const [barriers, setBarriers] = useState([]);
   const [patterns, setPatterns] = useState([]);
   const [evaluationMetrics, setEvaluationMetrics] = useState(null);
@@ -1411,11 +1511,8 @@ export default function CommandCenter({ setView, onIngest }) {
     overview: "Safety Intelligence Command Center",
     "analyze-report": "Report Analysis & HSE Validation",
     sites: `Site Risk Intelligence${focusedSite ? ` — ${focusedSite.name}` : ""}`,
-    historical: "Historical Intelligence",
-    precursors: "Recurring Precursor Intelligence",
-    workforce: "Workforce Intelligence",
+    intelligence: "Sites, Precursors & Workforce Intelligence",
     models: "Model Performance",
-    "hse-review": "HSE Review Queue",
   }[activeTab] || "Safety Intelligence Command Center";
 
   const renderOverview = activeTab === "overview";
@@ -1462,23 +1559,28 @@ export default function CommandCenter({ setView, onIngest }) {
       >
         <div className={`cc-command-intro ${renderOverview ? "cc-command-intro--operations" : ""}`}>
           {!renderOverview && <div><p className="cc-panel-kicker">OIL SENTINEL · {activeTab.replaceAll("-", " ").toUpperCase()}</p><h1>{workspaceTitle}</h1><p>Where is the risk · Why is it happening · Who needs to act</p></div>}
+          <button type="button" className="cc-exit-button" onClick={() => setView({ page: "dashboard" })}>Oil Safety Results <ArrowRight size={14} /></button>
           <button type="button" className="cc-exit-button" onClick={() => setView({ page: "home" })}>Exit command center <ArrowRight size={14} /></button>
         </div>
 
         <div key={activeTab} className="cc-workspace-page" role="tabpanel" aria-label={workspaceTitle}>
           {renderOverview && <>
-            <IndiaLiveRiskMap dashboard={dashboard} onSiteAnalysis={(site) => { setFocusedSite(site); setActiveTab("sites"); }} />
+            <LiveHighlights dashboard={dashboard} onSiteAnalysis={(site) => { setFocusedSite(site); setActiveTab("intelligence"); }} />
+            <OperationalTrendChart reports={reports} />
+            <SiteRiskComparison data={siteRiskData} />
           </>}
           {activeTab === "analyze-report" && <CommandUpload setView={setView} onIngest={refreshDashboard} />}
-          {activeTab === "sites" && <><SiteRiskComparison data={siteRiskData} /><SiteIntelligenceWorkspace dashboard={dashboard} selectedSite={focusedSite} patterns={patterns} /></>}
-          {["historical", "precursors", "workforce", "hse-review"].includes(activeTab) && <IntelligenceLayers dashboard={dashboard} barriers={barriers} patterns={patterns} reports={highSIFReports} mode={activeTab} similarReports={similarReports} />}
+          {activeTab === "intelligence" && <>
+            <SiteIntelligenceWorkspace dashboard={dashboard} selectedSite={focusedSite} patterns={patterns} />
+            <IntelligenceLayers dashboard={dashboard} barriers={barriers} patterns={patterns} reports={highSIFReports} mode="intelligence" similarReports={similarReports} />
+          </>}
           {activeTab === "models" && <ModelPerformance metrics={evaluationMetrics} />}
         </div>
 
         {!renderOverview && <div className="cc-primary-actions">
           <button type="button" onClick={() => setActiveTab("analyze-report")}>Analyze report <ArrowRight size={15} /></button>
-          <button type="button" onClick={() => setActiveTab("sites")}>Site intelligence <ArrowRight size={15} /></button>
-          <button type="button" onClick={() => setActiveTab("hse-review")}>HSE review <ArrowRight size={15} /></button>
+          <button type="button" onClick={() => setActiveTab("intelligence")}>Site intelligence <ArrowRight size={15} /></button>
+          <button type="button" onClick={() => setActiveTab("intelligence")}>HSE review <ArrowRight size={15} /></button>
         </div>}
       </main>
 

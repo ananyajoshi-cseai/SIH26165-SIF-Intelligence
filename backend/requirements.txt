@@ -30,9 +30,11 @@ networkx==3.6.1
 numpy==2.4.6
 packaging==26.3
 pgvector==0.5.0
+Pillow==11.3.0
 pluggy==1.6.0
 psycopg2-binary==2.9.12
 pydantic==2.13.5
+pytesseract==0.3.13
 pydantic-settings==2.15.0
 pydantic_core==2.46.5
 Pygments==2.21.0
@@ -41,6 +43,7 @@ python-dotenv==1.2.3
 python-multipart==0.0.32
 PyYAML==6.0.3
 regex==2026.9.3
+requests==2.32.3
 rich==15.0.0
 safetensors==0.8.0
 scikit-learn==1.9.0
