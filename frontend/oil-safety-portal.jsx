@@ -29,6 +29,7 @@ import {
   ClipboardCheck, Wrench as WrenchIcon, ShieldCheck, ListChecks, MessageSquare, Loader2,
 } from "lucide-react";
 import CommandCenter from "./command-center.jsx";
+import { oilSites } from "./command-center.jsx";
 import WorkforceIntelligence from "./workforce-intelligence.jsx";
 import Home from "./home.jsx";
 import "./sentinel-theme.css";
@@ -42,8 +43,6 @@ export const IMG = {
   wellhead: "data:image/jpeg;base64,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",
 };
 
-
-/* ------------------------------------------------------------------ */
 /* TOKENS                                                              */
 /* ------------------------------------------------------------------ */
 const C = {
@@ -128,16 +127,6 @@ const trendData = MONTHS.map((m, i) => {
   SITE_IDS.forEach((s) => (row[s] = sifTrendRaw[s][i]));
   return row;
 });
-const psifTrendRaw = {
-  A:[6,9,11,13,9,8,5,4,4,3,6,8], B:[11,14,15,15,13,15,13,8,9,9,9,10],
-  C:[11,17,16,17,16,15,12,10,9,10,10,11], D:[3,14,12,14,11,5,5,1,1,1,3,4],
-  E:[9,13,12,13,9,3,3,6,4,4,6,8], F:[4,6,7,8,5,3,1,2,1,1,3,2],
-};
-const psifData = MONTHS.map((m, i) => {
-  const row = { month: m };
-  SITE_IDS.forEach((s) => (row[s] = psifTrendRaw[s][i]));
-  return row;
-});
 const SITE_COLORS = { A: C.saffron, B: "#C79A1E", C: C.greenGood, D: C.redBright, E: "#8B4A9C", F: C.inkSoft };
 
 const toRiskLevel = (score) => score >= 81 ? "Critical" : score >= 61 ? "High" : score >= 31 ? "Medium" : "Low";
@@ -206,7 +195,7 @@ function buildDashboardData(reports) {
     const trend = earlierRate ? Math.round(((laterRate - earlierRate) / earlierRate) * 100) : laterRate ? 100 : 0;
     return {
       id, name, risk, sif: group.filter((report) => report.analysis.sif_level === "HIGH").length,
-      psif: group.length, trend,
+      reports: group.length, psif: group.length, trend,
       hazard: Object.entries(hazardCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || "Unknown",
       barrier: latest.analysis.extracted_data?.barrier_failure || "No barrier failure identified",
       lsr: SITES.find((site) => site.name === name)?.lsr || "ML classified",
@@ -235,7 +224,7 @@ function buildDashboardData(reports) {
     });
     return row;
   });
-  const monthlyPsifData = monthKeys.map((monthKey) => {
+  const monthlyReportData = monthKeys.map((monthKey) => {
     const [year, month] = monthKey.split("-").map(Number);
     const label = new Date(year, month - 1, 1).toLocaleString("en-US", { month: "short", year: "numeric" });
     const row = { month: label };
@@ -260,7 +249,7 @@ function buildDashboardData(reports) {
     });
     return row;
   });
-  const sequencePsifData = Array.from({ length: bucketCount }, (_, bucketIndex) => {
+  const sequenceReportData = Array.from({ length: bucketCount }, (_, bucketIndex) => {
     const start = Math.floor((bucketIndex * sequenceReports.length) / bucketCount);
     const end = Math.floor(((bucketIndex + 1) * sequenceReports.length) / bucketCount);
     const bucketReports = sequenceReports.slice(start, end);
@@ -278,21 +267,13 @@ function buildDashboardData(reports) {
     });
     return row;
   });
-  const historicalPsifData = MONTHS.map((month, monthIndex) => {
-    const row = { month };
-    Object.entries(siteIds).forEach(([id, name], siteIndex) => {
-      const sourceId = SITES.find((site) => site.name === name)?.id || SITE_IDS[siteIndex % SITE_IDS.length];
-      row[id] = psifTrendRaw[sourceId][monthIndex];
-    });
-    return row;
-  });
   const trendIsMock = monthKeys.length <= 1 && siteNames.length > 0;
   const trendData = monthKeys.length > 1 ? monthlyTrendData : siteNames.length ? historicalTrendData : sequenceTrendData;
-  const psifData = monthKeys.length > 1 ? monthlyPsifData : siteNames.length ? historicalPsifData : sequencePsifData;
+  const reportVolumeData = monthKeys.length > 1 ? monthlyReportData : sequenceReportData;
   const alerts = [...barrierGroups.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([barrier, count]) => ({
     title: "Recurring Barrier Failure", body: `${barrier} was identified in ${count} analyzed report${count === 1 ? "" : "s"}.`, sev: count >= 3 ? "Critical" : count >= 2 ? "High" : "Medium",
   }));
-  return { reports, sites, hazards, siteIds, heat, trendData, psifData, trendIsMock, siteColors: Object.fromEntries(Object.keys(siteIds).map((id, index) => [id, Object.values(SITE_COLORS)[index % Object.values(SITE_COLORS).length]])), alerts };
+  return { reports, sites, hazards, siteIds, heat, trendData, reportVolumeData, trendIsMock, siteColors: Object.fromEntries(Object.keys(siteIds).map((id, index) => [id, Object.values(SITE_COLORS)[index % Object.values(SITE_COLORS).length]])), alerts };
 }
 
 const alerts = [
@@ -534,7 +515,7 @@ const backBtn = {
 };
 function Panel({ title, icon: Icon, children, tone }) {
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 4, padding: 18, marginBottom: 14 }}>
+    <div className="portal-panel" style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 4, padding: 18, marginBottom: 14 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 10 }}>
         {Icon && <Icon size={15} color={tone || C.ink} />}
         <div style={{ ...miniLabel, color: tone || C.ink, fontSize: 12.5 }}>{title}</div>
@@ -779,36 +760,38 @@ function TopSites({ setView, data }) {
       <SectionLabel sub="Ranked by composite Site Risk Score — SIF/PSIF potential, severity, recurrence, failed barriers and trend, normalised by report volume.">
         All Sites by Risk
       </SectionLabel>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14, alignItems: "stretch" }}>
+      <div className="portal-site-grid">
         {data.sites.map((s, i) => {
           const Icon = hazardIcon(s.hazard);
           const level = s.risk >= 61 ? "Critical" : s.risk >= 41 ? "High" : s.risk >= 21 ? "Medium" : "Low";
+          const workforce = oilSites.find((site) => {
+            const siteKey = site.reportSiteKey || site.name.toLowerCase().split(/\s+/)[0];
+            return s.name.toLowerCase().includes(siteKey);
+          });
           return (
-            <div key={s.id} onClick={() => setView({ page: "site-drill", siteId: s.id })}
-              style={{
-                background: C.card, border: `1px solid ${C.line}`, borderLeft: `5px solid ${riskColor(level)}`,
-                borderRadius: 4, padding: "16px 18px", cursor: "pointer", position: "relative", minHeight: 184,
-              }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                <div style={{ color: C.inkSoft, fontSize: 12, fontWeight: 700, fontFamily: "'Inter',sans-serif" }}>#{i + 1} RANK</div>
-                <RiskBadge level={level} />
-              </div>
-              <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 18, fontWeight: 700, color: C.ink, margin: "6px 0 10px" }}>
-                {s.name}
-              </div>
-              <div style={{ display: "flex", gap: 18, fontFamily: "'Inter',sans-serif", fontSize: 13, color: C.inkSoft, marginBottom: 10 }}>
-                <div>SIF Precursors<br /><b style={{ color: C.ink, fontSize: 16 }}>{s.sif}</b></div>
-                <div>PSIF<br /><b style={{ color: C.ink, fontSize: 16 }}>{s.psif}</b></div>
-                <div>Trend<br /><TrendPill v={s.trend} /></div>
-              </div>
-              <div style={{ borderTop: `1px dashed ${C.line}`, paddingTop: 9, fontSize: 12.5, fontFamily: "'Inter',sans-serif", color: C.ink, display: "flex", alignItems: "center", gap: 6 }}>
-                <Icon size={14} color={C.saffron} /> Top hazard: <b>{s.hazard}</b>
-              </div>
-              <div style={{ fontSize: 12.5, fontFamily: "'Inter',sans-serif", color: C.ink, marginTop: 4 }}>
-                Failed barrier: <b>{s.barrier}</b>
-              </div>
-              <ChevronRight size={16} color={C.inkSoft} style={{ position: "absolute", right: 14, bottom: 14 }} />
-            </div>
+            <button type="button" className="portal-site-card" key={s.id} onClick={() => setView({ page: "site-drill", siteId: s.id })}>
+              <span className="portal-site-card__rank">SITE RANK <b>{String(i + 1).padStart(2, "0")}</b></span>
+              <span className="portal-site-card__risk" style={{ "--site-risk-color": riskColor(level) }}>
+                <span><small>RISK SCORE</small><strong>{s.risk}<i>/100</i></strong></span><RiskBadge level={level} />
+              </span>
+              <strong className="portal-site-card__name">{s.name}</strong>
+              <span className="portal-site-card__metrics">
+                <span><small>SIF PRECURSORS</small><b>{s.sif}</b></span>
+                <span><small>TOTAL REPORTS</small><b>{s.reports}</b></span>
+                <span><small>RISK TREND</small><TrendPill v={s.trend} /></span>
+              </span>
+              <span className="portal-site-card__hazard"><Icon size={17} /> <span>Top hazard <b>{s.hazard}</b></span></span>
+              <span className="portal-site-card__barrier">Failed barrier <b>{s.barrier}</b></span>
+              <span className="portal-site-card__workers">
+                <span className="portal-site-card__workers-heading">WORKER FATIGUE <small>{workforce ? "REPRESENTATIVE ROSTER" : "ROSTER NOT LINKED"}</small></span>
+                {workforce ? <span className="portal-site-card__fatigue-grid">
+                  {[ ["Very high", "veryHigh"], ["High", "high"], ["Medium", "medium"], ["Low", "low"] ].map(([label, key]) => (
+                    <span key={key}><i className={`portal-fatigue-dot portal-fatigue-dot--${key}`} />{label}<b>{workforce.workers[key]}</b></span>
+                  ))}
+                </span> : <span className="portal-site-card__unlinked">Fatigue counts are unavailable for this reporting site.</span>}
+              </span>
+              <span className="portal-site-card__action">Open site analysis <ChevronRight size={16} /></span>
+            </button>
           );
         })}
       </div>
@@ -853,22 +836,24 @@ function Heatmap({ setView, data }) {
   }, [data.reports, riskScope]);
 
   const cellColor = (count, maxCount) => {
-    if (!count) return { bg: "rgba(16,185,129,0.10)", text: "rgba(255,255,255,0.22)", border: "rgba(16,185,129,0.20)" };
-    const r = count / maxCount;
-    if (r <= 0.15) return { bg: "#d1fae5", text: "#065f46", border: "#6ee7b7" };
-    if (r <= 0.30) return { bg: "#fef9c3", text: "#713f12", border: "#fde68a" };
-    if (r <= 0.50) return { bg: "#fde68a", text: "#78350f", border: "#fbbf24" };
-    if (r <= 0.70) return { bg: "#fb923c", text: "#fff",    border: "#ea580c" };
-    if (r <= 0.88) return { bg: "#ef4444", text: "#fff",    border: "#b91c1c" };
-    return                { bg: "#7f1d1d", text: "#fecaca", border: "#991b1b" };
+    if (!count) return { bg: "#263238", text: "#B8C4C8", border: "#46565D", level: "No reports" };
+    const ratio = count / maxCount;
+    if (ratio <= 0.15) return { bg: "#14543F", text: "#D8FFF0", border: "#2A8A68", level: "Low" };
+    if (ratio <= 0.30) return { bg: "#38632B", text: "#EDFFD9", border: "#679343", level: "Moderate" };
+    if (ratio <= 0.50) return { bg: "#80620D", text: "#FFF5CB", border: "#C59A21", level: "Elevated" };
+    if (ratio <= 0.70) return { bg: "#A64B16", text: "#FFF0DF", border: "#E77B32", level: "High" };
+    if (ratio <= 0.88) return { bg: "#A52A27", text: "#FFE5E1", border: "#E35B52", level: "Very high" };
+    return { bg: "#681B22", text: "#FFE4E6", border: "#C6444F", level: "Critical" };
   };
 
   const LEGEND = [
-    { label: "None",     bg: "rgba(16,185,129,0.10)", border: "rgba(16,185,129,0.20)" },
-    { label: "Low",      bg: "#fef9c3",               border: "#fde68a" },
-    { label: "Medium",   bg: "#fde68a",               border: "#fbbf24" },
-    { label: "High",     bg: "#fb923c",               border: "#ea580c" },
-    { label: "Critical", bg: "#7f1d1d",               border: "#991b1b" },
+    { label: "No reports", bg: "#263238", border: "#46565D" },
+    { label: "Low", bg: "#14543F", border: "#2A8A68" },
+    { label: "Moderate", bg: "#38632B", border: "#679343" },
+    { label: "Elevated", bg: "#80620D", border: "#C59A21" },
+    { label: "High", bg: "#A64B16", border: "#E77B32" },
+    { label: "Very high", bg: "#A52A27", border: "#E35B52" },
+    { label: "Critical", bg: "#681B22", border: "#C6444F" },
   ];
 
   return (
@@ -886,7 +871,7 @@ function Heatmap({ setView, data }) {
 
       {/* Intensity legend */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 11, fontFamily: "'Inter',sans-serif", color: C.inkSoft, fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase" }}>Intensity:</span>
+        <span style={{ fontSize: 11, fontFamily: "'Inter',sans-serif", color: C.inkSoft, fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase" }}>Report intensity:</span>
         {LEGEND.map(({ label, bg, border }) => (
           <div key={label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
             <div style={{ width: 16, height: 16, borderRadius: 3, background: bg, border: `1.5px solid ${border}` }} />
@@ -895,7 +880,7 @@ function Heatmap({ setView, data }) {
         ))}
       </div>
 
-      <div style={{ background: "#071626", border: `1px solid ${C.line}`, borderRadius: 6, overflowX: "auto", boxShadow: "0 4px 24px rgba(0,0,0,0.22)" }}>
+      <div className="portal-heatmap-frame" style={{ background: "#111719", border: `1px solid ${C.line}`, borderRadius: 6, overflowX: "auto", boxShadow: "0 4px 24px rgba(0,0,0,0.22)" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "'Inter',sans-serif" }}>
           <thead>
             <tr style={{ background: "rgba(5,18,32,0.98)" }}>
@@ -928,8 +913,9 @@ function Heatmap({ setView, data }) {
                           onClick={() => cell.count && setView({ page: "reports", siteFilter: site, hazardFilter: hazard, riskFilter: "All" })}
                           onMouseEnter={() => setHoveredCell(cellKey)} onMouseLeave={() => setHoveredCell(null)}
                           aria-label={`${site}, ${hazard}, ${cell.count} reports`}
-                          style={{ width: "100%", minHeight: 40, background: cs.bg, color: cs.text, border: `1.5px solid ${cs.border}`, borderRadius: 4, padding: "6px 4px", fontSize: 14, fontWeight: 800, cursor: cell.count ? "pointer" : "default", boxShadow: cell.count ? "0 2px 6px rgba(0,0,0,0.25)" : "none" }}>
-                          {cell.count || "·"}
+                          title={`${cs.level}: ${cell.count} ${cell.count === 1 ? "report" : "reports"}`}
+                          style={{ width: "100%", minHeight: 44, background: cs.bg, color: cs.text, border: `1.5px solid ${cs.border}`, borderRadius: 3, padding: "6px 4px", fontSize: 14, fontWeight: 800, cursor: cell.count ? "pointer" : "default", boxShadow: "inset 0 1px rgba(255,255,255,0.08)" }}>
+                          {cell.count}
                         </button>
                         {hoveredCell === cellKey && cell.count > 0 && (
                           <div style={{ position: "absolute", zIndex: 30, left: "50%", bottom: "calc(100% + 6px)", transform: "translateX(-50%)", width: 205, padding: "10px 12px", background: "#0f1923", color: "#fff", borderRadius: 5, textAlign: "left", fontSize: 12, lineHeight: 1.55, pointerEvents: "none", boxShadow: "0 8px 28px rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.1)" }}>
@@ -961,33 +947,40 @@ function Heatmap({ setView, data }) {
 
 function TrendSection({ data }) {
   const [metric, setMetric] = useState("sif");
-  const chartData = metric === "sif" ? data.trendData : data.psifData;
+  const [selectedSite, setSelectedSite] = useState(data.sites[0]?.id || "all");
+  const chartData = metric === "sif" ? data.trendData : data.reportVolumeData;
+  const visibleSiteIds = selectedSite === "all" ? Object.keys(data.siteIds) : [selectedSite];
   return (
     <div style={{ marginBottom: 34 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 10 }}>
-        <SectionLabel sub={`Monthly count by site. Switch metric to compare precursor volume against potential-severity classification.${data.trendIsMock ? " Fixed historical series fills gaps when reports cover only one month." : ""}`}>
-          SIF / PSIF Trend Analysis
+        <SectionLabel sub={`${selectedSite === "all" ? "Counts across all sites" : `Count for ${data.siteIds[selectedSite] || "selected site"}`}. Compare high-risk SIF reports with total analyzed report volume.${data.trendIsMock ? " Historical SIF sample fills gaps when reports cover only one month; report volume uses analyzed records." : ""}`}>
+          SIF / Report Volume
         </SectionLabel>
-        <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
-          {[["sif","SIF Precursor Trend"],["psif","PSIF Trend"]].map(([k,label]) => (
-            <button key={k} onClick={() => setMetric(k)} style={{
+        <div style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap", alignItems: "center" }}>
+          {[["sif","High-risk SIF"],["reports","Total reports"]].map(([k,label]) => (
+              <button key={k} onClick={() => setMetric(k)} style={{
               background: metric === k ? C.redBright : C.card, color: C.ink,
               border: `1px solid ${metric === k ? C.redBright : C.line}`, borderRadius: 3, padding: "7px 14px",
               fontFamily: "'Inter',sans-serif", fontSize: 12.5, fontWeight: 600, cursor: "pointer",
             }}>{label}</button>
           ))}
+          <select value={selectedSite} onChange={(event) => setSelectedSite(event.target.value)} aria-label="Trend chart site"
+            style={{ maxWidth: 220, padding: "8px 10px", border: `1px solid ${C.line}`, borderRadius: 3, background: C.card, color: C.ink, fontFamily: "'Inter',sans-serif", fontSize: 12, fontWeight: 600 }}>
+            <option value="all">All sites</option>
+            {Object.entries(data.siteIds).map(([siteId, name]) => <option key={siteId} value={siteId}>{name}</option>)}
+          </select>
         </div>
       </div>
-      <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 4, padding: "18px 14px 6px", minWidth: 0 }}>
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={chartData} margin={{ top: 5, right: 20, left: -10, bottom: 0 }}>
-            <CartesianGrid stroke={C.line} vertical={false} />
-            <XAxis dataKey="month" tick={{ fontSize: 12, fontFamily: "Inter" }} stroke={C.inkSoft} />
-            <YAxis tick={{ fontSize: 12, fontFamily: "Inter" }} stroke={C.inkSoft} />
-            <Tooltip contentStyle={{ fontFamily: "Inter", fontSize: 12.5, borderRadius: 4, border: `1px solid ${C.line}` }} />
-            <Legend wrapperStyle={{ fontFamily: "Inter", fontSize: 12.5 }} formatter={(v) => `Site ${v}`} />
-            {Object.keys(data.siteIds).map((sid) => (
-              <Line key={sid} type="monotone" dataKey={sid} name={data.siteIds[sid]} stroke={data.siteColors[sid]} strokeWidth={2.2} dot={{ r: 2.5 }} activeDot={{ r: 5 }} />
+      <div className="portal-trend-frame" style={{ background: "linear-gradient(145deg, #151a1c, #101416)", border: `1px solid ${C.line}`, borderRadius: 4, padding: "16px 14px 6px", minWidth: 0 }}>
+        <ResponsiveContainer width="100%" height={280}>
+          <LineChart data={chartData} margin={{ top: 8, right: 16, left: -14, bottom: 0 }}>
+            <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
+            <XAxis dataKey="month" tick={{ fontSize: 11, fontFamily: "DM Sans", fill: "#B8C0C2" }} tickLine={false} axisLine={{ stroke: "rgba(255,255,255,0.14)" }} interval="preserveStartEnd" />
+            <YAxis tick={{ fontSize: 11, fontFamily: "DM Sans", fill: "#B8C0C2" }} tickLine={false} axisLine={false} width={38} allowDecimals={false} />
+            <Tooltip contentStyle={{ background: "#111719", color: C.ink, fontFamily: "'DM Sans',sans-serif", fontSize: 12, borderRadius: 3, border: `1px solid ${C.line}` }} itemStyle={{ padding: "2px 0" }} />
+            {selectedSite === "all" && <Legend wrapperStyle={{ fontFamily: "'DM Sans',sans-serif", fontSize: 11, paddingTop: 8 }} formatter={(value) => <span style={{ color: C.inkSoft }}>{value}</span>} />}
+            {visibleSiteIds.map((sid) => (
+              <Line key={sid} type="monotone" dataKey={sid} name={data.siteIds[sid]} stroke={data.siteColors[sid]} strokeWidth={3} dot={false} activeDot={{ r: 5, strokeWidth: 0 }} />
             ))}
           </LineChart>
         </ResponsiveContainer>
@@ -1045,7 +1038,9 @@ function SiteDrilldown({ siteId, setView, data }) {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 360px), 1fr))", gap: 20 }}>
         <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 4, padding: 18 }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: 12, marginBottom: 16 }}>
-            {[["Risk Score", s.risk],["SIF Score", s.sif],["PSIF Count", s.psif],["Trend", <TrendPill v={s.trend} />]].map(([label, val], i) => (
+            {[
+              ["Risk Score", s.risk], ["SIF Score", s.sif], ["Total Reports", s.reports], ["Trend", <TrendPill v={s.trend} />],
+            ].map(([label, val], i) => (
               <div key={i} style={{ textAlign: "center", border: `1px solid ${C.line}`, borderRadius: 4, padding: "10px 4px" }}>
                 <div style={{ fontSize: 20, fontWeight: 700, color: C.ink, fontFamily: "'Cormorant Garamond',serif" }}>{val}</div>
                 <div style={{ fontSize: 11.5, color: C.inkSoft, fontFamily: "'Inter',sans-serif", marginTop: 2 }}>{label}</div>
@@ -1094,7 +1089,7 @@ function SiteDrilldown({ siteId, setView, data }) {
           <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 4, padding: 16 }}>
             <div style={miniLabel}>Historical Intelligence</div>
             <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: C.inkSoft, marginTop: 6 }}>
-              Similar past events: <b style={{ color: C.ink }}>{Math.round(s.psif / 4)}</b> &nbsp;·&nbsp;
+              Total analyzed reports: <b style={{ color: C.ink }}>{s.reports}</b> &nbsp;·&nbsp;
               Recurrence count: <b style={{ color: C.ink }}>{Math.round(s.sif / 6)}</b>
             </div>
           </div>
@@ -1235,37 +1230,47 @@ function ReportsTable({ setView, reports, onIngest, siteFilter, hazardFilter, in
 function CausalGraph({ data }) {
   const kindColor = { cause: C.orange, event: C.yellow, incident: C.redBright, outcome: C.inkSoft };
   const kindLabel = { cause: "CONTRIBUTING CAUSE", event: "CONTROL EVENT", incident: "INCIDENT", outcome: "POTENTIAL OUTCOME" };
-  const nodeWidth = 142;
-  const nodeHeight = 62;
+  const nodeWidth = 148;
+  const nodeHeight = 76;
+  const graphWidth = Math.max(900, ...data.nodes.map((node) => node.x + nodeWidth + 24));
   const find = (id) => data.nodes.find((n) => n.id === id);
   return (
-    <svg viewBox="0 0 900 300" width="100%" height="330" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Causal pathway graph">
+    <div className="causal-graph-frame">
+    <svg className="causal-graph-svg" viewBox={`0 0 ${graphWidth} 300`} width={graphWidth > 900 ? graphWidth : "100%"} height="300" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Causal pathway graph">
       <defs>
         <marker id="causal-arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
-          <path d="M0,0 L10,5 L0,10 Z" fill={C.inkSoft} />
+          <path d="M0,0 L10,5 L0,10 Z" fill="#89979B" />
         </marker>
+        <pattern id="causal-grid" width="24" height="24" patternUnits="userSpaceOnUse">
+          <path d="M24 0H0V24" fill="none" stroke="rgba(255,255,255,0.035)" strokeWidth="1" />
+        </pattern>
       </defs>
-      <rect x="0" y="0" width="900" height="300" rx="8" fill={C.card} stroke={C.line} />
-      <text x="22" y="24" fontFamily="Inter" fontSize="11" fontWeight="700" fill={C.inkSoft} letterSpacing="1">
-        READ LEFT TO RIGHT · CONTRIBUTING FACTORS LEAD TO THE POTENTIAL OUTCOME
+      <rect x="0" y="0" width={graphWidth} height="300" fill="#101517" stroke={C.line} />
+      <rect x="0" y="0" width={graphWidth} height="300" fill="url(#causal-grid)" />
+      <text x="22" y="28" fontFamily="DM Sans" fontSize="10" fontWeight="700" fill="#B8C0C2">
+        CAUSAL PATHWAY <tspan fill={C.saffron}>/</tspan> FACTORS LEAD TO POTENTIAL OUTCOME
       </text>
       {data.edges.map(([from, to], i) => {
         const a = find(from), b = find(to);
-        return <line key={i} x1={a.x + nodeWidth} y1={a.y + nodeHeight / 2} x2={b.x - 8} y2={b.y + nodeHeight / 2} stroke={C.inkSoft} strokeWidth="2" strokeLinecap="round" markerEnd="url(#causal-arrow)" />;
+        if (!a || !b) return null;
+        return <line key={i} x1={a.x + nodeWidth + 2} y1={a.y + nodeHeight / 2} x2={b.x - 8} y2={b.y + nodeHeight / 2} stroke="#89979B" strokeOpacity="0.78" strokeWidth="2" strokeLinecap="round" markerEnd="url(#causal-arrow)" />;
       })}
       {data.nodes.map((n, index) => (
         <g key={n.id} transform={`translate(${n.x},${n.y})`}>
-          <rect width={nodeWidth} height={nodeHeight} rx="8" fill={C.paper} stroke={kindColor[n.kind]} strokeWidth="2" />
-          <rect width={nodeWidth} height="8" rx="7" fill={kindColor[n.kind]} />
-          <text x="12" y="25" fontFamily="Inter" fontSize="9" fontWeight="800" fill={kindColor[n.kind]} letterSpacing="0.5">
-            {index + 1} · {kindLabel[n.kind]}
+          <rect width={nodeWidth} height={nodeHeight} rx="3" fill="#171E21" stroke="#465257" strokeWidth="1" />
+          <rect width="4" height={nodeHeight} rx="2" fill={kindColor[n.kind]} />
+          <circle cx="19" cy="19" r="10" fill={kindColor[n.kind]} fillOpacity="0.18" />
+          <text x="19" y="22" textAnchor="middle" fontFamily="DM Sans" fontSize="9" fontWeight="800" fill={kindColor[n.kind]}>{index + 1}</text>
+          <text x="34" y="22" fontFamily="DM Sans" fontSize="8" fontWeight="800" fill={kindColor[n.kind]}>
+            {kindLabel[n.kind]}
           </text>
           {n.label.split("\n").map((line, lineIndex) => (
-            <text key={lineIndex} x={nodeWidth / 2} y={42 + lineIndex * 13} textAnchor="middle" fontFamily="Inter" fontSize="11" fontWeight="700" fill={C.ink}>{line}</text>
+            <text key={lineIndex} x={nodeWidth / 2} y={48 + lineIndex * 13} textAnchor="middle" fontFamily="DM Sans" fontSize="10" fontWeight="700" fill={C.ink}>{line}</text>
           ))}
         </g>
       ))}
     </svg>
+    </div>
   );
 }
 
@@ -1414,7 +1419,7 @@ function ReportDetail({ reportId, setView, reports, onIngest }) {
   } : detail?.causal;
 
   return (
-    <div>
+    <div className="portal-report-detail">
       <button onClick={() => setView({ page: "reports" })} style={backBtn}><ArrowLeft size={14} /> Back to reports</button>
       <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "10px 0 4px", flexWrap: "wrap" }}>
         <FileText size={20} color={C.saffron} />
@@ -1426,7 +1431,7 @@ function ReportDetail({ reportId, setView, reports, onIngest }) {
         {meta.site} &nbsp;·&nbsp; {meta.hazard} &nbsp;·&nbsp; {meta.date}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 360px), 1fr))", gap: 20 }}>
+      <div className="portal-report-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 360px), 1fr))", gap: 20 }}>
         {/* LEFT PANE — DATA */}
         <div>
           <Panel title="Original Report Text">
@@ -1718,7 +1723,7 @@ export default function App() {
   const isFullWidthWorkspace = isCommandCenter || isWorkforceIntelligence;
 
   return (
-    <div style={{ minHeight: "100vh", background: C.paper }}>
+    <div className="portal-shell" style={{ minHeight: "100vh" }}>
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap');

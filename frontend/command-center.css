@@ -1699,3 +1699,43 @@ body {
   .cc-intake-actions { flex-wrap: wrap; }
   .cc-editable-fields { grid-template-columns: 1fr; }
 }
+
+  .cc-root .cc-nav-button { font-size: 13px; letter-spacing: .05em; }
+  .cc-root .cc-highlight-card h2 { font-size: 26px; }
+  .cc-root .cc-highlight-rank,.cc-root .cc-highlight-count { font-size: 13px; }
+  .cc-root .cc-highlight-label { font-size: 15px; }
+  .cc-root .cc-trend-subtext { font-size: 14px; line-height: 1.6; }
+  .cc-root .cc-map-titlebar h2,.cc-root .cc-workspace-heading h2 { font-size: 31px; }
+  .cc-root .cc-map-titlebar p:last-child,.cc-root .cc-workspace-heading p:last-child { font-size: 15px; }
+  .cc-root .cc-site-selector span { font-size: 11px; }
+  .cc-root .cc-site-selector select { font-size: 14px; }
+  .cc-root .cc-intelligence-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; }
+  .cc-root .cc-intel-module--wide { grid-column: auto; }
+  .cc-root .cc-module-title h3 { font-size: 21px; }
+  .cc-root .cc-module-title small { font-size: 13px; }
+  .cc-root .cc-pattern-row strong,.cc-root .cc-barrier-row span { font-size: 14px; }
+  .cc-root .cc-pattern-row small,.cc-root .cc-module-foot { font-size: 12px; }
+  .cc-root .cc-pattern-row > b,.cc-root .cc-barrier-row b { font-size: 13px; }
+  .cc-root .cc-similarity-breakdown { font-size: 12px; }
+  .cc-root .cc-history-results strong { font-size: 13px; }
+  .cc-root .cc-model-grid { gap: 14px; }
+  .cc-root .cc-model-panel { padding: 20px; }
+  .cc-root .cc-model-panel-title h3 { font-size: 21px; }
+  .cc-root .cc-model-panel-title small { font-size: 12px; }
+  .cc-root .cc-model-panel-title > span { font-size: 25px; }
+  .cc-root .cc-model-panel-title > span small { font-size: 12px; }
+  .cc-root .cc-model-metrics span { font-size: 13px; }
+  .cc-root .cc-model-metrics b { font-size: 15px; }
+  .cc-root .cc-model-metrics small { font-size: 12px; }
+  .cc-root .cc-class-metrics-wrap,.cc-root .cc-confusion-wrap { margin-top: 17px; overflow-x: auto; }
+  .cc-root .cc-class-metrics-wrap h4,.cc-root .cc-confusion-wrap h4 { font-size: 13px; }
+  .cc-root .cc-class-metrics,.cc-root .cc-confusion-matrix { min-width: 420px; border-collapse: collapse; color: #e5ebec; font-size: 12px; }
+  .cc-root .cc-class-metrics th,.cc-root .cc-class-metrics td,.cc-root .cc-confusion-matrix th,.cc-root .cc-confusion-matrix td { padding: 8px 10px; border: 1px solid rgba(255,255,255,.1); text-align: right; }
+  .cc-root .cc-class-metrics th:first-child,.cc-root .cc-confusion-matrix th:first-child { text-align: left; }
+  .cc-root .cc-class-metrics th,.cc-root .cc-confusion-matrix th { color: #ffd4a7; }
+  .cc-root .cc-model-empty { padding: 22px; border: 1px solid var(--cc-line); background: rgba(255,255,255,.03); color: #d3dddf; font-size: 15px; line-height: 1.55; }
+
+  @media (max-width: 760px) {
+    .cc-root .cc-intelligence-grid { grid-template-columns: minmax(0,1fr); }
+    .cc-root .cc-map-titlebar h2,.cc-root .cc-workspace-heading h2 { font-size: 27px; }
+  }
