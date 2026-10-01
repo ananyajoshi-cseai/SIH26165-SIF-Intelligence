@@ -17,6 +17,7 @@ class Settings(BaseSettings):
         "http://localhost:5174",
         "http://127.0.0.1:5174",
         "http://192.168.1.78:5173",
+        "https://oilsentinel.vercel.app",
     ]
 
     model_config = SettingsConfigDict(
