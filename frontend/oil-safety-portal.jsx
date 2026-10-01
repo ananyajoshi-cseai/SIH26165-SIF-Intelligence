@@ -542,22 +542,19 @@ export function UploadWidget({ compact, onIngest, accept = ".csv,image/*", site 
   setMessage("");
 
   try {
-    // Frontend-only demo: fake analysis delay
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    const mockResult = {
-      analyzed: 1,
-      report_type: "Incident Report",
-      sif_potential: "High",
-      risk_score: 87,
-      site,
-    };
+    let result;
+    if (f.type.startsWith("image/")) {
+      result = await analyzeImage(f, site);
+    } else {
+      result = await uploadReports(f);
+    }
 
     setStatus("done");
-    setMessage("Report analysed successfully");
+    const count = result?.analyzed ?? result?.count ?? 1;
+    setMessage(`${count} report${count === 1 ? "" : "s"} analysed successfully`);
 
     if (onIngest) {
-      onIngest(f.name, mockResult);
+      onIngest(f.name, result);
     }
   } catch (error) {
     console.error("Report upload failed:", error);
