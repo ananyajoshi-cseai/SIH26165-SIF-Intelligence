@@ -1483,12 +1483,12 @@ function ReportDetail({ reportId, setView, reports, onIngest }) {
           <Panel title="Emerging Pattern Detection" icon={pattern?.direction === "up" ? TrendingUp : TrendingDown} tone={pattern?.direction === "up" ? C.redBright : C.greenGood}>
             {pattern ? <>
             <div style={{
-              background: pattern.direction === "up" ? "#FCEDEB" : "#EAF5EE",
-              border: `1px solid ${pattern.direction === "up" ? C.red : C.greenGood}44`,
+              background: C.paper,
+              border: `1px solid ${pattern.direction === "up" ? C.redBright : C.greenGood}66`,
               borderRadius: 4, padding: "10px 12px", display: "flex", alignItems: "center", gap: 10, marginBottom: 10,
             }}>
               {pattern.direction === "up" ? <TrendingUp size={17} color={C.redBright} /> : <TrendingDown size={17} color={C.greenGood} />}
-              <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: pattern.direction === "up" ? "#4B1F1C" : "#17452C" }}>
+              <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: C.ink }}>
                 <b>{pattern.direction === "up" ? "Increasing" : "Decreasing"} trend · {pattern.changeLabel}.</b> {pattern.note}
               </div>
             </div>
@@ -1538,16 +1538,6 @@ export default function App() {
   const [reportsError, setReportsError] = useState("");
   const [modelMetrics, setModelMetrics] = useState(null);
   const [modelMetricsStatus, setModelMetricsStatus] = useState("loading");
-
-  useEffect(() => {
-    window.localStorage.removeItem("oil-sentinel-view");
-  }, []);
-
-  useEffect(() => {
-    if (view.page !== "home") {
-      window.localStorage.setItem("oil-sentinel-view", JSON.stringify(view));
-    }
-  }, [view]);
 
   const refreshReports = async () => {
     setReportsStatus("loading");
