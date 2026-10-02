@@ -9,7 +9,7 @@ From the backend/ directory:
 import sys
 import os
 
-# So Python can find the app module from backend/
+# So Python can find the app module from backend./
 sys.path.insert(0, os.path.dirname(__file__))
 
 from app.services.nlp_service import nlp_service
