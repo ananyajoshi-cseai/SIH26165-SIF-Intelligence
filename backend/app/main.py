@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+﻿from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 
@@ -24,6 +24,7 @@ app.add_middleware(
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "https://oilsentinel.vercel.app",
+        "https://sih-26165-sif-intelligence.vercel.app",
         "https://oil-sentinel.onrender.com",
         "https://oilsentinel-ipzv1p3mk-amnas-projects-c8a968a1.vercel.app",
         "https://oilsentinel-eta.vercel.app",
@@ -43,3 +44,4 @@ def health_check():
         "service": "SIF Intelligence API",
         "version": "0.1.0",
     }
+
