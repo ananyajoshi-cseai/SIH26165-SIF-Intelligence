@@ -26,6 +26,7 @@ app.add_middleware(
         "https://oilsentinel.vercel.app",
         "https://oil-sentinel.onrender.com",
         "https://oilsentinel-ipzv1p3mk-amnas-projects-c8a968a1.vercel.app",
+        "https://oilsentinel-eta.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
