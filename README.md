@@ -123,7 +123,7 @@ For example:
 
 ### Input
 
-> "Worker bypassed interlock on pump during maintenance."
+> "Worker bypassed interlock on pump during maintenance.."
 
 ### AI Extraction
 
