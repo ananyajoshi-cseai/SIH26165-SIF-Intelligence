@@ -25,6 +25,7 @@ app.add_middleware(
         "http://127.0.0.1:3000",
         "https://oilsentinel.vercel.app",
         "https://oil-sentinel.onrender.com",
+        "https://oilsentinel-ipzv1p3mk-amnas-projects-c8a968a1.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
