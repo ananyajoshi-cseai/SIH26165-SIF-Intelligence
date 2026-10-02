@@ -14,7 +14,6 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1|192\.168\.1\.\d+)(:\d+)?",
     allow_origins=[
         "http://localhost:4173",
         "http://127.0.0.1:4173",
@@ -25,13 +24,12 @@ app.add_middleware(
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "https://oilsentinel.vercel.app",
-        *settings.cors_origins,
+        "https://oil-sentinel.onrender.com",
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 app.include_router(reports_router, prefix="/api/v1")
 app.include_router(debug_router, prefix="/api/v1")
 
