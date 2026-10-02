@@ -29,6 +29,8 @@ from app.services.report_service import (
     delete_report,
     get_report,
     get_reports,
+    infer_report_site,
+    is_report_csv_document,
 )
 from app.services.risk_service import get_risk_breakdown
 from app.services.vector_service import find_similar_reports
@@ -37,6 +39,34 @@ router = APIRouter(
     prefix="/reports",
     tags=["Reports"],
 )
+
+
+def _analyze_response(report, analysis) -> AnalyzeResponse:
+    extracted = analysis.extracted_data
+    risk_context = extracted.get("risk_context", {})
+    return AnalyzeResponse(
+        report_id=report.id,
+        report_type=extracted.get("report_type", "Unknown"),
+        report_type_confidence=extracted.get("report_type_confidence", 0.0),
+        sif_potential=extracted.get("sif_potential", "Unknown"),
+        sif_confidence=extracted.get("sif_confidence", 0.0),
+        risk_score=analysis.risk_score,
+        risk_level=analysis.sif_level,
+        confidence=analysis.confidence,
+        extraction=extracted,
+        risk_breakdown=RiskBreakdown(**get_risk_breakdown(extracted)),
+        base_sif_risk_score=risk_context.get("base_sif_risk_score", analysis.risk_score),
+        base_risk_level=risk_context.get("base_risk_level", analysis.sif_level),
+        fatigue_score=risk_context.get("fatigue_score"),
+        fatigue_level=risk_context.get("fatigue_level"),
+        fatigue_adjustment=risk_context.get("fatigue_adjustment"),
+        contextual_risk_score=risk_context.get("contextual_risk_score"),
+        contextual_risk_level=risk_context.get("contextual_risk_level"),
+        risk_change=risk_context.get("risk_change"),
+        fatigue_signals=risk_context.get("fatigue_signals"),
+    )
+
+
 @router.get("/metrics")
 def get_evaluation_metrics():
     """
@@ -66,6 +96,7 @@ def create_report_endpoint(
         raw_text=payload.text,
         site=payload.site,
         is_synthetic=payload.is_synthetic,
+        metadata={"ingestion_source": "report_api"},
     )
 
 
@@ -88,11 +119,18 @@ def analyze_report_endpoint(
     payload: AnalyzeRequest,
     db: Session = Depends(get_db),
 ):
+    if is_report_csv_document(payload.text):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="CSV files contain multiple reports. Upload them as a CSV batch instead.",
+        )
+
     report = create_report(
         db=db,
         raw_text=payload.text,
-        site=payload.site,
-        is_synthetic=True,
+        site=payload.site or infer_report_site(payload.text),
+        is_synthetic=False,
+        metadata={"ingestion_source": "analyze_tab"},
     )
 
     analysis = analyze_report(
@@ -100,31 +138,39 @@ def analyze_report_endpoint(
         report=report,
     )
 
-    extracted = analysis.extracted_data
+    return _analyze_response(report, analysis)
 
-    return AnalyzeResponse(
-        report_id=report.id,
-        report_type=extracted.get("report_type", "Unknown"),
-        report_type_confidence=extracted.get(
-            "report_type_confidence",
-            0.0,
-        ),
-        sif_potential=extracted.get(
-            "sif_potential",
-            "Unknown",
-        ),
-        sif_confidence=extracted.get(
-            "sif_confidence",
-            0.0,
-        ),
-        risk_score=analysis.risk_score,
-        risk_level=analysis.sif_level,
-        confidence=analysis.confidence,
-        extraction=extracted,
-        risk_breakdown=RiskBreakdown(
-            **get_risk_breakdown(extracted)
-        ),
-    )
+
+@router.post("/ocr")
+async def extract_report_image_text(file: UploadFile = File(...)):
+    if not file.filename:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Image file is required",
+        )
+
+    allowed_extensions = (".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tiff")
+    if not file.filename.lower().endswith(allowed_extensions):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Supported image formats: PNG, JPG, JPEG, WEBP, BMP, TIFF",
+        )
+
+    try:
+        extracted_text = extract_text_from_image(await file.read())
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"OCR failed: {exc}",
+        ) from exc
+
+    if not extracted_text:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No readable text was found in the image",
+        )
+
+    return {"filename": file.filename, "text": extracted_text}
 
 
 @router.post(
@@ -170,8 +216,9 @@ async def analyze_image_endpoint(
     report = create_report(
         db=db,
         raw_text=extracted_text,
-        site=site,
-        is_synthetic=True,
+        site=infer_report_site(extracted_text) if site == "Unknown" else site,
+        is_synthetic=False,
+        metadata={"ingestion_source": "image_analysis"},
     )
 
     analysis = analyze_report(
@@ -179,31 +226,7 @@ async def analyze_image_endpoint(
         report=report,
     )
 
-    extracted = analysis.extracted_data
-
-    return AnalyzeResponse(
-        report_id=report.id,
-        report_type=extracted.get("report_type", "Unknown"),
-        report_type_confidence=extracted.get(
-            "report_type_confidence",
-            0.0,
-        ),
-        sif_potential=extracted.get(
-            "sif_potential",
-            "Unknown",
-        ),
-        sif_confidence=extracted.get(
-            "sif_confidence",
-            0.0,
-        ),
-        risk_score=analysis.risk_score,
-        risk_level=analysis.sif_level,
-        confidence=analysis.confidence,
-        extraction=extracted,
-        risk_breakdown=RiskBreakdown(
-            **get_risk_breakdown(extracted)
-        ),
-    )
+    return _analyze_response(report, analysis)
 
 
 @router.post("/upload", status_code=status.HTTP_201_CREATED)

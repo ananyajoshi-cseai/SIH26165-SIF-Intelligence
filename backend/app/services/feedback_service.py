@@ -2,9 +2,14 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.models.analysis import Analysis
 from app.schemas.analysis import ExtractionData
-from app.services.risk_service import calculate_risk_score, get_sif_level
+from app.services.risk_service import (
+    calculate_contextual_risk,
+    calculate_risk_score,
+    get_sif_level,
+)
 
 
 def validate_analysis(
@@ -29,6 +34,19 @@ def validate_analysis(
     }
     risk_score = calculate_risk_score(extracted_dict)
     sif_level = get_sif_level(risk_score)
+    previous_context = extracted_dict.get("risk_context")
+    if previous_context:
+        updated_context = calculate_contextual_risk(
+            risk_score,
+            previous_context.get("fatigue_score"),
+            settings.fatigue_max_adjustment,
+        )
+        updated_context["fatigue_signals"] = previous_context.get("fatigue_signals", {})
+        updated_context["fatigue_context_note"] = previous_context.get(
+            "fatigue_context_note",
+            "Report-derived signals; not a medical diagnosis.",
+        )
+        extracted_dict["risk_context"] = updated_context
 
     analysis.extracted_data = extracted_dict
     analysis.risk_score = risk_score

@@ -87,6 +87,10 @@ class Analysis(Base):
     def sif_confidence(self) -> float:
         return (self.extracted_data or {}).get("sif_confidence", 0.0)
 
+    @property
+    def risk_context(self) -> dict | None:
+        return (self.extracted_data or {}).get("risk_context")
+
     report: Mapped["Report"] = relationship(
         back_populates="analysis",
     )

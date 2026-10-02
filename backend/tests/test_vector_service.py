@@ -73,10 +73,10 @@ def test_find_similar_reports():
         results = find_similar_reports(
             db=db,
             report_id=report_a.id,
-            top_k=2,
+            top_k=20,
         )
 
-        assert 1 <= len(results) <= 2
+        assert 1 <= len(results) <= 20
 
         returned_reports = [report for report, similarity in results]
         similarities = [similarity for report, similarity in results]

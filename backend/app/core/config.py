@@ -9,6 +9,10 @@ BASE_DIR = Path(__file__).resolve().parents[2]
 class Settings(BaseSettings):
     database_url: str
     groq_api_key: str = ""
+    groq_model: str = "llama-3.3-70b-versatile"
+    use_groq_llm: bool = False
+    enable_sentence_transformers: bool = False
+    fatigue_max_adjustment: int = 8
     cors_origins: list[str] = [
         "http://localhost:4173",
         "http://127.0.0.1:4173",

@@ -56,6 +56,15 @@ export async function analyzeImage(file, site = "Unknown") {
   });
 }
 
+export async function ocrImage(file) {
+  const formData = new FormData();
+  formData.append("file", file);
+  return request("/reports/ocr", {
+    method: "POST",
+    body: formData,
+  });
+}
+
 export async function getDashboardSummary() {
   return request("/reports/dashboard-summary");
 }

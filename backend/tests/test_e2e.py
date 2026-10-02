@@ -18,8 +18,7 @@ def test_health_check():
 
 def test_analyze_report_returns_structured_json():
     payload = {
-        "site": "Rig 4",
-        "text": "During lifting operations, a worker entered the exclusion zone beneath a suspended drill pipe. No barricade was in place.",
+        "text": "Site: Jorajan Oil Field\nDuring lifting operations, a worker entered the exclusion zone beneath a suspended drill pipe. No barricade was in place.",
     }
     r = requests.post(f"{BASE}/reports/analyze", json=payload)
     assert r.status_code == 201
@@ -29,6 +28,18 @@ def test_analyze_report_returns_structured_json():
     assert "risk_level" in data
     assert "confidence" in data
     assert "extraction" in data
+    assert data["base_sif_risk_score"] == data["risk_score"]
+    assert data["base_risk_level"] == data["risk_level"]
+    assert data["fatigue_score"] is None
+    assert data["contextual_risk_score"] is None
+    report = requests.get(f"{BASE}/reports/{data['report_id']}")
+    assert report.status_code == 200
+    assert report.json()["metadata"]["site"] == "Jorajan Oil Field"
+    assert report.json()["metadata"]["ingestion_source"] == "analyze_tab"
+    assert report.json()["is_synthetic"] is False
+    report_context = report.json()["analysis"]["risk_context"]
+    assert report_context["base_sif_risk_score"] == data["base_sif_risk_score"]
+    assert report_context["contextual_risk_score"] is None
     ext = data["extraction"]
     assert "activity" in ext
     assert "hazard" in ext
@@ -39,7 +50,7 @@ def test_analyze_report_returns_structured_json():
 def test_analyze_high_risk_report():
     payload = {
         "site": "Site A",
-        "text": "Worker entered confined space without atmospheric testing. H2S levels unknown.",
+        "text": "Worker entered confined space without atmospheric testing. H2S levels unknown. 58 hours worked, 7 consecutive shifts, 4 night shifts, average rest 5.2 h, self-reported fatigue high.",
     }
     r = requests.post(f"{BASE}/reports/analyze", json=payload)
     assert r.status_code == 201
@@ -47,12 +58,24 @@ def test_analyze_high_risk_report():
     assert data["risk_level"] in ("HIGH", "MEDIUM", "LOW")
     assert 0 <= data["risk_score"] <= 100
     assert 0 <= data["confidence"] <= 1
+    assert data["fatigue_score"] is not None
+    assert data["contextual_risk_score"] == min(100, data["risk_score"] + data["fatigue_adjustment"])
+    assert data["contextual_risk_level"] in ("HIGH", "MEDIUM", "LOW")
 
 
 def test_analyze_empty_text_returns_400():
     payload = {"site": "Site A", "text": ""}
     r = requests.post(f"{BASE}/reports/analyze", json=payload)
     assert r.status_code in (400, 422)
+
+
+def test_analyze_rejects_csv_documents():
+    response = requests.post(
+        f"{BASE}/reports/analyze",
+        json={"text": "report_id,site,report_text\n1,Rig A,Near miss\n"},
+    )
+
+    assert response.status_code == 422
 
 
 def test_analyze_gibberish_does_not_crash():

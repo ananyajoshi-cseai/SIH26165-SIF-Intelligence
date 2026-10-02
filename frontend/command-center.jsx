@@ -37,15 +37,12 @@ import {
   Cell,
 } from "recharts";
 import {
-  analyzeImage,
   analyzeReport,
   getBarrierIntelligence,
   getDashboardSummary,
   getEmergingPatterns,
-  getEvaluationMetrics,
-  getReports,
   getSimilarReports,
-  submitFeedback,
+  ocrImage,
   uploadReports,
 } from "../src/api.js";
 import featureImage1 from "./img&vid/img1.png";
@@ -123,7 +120,6 @@ function CommandHeader({ activeTab, onTabChange }) {
     { key: "overview", label: "Operations" },
     { key: "intelligence", label: "Intelligence" },
     { key: "workforce", label: "Workforce" },
-    { key: "models", label: "Models" },
     { key: "analyze-report", label: "Analyze" },
   ];
 
@@ -634,26 +630,74 @@ function HighSIFReports({ reports, setView }) {
   );
 }
 
-function CommandUpload({ onIngest, setView }) {
-  const [site, setSite] = useState("Numaligarh Refinery");
+const ANALYSIS_STEPS = [
+  "Extract",
+  "Classify",
+  "SIF / PSIF",
+  "Hazard & exposure",
+  "Barrier & LSR",
+  "Risk score",
+  "Similarity & patterns",
+];
+
+function CommandUpload({ onIngest, setView, reports = [] }) {
   const [fileName, setFileName] = useState("");
   const [text, setText] = useState("");
-  const [analysis, setAnalysis] = useState(null);
-  const [editedExtraction, setEditedExtraction] = useState({});
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [listening, setListening] = useState(false);
+  const [activeStep, setActiveStep] = useState(-1);
+  const [ocrLineCount, setOcrLineCount] = useState(0);
   const [audioUrl, setAudioUrl] = useState("");
   const [csvFile, setCsvFile] = useState(null);
   const recognitionRef = React.useRef(null);
+  const speechBaseRef = React.useRef("");
   const fileRef = React.useRef(null);
+  const analyzedReports = reports.filter((report) => report.analysis && !report.isDemo
+    && ["analyze_tab", "image_analysis", "csv_upload", "report_api"].includes(report.metadata?.ingestion_source));
+  const riskRows = analyzedReports.map((report) => {
+    const analysis = report.analysis;
+    const extraction = analysis.extracted_data || {};
+    const context = analysis.risk_context || extraction.risk_context || {};
+    return {
+      report,
+      analysis,
+      extraction,
+      context,
+      site: report.metadata?.site || report.site || "Unknown site",
+    };
+  });
+  const sifRows = riskRows.filter(({ extraction, analysis }) => {
+    const classification = String(extraction.sif_potential || analysis.sif_potential || "").toLowerCase();
+    return classification.includes("sif potential") && !classification.includes("non-sif");
+  });
+  const highestSif = sifRows.sort((left, right) => right.analysis.risk_score - left.analysis.risk_score)[0];
+  const precursorRows = riskRows.filter(({ extraction, analysis }) => {
+    const classification = String(extraction.sif_potential || analysis.sif_potential || "").toLowerCase();
+    const reportType = String(analysis.report_type || extraction.report_type || "").toLowerCase();
+    return classification.includes("sif potential") && !classification.includes("non-sif")
+      && /near miss|unsafe condition/.test(reportType);
+  });
+  const highestPsif = [...(precursorRows.length ? precursorRows : sifRows)]
+    .sort((left, right) => right.analysis.risk_score - left.analysis.risk_score)[0];
+  const highestFatigue = [...oilSites].sort((left, right) => {
+    const leftCount = left.workers.veryHigh + left.workers.high;
+    const rightCount = right.workers.veryHigh + right.workers.high;
+    return rightCount - leftCount;
+  })[0];
+
+  React.useEffect(() => () => {
+    recognitionRef.current?.stop();
+    if (audioUrl) URL.revokeObjectURL(audioUrl);
+  }, [audioUrl]);
 
   const extractFile = async (file) => {
     if (!file) return;
     setFileName(file.name);
     setCsvFile(null);
     setError("");
-    setAnalysis(null);
+    setOcrLineCount(0);
     setStatus("Extracting source text...");
     const extension = file.name.split(".").pop()?.toLowerCase();
 
@@ -661,7 +705,7 @@ function CommandUpload({ onIngest, setView }) {
       if (extension === "csv") {
         setCsvFile(file);
         setText(await file.text());
-        setStatus("CSV text extracted. Edit it before analysis, or import its rows as a structured batch.");
+        setStatus("CSV loaded. Import its rows to analyze each report independently.");
         return;
       }
       if (["txt"].includes(extension)) {
@@ -676,20 +720,34 @@ function CommandUpload({ onIngest, setView }) {
           const content = await page.getTextContent();
           pages.push(content.items.map((item) => item.str).join(" "));
         }
-        const extracted = pages.join("\n\n").trim();
-        if (!extracted) throw new Error("No embedded text found. Scanned PDFs need image OCR before analysis.");
+        let extracted = pages.join("\n\n").trim();
+        if (!extracted) {
+          const scannedPages = [];
+          for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber += 1) {
+            const page = await document.getPage(pageNumber);
+            const viewport = page.getViewport({ scale: 1.6 });
+            const canvas = window.document.createElement("canvas");
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            await page.render({ canvas, canvasContext: canvas.getContext("2d"), viewport }).promise;
+            const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+            if (!blob) continue;
+            const result = await ocrImage(new File([blob], `${file.name}-page-${pageNumber}.png`, { type: "image/png" }));
+            scannedPages.push(result.text);
+          }
+          extracted = scannedPages.join("\n\n").trim();
+        }
+        if (!extracted) throw new Error("No readable text was found in the PDF.");
         setText(extracted);
       } else if (["xlsx", "xls"].includes(extension)) {
         const XLSX = await import("xlsx");
         const workbook = XLSX.read(await file.arrayBuffer(), { type: "array" });
         setText(workbook.SheetNames.map((name) => `## ${name}\n${XLSX.utils.sheet_to_csv(workbook.Sheets[name])}`).join("\n\n"));
       } else if (file.type.startsWith("image/")) {
-        const result = await analyzeImage(file, site);
-        setAnalysis(result);
-        setEditedExtraction(result.extraction || {});
-        setStatus("OCR and AI analysis complete. Review or correct the extracted fields before HSE validation.");
-        await onIngest?.();
-        setView({ page: "dashboard" });
+        const result = await ocrImage(file);
+        setText(result.text);
+        setOcrLineCount(result.text.split(/\r?\n/).filter((line) => line.trim()).length);
+        setStatus("OCR text extracted. Review the recognized rows, then analyze the report.");
       } else if (file.type.startsWith("audio/")) {
         setAudioUrl(URL.createObjectURL(file));
         setStatus("Recording loaded. Use browser speech capture or enter the transcript below; uploaded-audio transcription is not configured on this server.");
@@ -703,43 +761,77 @@ function CommandUpload({ onIngest, setView }) {
   };
 
   const startSpeechCapture = () => {
+    if (listening) {
+      recognitionRef.current?.stop();
+      setListening(false);
+      return;
+    }
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      setError("Speech capture is not supported in this browser. Upload a recording and add its transcript manually.");
+      setError("Speech recognition is unavailable in this browser. Use Chrome or Edge, allow microphone access, or enter the report text.");
       return;
     }
     const recognition = new SpeechRecognition();
     recognition.lang = "en-IN";
     recognition.continuous = true;
     recognition.interimResults = true;
+    speechBaseRef.current = text.trim();
     recognition.onresult = (event) => {
-      const transcript = Array.from(event.results).map((result) => result[0].transcript).join(" ");
-      setText(transcript);
+      const transcript = Array.from(event.results).map((result) => result[0].transcript.trim()).filter(Boolean).join(" ");
+      setText([speechBaseRef.current, transcript].filter(Boolean).join("\n"));
     };
-    recognition.onerror = (event) => setError(`Speech capture failed: ${event.error}`);
-    recognition.onend = () => setStatus("Speech capture ended. Review the transcript before analysis.");
+    recognition.onerror = (event) => {
+      setListening(false);
+      setError(event.error === "not-allowed" || event.error === "service-not-allowed"
+        ? "Microphone access was denied. Allow microphone access in browser settings and try again."
+        : `Speech capture failed (${event.error}). Check microphone access and try again.`);
+    };
+    recognition.onend = () => {
+      setListening(false);
+      setStatus("Speech capture ended. Review the transcript before analysis.");
+    };
     recognitionRef.current = recognition;
+    setError("");
+    setListening(true);
     setStatus("Listening. Review the transcript below before analysis.");
-    recognition.start();
+    try {
+      recognition.start();
+    } catch (speechError) {
+      setListening(false);
+      setError(speechError.message || "Unable to start speech capture.");
+    }
   };
 
   const runAnalysis = async () => {
+    if (csvFile) {
+      setError("CSV files contain multiple reports. Use Import CSV rows to analyze each row separately.");
+      return;
+    }
     if (!text.trim()) {
       setError("Extract or enter report text before starting analysis.");
       return;
     }
     setBusy(true);
     setError("");
+    setActiveStep(0);
+    setStatus("Starting report analysis...");
+    const progressTimer = window.setInterval(() => {
+      setActiveStep((step) => Math.min(step + 1, ANALYSIS_STEPS.length - 1));
+    }, 700);
     try {
-      const result = await analyzeReport({ site, text: text.trim() });
-      setAnalysis(result);
-      setEditedExtraction(result.extraction || {});
-      setStatus("AI analysis complete. HSE validation is required before this record is considered final.");
+      const result = await analyzeReport({ text: text.trim() });
+      setActiveStep(ANALYSIS_STEPS.length);
       await onIngest?.();
-      setView({ page: "dashboard" });
+      setText("");
+      setFileName("");
+      setCsvFile(null);
+      setOcrLineCount(0);
+      setStatus("Analysis complete. Ready for the next report.");
+      setView({ page: "dashboard", focusReportId: result.report_id });
     } catch (analysisError) {
       setError(analysisError.message || "Analysis failed.");
     } finally {
+      window.clearInterval(progressTimer);
       setBusy(false);
     }
   };
@@ -750,26 +842,10 @@ function CommandUpload({ onIngest, setView }) {
     setError("");
     try {
       const result = await uploadReports(csvFile);
-      setStatus(`${result.analyzed || 0} reports imported and analyzed from ${csvFile.name}.`);
       await onIngest?.();
-      setView({ page: "dashboard" });
+      setView({ page: "dashboard", focusReportId: result.reports?.[0]?.report_id });
     } catch (importError) {
       setError(importError.message || "CSV batch import failed.");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const saveDecision = async (decision) => {
-    if (!analysis?.report_id) return;
-    setBusy(true);
-    setError("");
-    try {
-      await submitFeedback(analysis.report_id, editedExtraction, decision);
-      setStatus(`HSE ${decision === "VALIDATED" ? "approved" : "rejected"} the record. The decision and corrections are saved as model feedback.`);
-      await onIngest?.();
-    } catch (validationError) {
-      setError(validationError.message || "Unable to save HSE decision.");
     } finally {
       setBusy(false);
     }
@@ -781,36 +857,31 @@ function CommandUpload({ onIngest, setView }) {
         <div><p className="cc-panel-kicker">ANALYZE · VALIDATE · LEARN</p><h2>Report Analysis &amp; HSE Validation</h2><p>AI supports the investigation. HSE personnel make the final decision.</p></div>
         <span className="cc-human-authority"><ClipboardCheck size={15} /> HUMAN VALIDATION REQUIRED</span>
       </div>
-      <div className="cc-analysis-grid">
+      <div className="cc-analyze-kpi-grid" aria-label="Report-derived analysis KPIs">
+        <article><span>ANALYZED REPORTS</span><strong>{analyzedReports.length}</strong><small>Submitted, non-synthetic reports</small></article>
+        <article><span>HIGHEST SIF SCORE</span><strong>{highestSif ? `${highestSif.analysis.risk_score}/100` : "--"}</strong><small>{highestSif ? `${highestSif.site} · existing base SIF risk` : "No SIF-potential report analyzed"}</small></article>
+        <article><span>HIGHEST PSIF SCORE</span><strong>{highestPsif ? `${highestPsif.analysis.risk_score}/100` : "--"}</strong><small>{highestPsif ? `${highestPsif.site} · reuses SIF-potential base risk; no separate PSIF scorer` : "No SIF-potential report analyzed"}</small></article>
+        <article><span>WORKFORCE FATIGUE PROFILE</span><strong>{highestFatigue.workers.veryHigh + highestFatigue.workers.high} workers</strong><small>{highestFatigue.name} · fixed representative profile, not live roster data</small></article>
+      </div>
+      <div className="cc-analysis-grid cc-analysis-grid--intake">
         <div className="cc-analysis-intake">
-          <label className="cc-field-label">SITE<input value={site} onChange={(event) => setSite(event.target.value)} /></label>
           <div className="cc-intake-actions">
             <button type="button" onClick={() => fileRef.current?.click()}><FileUp size={16} /> Choose report</button>
             <input ref={fileRef} type="file" accept=".pdf,.csv,.xlsx,.xls,.txt,image/*,audio/*,.wav,.mp3,.m4a,.webm" onChange={(event) => { extractFile(event.target.files?.[0]); event.target.value = ""; }} hidden />
-            <button type="button" className="cc-speech-button" onClick={startSpeechCapture}><Mic size={16} /> Capture speech</button>
+            <button type="button" className={`cc-speech-button ${listening ? "is-listening" : ""}`} onClick={startSpeechCapture}><Mic size={16} /> {listening ? "Stop capture" : "Capture speech"}</button>
           </div>
           {fileName && <div className="cc-file-label">{fileName}</div>}
+          {!!ocrLineCount && <div className="cc-file-label">OCR recognized {ocrLineCount} non-empty lines. All extracted text is available below.</div>}
           {audioUrl && <audio controls src={audioUrl} className="cc-audio-player" />}
           <label className="cc-field-label">EDITABLE EXTRACTED TEXT<textarea rows={9} value={text} onChange={(event) => setText(event.target.value)} placeholder="Extracted PDF, spreadsheet, OCR, or speech text appears here. Edit it before analysis." /></label>
-          <div className="cc-pipeline" aria-label="Analysis pipeline">
-            {["Extract", "Classify", "SIF / PSIF", "Hazard & exposure", "Barriers & LSR", "Risk score", "Similarity & patterns", "HSE validation"].map((step, index) => <span key={step} className={analysis && index < 7 ? "complete" : ""}><i>{analysis && index < 7 ? <Check size={11} /> : index + 1}</i>{step}</span>)}
+          <div className={`cc-pipeline ${busy ? "is-running" : ""}`} aria-label="Analysis pipeline">
+            <div className="cc-pipeline-track"><i style={{ width: `${activeStep < 0 ? 0 : Math.min(100, ((activeStep + 1) / ANALYSIS_STEPS.length) * 100)}%` }} /></div>
+            {ANALYSIS_STEPS.map((step, index) => <span key={step} className={index < activeStep ? "complete" : index === activeStep && busy ? "active" : ""}><i>{index < activeStep ? <Check size={12} /> : index + 1}</i><small>{step}</small></span>)}
           </div>
-          <button type="button" className="cc-analyze-button" disabled={busy || !text.trim()} onClick={runAnalysis}>{busy ? "Analyzing..." : "Analyze report"}<ArrowRight size={16} /></button>
+          {busy && <p className="cc-pipeline-current" aria-live="polite">Processing: {ANALYSIS_STEPS[Math.min(activeStep, ANALYSIS_STEPS.length - 1)]}…</p>}
+          <button type="button" className="cc-analyze-button" disabled={busy || !text.trim() || Boolean(csvFile)} onClick={runAnalysis}>{busy ? "Analyzing..." : csvFile ? "Import CSV rows below" : "Analyze report"}<ArrowRight size={16} /></button>
           {csvFile && <button type="button" className="cc-csv-import-button" disabled={busy} onClick={importCsvBatch}>Import CSV rows as a batch</button>}
           {status && <p className="cc-status-message">{status}</p>}{error && <p className="cc-error-message">{error}</p>}
-        </div>
-
-        <div className="cc-validation-pane">
-          <div className="cc-validation-title"><div><p className="cc-panel-kicker">AI ANALYSIS</p><h3>Decision record</h3></div><span className={analysis ? "cc-validation-live" : "cc-validation-pending"}>{analysis ? "READY FOR HSE" : "AWAITING REPORT"}</span></div>
-          {analysis ? (
-            <>
-              <div className="cc-analysis-score"><strong>{analysis.risk_score ?? "--"}</strong><span>/100 RISK</span><b>{analysis.risk_level || "Pending"}</b></div>
-              <div className="cc-editable-fields">{["report_type", "sif_potential", "hazard", "activity", "exposure", "barrier_failure", "potential_consequence"].map((field) => <label key={field}>{field.replaceAll("_", " ")}<input value={editedExtraction[field] || ""} onChange={(event) => setEditedExtraction((previous) => ({ ...previous, [field]: event.target.value }))} /></label>)}</div>
-              <div className="cc-provenance"><span>AI-generated information</span><i /><span>HSE correction</span><i /><strong>Final validated record</strong></div>
-              <div className="cc-decision-buttons"><button type="button" disabled={busy} onClick={() => saveDecision("VALIDATED")}><Check size={15} /> Approve</button><button type="button" disabled={busy} onClick={() => saveDecision("REJECTED")}><X size={15} /> Reject</button></div>
-              {analysis.report_id && <button type="button" className="cc-open-analysis" onClick={() => setView({ page: "report-detail", reportId: analysis.report_id })}>Open full investigation <ArrowRight size={14} /></button>}
-            </>
-          ) : <div className="cc-validation-empty"><ClipboardCheck size={25} /><strong>AI findings appear here</strong><span>Classification, SIF potential, hazards, failed barriers, and risk score will be reviewed by an HSE officer.</span></div>}
         </div>
       </div>
     </section>
@@ -897,9 +968,9 @@ function formatIncidentTitle(text) {
   return clean;
 }
 
-function SiteIntelligenceWorkspace({ dashboard, selectedSite, onSiteChange, patterns = [] }) {
+function SiteIntelligenceWorkspace({ dashboard, selectedSite, onSiteChange, patterns = [], reports = [] }) {
   const liveSites = dashboard?.highest_risk_locations || [];
-  const sites = oilSites.map((site) => {
+  const sites = buildMapSites(reports).map((site) => {
     const live = liveSites.find((item) => {
       const liveName = item.site.toLowerCase();
       const siteName = site.name.toLowerCase();
@@ -990,7 +1061,7 @@ function SiteIntelligenceWorkspace({ dashboard, selectedSite, onSiteChange, patt
   );
 }
 
-function ModelPerformance({ metrics, status, reports, reportsStatus }) {
+export function ModelPerformance({ metrics, status, reports, reportsStatus }) {
   const panels = [
     { key: "report_type_classification", label: "Report Type Classification" },
     { key: "sif_potential_classification", label: "SIF Potential Classification" },
@@ -1044,6 +1115,73 @@ export const oilSites = [
 ];
 
 const siteRiskLevel = (score) => score >= 70 ? "HIGH" : score >= 45 ? "MEDIUM" : "LOW";
+
+function normalizeSiteKey(name) {
+  return String(name || "")
+    .toLowerCase()
+    .replace(/\b(limited|oilfield|oil|field|refinery|terminal|plant|station|site)\b/g, "")
+    .replace(/[^a-z0-9]/g, "");
+}
+
+function buildMapSites(reports = []) {
+  const groups = new Map();
+  reports.filter((report) => report.analysis && !report.isDemo && !report.is_synthetic).forEach((report) => {
+    const name = report.metadata?.site || report.site;
+    if (!name || name === "Unknown") return;
+    const siteKey = normalizeSiteKey(name);
+    const knownSite = oilSites.find((site) => {
+      const knownKey = normalizeSiteKey(site.name);
+      return siteKey && knownKey && (knownKey.includes(siteKey) || siteKey.includes(knownKey));
+    });
+    const groupKey = knownSite?.name || name;
+    if (!groups.has(groupKey)) groups.set(groupKey, { name: groupKey, knownSite, reports: [] });
+    groups.get(groupKey).reports.push(report);
+  });
+
+  const makeProfile = ({ name, knownSite, reports: siteReports }) => {
+    const latest = [...siteReports].sort((left, right) => new Date(right.created_at) - new Date(left.created_at))[0];
+    const hazardCounts = new Map();
+    siteReports.forEach((report) => {
+      const hazard = report.analysis.extracted_data?.hazard;
+      if (hazard) hazardCounts.set(hazard, (hazardCounts.get(hazard) || 0) + 1);
+    });
+    const topHazard = [...hazardCounts.entries()].sort((left, right) => right[1] - left[1])[0]?.[0];
+    const reportRisk = siteReports.map((report) => report.analysis.risk_score).filter(Number.isFinite);
+    const contextualRisk = reportRisk.length
+      ? Math.round(reportRisk.reduce((sum, score) => sum + score, 0) / reportRisk.length)
+      : knownSite?.risk ?? 0;
+    const psifHigh = siteReports.filter((report) => /high/i.test(String(
+      report.analysis.extracted_data?.psif_potential || report.analysis.psif_potential || "",
+    ))).length;
+    return {
+      ...(knownSite || {}),
+      name,
+      category: knownSite?.category || "Reported site · location not geocoded",
+      coordinates: knownSite?.coordinates || [76 + (Array.from(name).reduce((sum, char) => sum + char.charCodeAt(0), 0) % 1200) / 100, 17 + (name.length * 37 % 1200) / 100],
+      risk: contextualRisk,
+      sif: siteReports.filter((report) => {
+        const value = String(report.analysis.extracted_data?.sif_potential || report.analysis.sif_potential || "").toLowerCase();
+        return value.includes("sif potential") && !value.includes("non-sif");
+      }).length,
+      psifHigh,
+      reports: siteReports.length,
+      fatigue: knownSite?.fatigue || "MEDIUM",
+      workers: knownSite?.workers || { veryHigh: 3, high: 8, medium: 21, low: 46 },
+      hazard: topHazard || knownSite?.hazard || "No hazard reported",
+      activity: latest?.analysis.extracted_data?.activity || knownSite?.activity || "No activity reported",
+      barrier: latest?.analysis.extracted_data?.barrier_failure || knownSite?.barrier || "No barrier reported",
+      lastReviewed: latest?.created_at ? new Date(latest.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : knownSite?.lastReviewed || "No analyzed reports",
+      isSample: false,
+      locationIsApproximate: !knownSite,
+    };
+  };
+
+  const reportProfiles = [...groups.values()].map(makeProfile);
+  const reportedNames = new Set(reportProfiles.filter((site) => !site.locationIsApproximate).map((site) => site.name));
+  const staticSites = oilSites.filter((site) => !reportedNames.has(site.name)).map((site) => ({ ...site, isSample: true }));
+  return [...reportProfiles, ...staticSites].sort((left, right) => right.risk - left.risk);
+}
+
 const riskMarkerColor = (level) => level === "HIGH" ? "#F24B45" : level === "MEDIUM" ? "#F4C95D" : "#2FCF88";
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || "pk.eyJ1Ijoic2hyZXlhYTA4MDciLCJhIjoiY211bXhjcGR3MDFqeDJ5czh5cGpmYTE3YyJ9.8VS06ZvvreFKLnmONcX8lA";
 
@@ -1154,14 +1292,10 @@ function MapboxOperationsMap({ sites, selectedSite, onSelectSite }) {
   </div>;
 }
 
-export function IndiaLiveRiskMap({ dashboard = null, onSiteAnalysis }) {
+export function IndiaLiveRiskMap({ dashboard = null, reports = [], onSiteAnalysis }) {
   const [selectedSiteName, setSelectedSiteName] = useState(oilSites[0].name);
-  const riskLocations = dashboard?.highest_risk_locations || [];
-  const sites = oilSites.map((site) => {
-    const live = riskLocations.find((item) => item.site.toLowerCase().includes(site.name.toLowerCase()) || site.name.toLowerCase().includes(item.site.toLowerCase()));
-    return live ? { ...site, risk: live.risk, reports: live.reports, isSample: false } : { ...site, isSample: true };
-  });
-  const selectedSite = sites.find((site) => site.name === selectedSiteName) || sites[0];
+  const sites = useMemo(() => buildMapSites(reports), [reports]);
+  const selectedSite = sites.find((site) => site.name === selectedSiteName) || sites[0] || oilSites[0];
 
   return (
     <section id="live-risk" className="cc-map-workspace">
@@ -1169,7 +1303,7 @@ export function IndiaLiveRiskMap({ dashboard = null, onSiteAnalysis }) {
         <div>
           <p className="cc-panel-kicker">OPERATIONS · LIVE SIGNALS</p>
           <h2>India Live Risk Map</h2>
-          <p>OIL locations · Site risk and aggregate workforce fatigue</p>
+          <p>Report-derived site risk · representative workforce profiles · new-site markers are approximate until geocoded</p>
         </div>
         <div className="cc-map-title-actions">
           <label className="cc-site-selector"><MapPinned size={14} /><span>SITE</span><select value={selectedSite.name} onChange={(event) => setSelectedSiteName(event.target.value)} aria-label="Select an operations site">
@@ -1203,7 +1337,7 @@ export function IndiaLiveRiskMap({ dashboard = null, onSiteAnalysis }) {
           {[ ["Very high", "veryHigh", "very-high"], ["High", "high", "high"], ["Medium", "medium", "medium"], ["Low", "low", "low"] ].map(([label, key, tone]) => (
             <div className="cc-worker-breakdown-row" key={key}><span><i className={`cc-fatigue-dot cc-fatigue-dot--${tone}`} />{label}</span><b>{selectedSite.workers[key]}</b><small>workers</small></div>
           ))}
-          <p>Representative workforce profile · confirm against the current roster.</p>
+          <p>Fixed representative workforce profile · replace with validated roster data when available.</p>
         </div>
         <button type="button" className="cc-site-analysis-button" onClick={() => onSiteAnalysis?.(selectedSite)}>View full site analysis <ArrowRight size={15} /></button>
       </aside>
@@ -1214,6 +1348,11 @@ export function IndiaLiveRiskMap({ dashboard = null, onSiteAnalysis }) {
 
 function OperationalTrendChart({ reports = [] }) {
   const [days, setDays] = useState(15);
+  const [selectedSite, setSelectedSite] = useState("All sites");
+  const siteOptions = [...new Set(reports
+    .filter((report) => report.analysis && !report.isDemo)
+    .map((report) => report.metadata?.site || report.site)
+    .filter((site) => site && site !== "Unknown"))].sort();
   const chartData = useMemo(() => {
     const today = new Date();
     const endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
@@ -1231,6 +1370,8 @@ function OperationalTrendChart({ reports = [] }) {
 
     reports.forEach((report) => {
       if (!report.analysis || report.isDemo) return;
+      const reportSite = report.metadata?.site || report.site || "Unknown";
+      if (selectedSite !== "All sites" && reportSite !== selectedSite) return;
       const date = new Date(report.created_at || report.date);
       if (Number.isNaN(date.getTime())) return;
       const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
@@ -1241,17 +1382,23 @@ function OperationalTrendChart({ reports = [] }) {
     });
 
     return rows;
-  }, [days, reports]);
+  }, [days, reports, selectedSite]);
   const hasTrendData = chartData.some((row) => row.analyzed > 0);
 
   return (
     <section className="cc-panel" style={{ marginTop: 28, background: C.card, border: `1px solid ${C.line}`, borderRadius: 8, padding: 22 }}>
       <div className="cc-panel-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, marginBottom: 16 }}>
-        <div><p className="cc-panel-kicker">REPORT ACTIVITY</p><h2 style={{ margin: 0, color: C.ink, fontSize: 20 }}>SIF trends · past {days} days</h2></div>
-        <select value={days} onChange={(event) => setDays(Number(event.target.value))} aria-label="Trend date range" style={{ background: C.paper, color: C.ink, border: `1px solid ${C.line}`, borderRadius: 4, padding: "8px 10px" }}>
-          <option value={15}>Past 15 days</option>
-          <option value={30}>Past 30 days</option>
-        </select>
+        <div><p className="cc-panel-kicker">REPORT ACTIVITY · {selectedSite.toUpperCase()}</p><h2 style={{ margin: 0, color: C.ink, fontSize: 20 }}>SIF trends · past {days} days</h2></div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          <select value={selectedSite} onChange={(event) => setSelectedSite(event.target.value)} aria-label="Site for SIF trend" style={{ background: C.paper, color: C.ink, border: `1px solid ${C.line}`, borderRadius: 4, padding: "8px 10px", maxWidth: 240 }}>
+            <option value="All sites">All sites</option>
+            {siteOptions.map((site) => <option key={site} value={site}>{site}</option>)}
+          </select>
+          <select value={days} onChange={(event) => setDays(Number(event.target.value))} aria-label="Trend date range" style={{ background: C.paper, color: C.ink, border: `1px solid ${C.line}`, borderRadius: 4, padding: "8px 10px" }}>
+            <option value={15}>Past 15 days</option>
+            <option value={30}>Past 30 days</option>
+          </select>
+        </div>
       </div>
       {hasTrendData ? <div style={{ width: "100%", height: 260 }}>
         <ResponsiveContainer width="100%" height="100%">
@@ -1270,7 +1417,7 @@ function OperationalTrendChart({ reports = [] }) {
   );
 }
 
-function LiveHighlights({ dashboard, onSiteAnalysis }) {
+function LiveHighlights({ dashboard, reports = [], onSiteAnalysis }) {
   // dashboard can be null while loading or if the API request fails
   const data = dashboard || {};
   const topHazards = data.top_hazards || [];
@@ -1334,7 +1481,7 @@ function LiveHighlights({ dashboard, onSiteAnalysis }) {
         </div>
       </section>
 
-      <IndiaLiveRiskMap dashboard={dashboard} onSiteAnalysis={onSiteAnalysis} />
+      <IndiaLiveRiskMap dashboard={dashboard} reports={reports} onSiteAnalysis={onSiteAnalysis} />
     </>
   );
 }
@@ -1458,10 +1605,6 @@ export default function CommandCenter({ setView, onIngest, reports = [], results
   const [activeTab, setActiveTab] = useState("overview");
   const [barriers, setBarriers] = useState([]);
   const [patterns, setPatterns] = useState([]);
-  const [evaluationMetrics, setEvaluationMetrics] = useState(null);
-  const [evaluationStatus, setEvaluationStatus] = useState("loading");
-  const [modelReports, setModelReports] = useState([]);
-  const [modelReportsStatus, setModelReportsStatus] = useState("loading");
   const [focusedSite, setFocusedSite] = useState(null);
   const [similarReports, setSimilarReports] = useState([]);
   const refreshDashboard = async () => {
@@ -1505,23 +1648,10 @@ export default function CommandCenter({ setView, onIngest, reports = [], results
 
   useEffect(() => {
     let active = true;
-    Promise.allSettled([getBarrierIntelligence(), getEmergingPatterns(), getEvaluationMetrics(), getReports()]).then(([barrierResult, patternResult, metricsResult, reportsResult]) => {
+    Promise.allSettled([getBarrierIntelligence(), getEmergingPatterns()]).then(([barrierResult, patternResult]) => {
       if (!active) return;
       if (barrierResult.status === "fulfilled") setBarriers(barrierResult.value?.barrier_failures || []);
       if (patternResult.status === "fulfilled") setPatterns(patternResult.value?.patterns || []);
-      if (metricsResult.status === "fulfilled" && metricsResult.value) {
-        setEvaluationMetrics(metricsResult.value);
-        setEvaluationStatus(Object.keys(metricsResult.value).some((key) => metricsResult.value[key]?.total_samples) ? "ready" : "empty");
-      } else {
-        setEvaluationStatus("error");
-      }
-      if (reportsResult.status === "fulfilled" && Array.isArray(reportsResult.value)) {
-        setModelReports(reportsResult.value);
-        setModelReportsStatus(reportsResult.value.length ? "ready" : "empty");
-      } else {
-        setModelReports([]);
-        setModelReportsStatus("error");
-      }
     });
     return () => { active = false; };
   }, []);
@@ -1549,7 +1679,6 @@ export default function CommandCenter({ setView, onIngest, reports = [], results
     sites: `Site Risk Intelligence${focusedSite ? ` — ${focusedSite.name}` : ""}`,
     intelligence: "Site & Precursor Intelligence",
     workforce: "Workforce Fatigue Intelligence",
-    models: "Model Performance",
   }[activeTab] || "Safety Intelligence Command Center";
 
   const renderOverview = activeTab === "overview";
@@ -1602,17 +1731,16 @@ export default function CommandCenter({ setView, onIngest, reports = [], results
 
         <div key={activeTab} className="cc-workspace-page" role="tabpanel" aria-label={workspaceTitle}>
           {renderOverview && <>
-            <LiveHighlights dashboard={dashboard} onSiteAnalysis={(site) => { setFocusedSite(site); setActiveTab("intelligence"); }} />
+            <LiveHighlights dashboard={dashboard} reports={reports} onSiteAnalysis={(site) => { setFocusedSite(site); setActiveTab("intelligence"); }} />
             <OperationalTrendChart reports={reports} />
             <SiteRiskComparison data={siteRiskData} />
           </>}
-          {activeTab === "analyze-report" && <CommandUpload setView={setView} onIngest={refreshDashboard} />}
+          {activeTab === "analyze-report" && <CommandUpload setView={setView} onIngest={refreshDashboard} reports={reports} />}
           {activeTab === "intelligence" && <>
-            <SiteIntelligenceWorkspace dashboard={dashboard} selectedSite={focusedSite} onSiteChange={setFocusedSite} patterns={patterns} />
+            <SiteIntelligenceWorkspace dashboard={dashboard} selectedSite={focusedSite} onSiteChange={setFocusedSite} patterns={patterns} reports={reports} />
             <IntelligenceLayers dashboard={dashboard} barriers={barriers} patterns={patterns} reports={highSIFReports} mode="intelligence" similarReports={similarReports} />
           </>}
           {activeTab === "workforce" && <WorkforceIntelligence onBack={() => setActiveTab("overview")} />}
-          {activeTab === "models" && <ModelPerformance metrics={evaluationMetrics} status={evaluationStatus} reports={modelReports} reportsStatus={modelReportsStatus} />}
         </div>
 
         {!renderOverview && activeTab !== "workforce" && <div className="cc-primary-actions">

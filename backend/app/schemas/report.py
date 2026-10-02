@@ -9,7 +9,7 @@ from app.schemas.analysis import AnalysisResponse, ExtractionData, RiskBreakdown
 class ReportCreate(BaseModel):
     site: str = "Unknown"
     text: str = Field(..., min_length=1)
-    is_synthetic: bool = True
+    is_synthetic: bool = False
 
 
 class ReportResponse(BaseModel):
@@ -24,7 +24,7 @@ class ReportResponse(BaseModel):
 
 
 class AnalyzeRequest(BaseModel):
-    site: str = "Unknown"
+    site: str | None = None
     text: str = Field(..., min_length=1)
 
 
@@ -39,3 +39,12 @@ class AnalyzeResponse(BaseModel):
     confidence: float
     extraction: ExtractionData
     risk_breakdown: RiskBreakdown
+    base_sif_risk_score: int
+    base_risk_level: str
+    fatigue_score: int | None = None
+    fatigue_level: str | None = None
+    fatigue_adjustment: int | None = None
+    contextual_risk_score: int | None = None
+    contextual_risk_level: str | None = None
+    risk_change: int | None = None
+    fatigue_signals: dict | None = None

@@ -1,6 +1,8 @@
 import pytest
 
 from app.services.csv_service import parse_csv
+from app.services.report_service import is_report_csv_document
+from app.services.mock_nlp_service import MockNLPService
 
 
 def test_parse_valid_csv():
@@ -44,3 +46,37 @@ def test_missing_site_defaults_to_unknown():
     rows = parse_csv(content)
 
     assert rows[0]["site"] == "Unknown"
+
+
+def test_site_is_inferred_when_csv_has_no_site_column():
+    content = b'text,is_synthetic\n"Site: Jorajan Oil Field\nWorker reported a hazard.",true\n'
+
+    rows = parse_csv(content)
+
+    assert rows[0]["site"] == "Jorajan Oil Field"
+
+
+def test_csv_upload_defaults_to_real_report_input():
+    rows = parse_csv(b"text\n\"Site: Jorajan Oil Field\nHazard observed.\"\n")
+
+    assert rows[0]["is_synthetic"] is False
+
+
+def test_modified_report_text_is_preferred_over_original_text():
+    content = (
+        b"site,report_text,modified_report_text\n"
+        b'Rig A,"Worker entered confined space without atmospheric testing.","Worker fell from rig platform and died."\n'
+    )
+
+    rows = parse_csv(content)
+    analyzer = MockNLPService()
+
+    assert rows[0]["text"] == "Worker fell from rig platform and died."
+    assert analyzer.extract("Worker entered confined space without atmospheric testing.").hazard == "Confined space"
+    assert analyzer.extract(rows[0]["text"]).hazard == "Fall from height"
+
+
+def test_detects_whole_csv_text_accidentally_submitted_as_one_report():
+    assert is_report_csv_document("report_id,site,report_text\n1,Rig A,Near miss\n")
+    assert is_report_csv_document("report_id,site,modified_text\n1,Rig A,Modified report\n")
+    assert not is_report_csv_document("A worker reported a near miss at Rig A.")

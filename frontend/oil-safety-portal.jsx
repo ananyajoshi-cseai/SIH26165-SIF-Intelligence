@@ -6,6 +6,7 @@ import {
   getReportGraph,
   getBarrierIntelligence,
   getEmergingPatterns,
+  getEvaluationMetrics,
   submitFeedback,
   uploadReports,
   analyzeImage,
@@ -26,10 +27,9 @@ import {
   Flame, Droplet, AlertTriangle, ShieldAlert, Search, Upload, ChevronRight,
   ArrowUp, ArrowDown, Minus, CheckCircle2, XCircle, X, Wrench,
   Building2, UserX, Wind, ArrowLeft, FileText, Sparkles, TrendingUp, TrendingDown,
-  ClipboardCheck, Wrench as WrenchIcon, ShieldCheck, ListChecks, MessageSquare, Loader2,
+  ClipboardCheck, Wrench as WrenchIcon, ShieldCheck, ListChecks, MessageSquare, Loader2, Info,
 } from "lucide-react";
-import CommandCenter from "./command-center.jsx";
-import { oilSites } from "./command-center.jsx";
+import CommandCenter, { ModelPerformance } from "./command-center.jsx";
 import WorkforceIntelligence from "./workforce-intelligence.jsx";
 import Home from "./home.jsx";
 import "./sentinel-theme.css";
@@ -84,49 +84,7 @@ const hazardIcon = (h) => {
   return map[h] || AlertTriangle;
 };
 
-/* ------------------------------------------------------------------ */
-/* MOCK DATA                                                           */
-/* ------------------------------------------------------------------ */
-const SITES = [
-  { id: "A", name: "Site A — Digboi Terminal", risk: 74, sif: 42, psif: 68, trend: 24,
-    hazard: "Oil Spilling", barrier: "Leak Detection / Containment", lsr: "Process Safety" },
-  { id: "B", name: "Site B — Duliajan Field", risk: 61, sif: 31, psif: 44, trend: 9,
-    hazard: "Fire Outbreak", barrier: "Hot Work Permit Verification", lsr: "Line of Fire" },
-  { id: "E", name: "Site E — Naharkatiya Plant", risk: 58, sif: 27, psif: 39, trend: 12,
-    hazard: "Equipment Failure", barrier: "Energy Isolation (LOTO)", lsr: "Energy Isolation" },
-  { id: "D", name: "Site D — Moran Refinery", risk: 55, sif: 25, psif: 33, trend: -6,
-    hazard: "Gas Leakage", barrier: "Gas Testing Before Entry", lsr: "Confined Space" },
-  { id: "F", name: "Site F — Kumchai Pipeline", risk: 33, sif: 12, psif: 14, trend: -18,
-    hazard: "Oil Spilling", barrier: "Pipeline Integrity Audit", lsr: "Process Safety" },
-  { id: "C", name: "Site C — Jorhat Depot", risk: 21, sif: 9, psif: 10, trend: -22,
-    hazard: "Structural Damage", barrier: "Scaffold Inspection Tag", lsr: "Working at Height" },
-];
-
-const HAZARDS = ["Oil Spilling", "Fire Outbreak", "Equipment Failure", "Explosion", "Gas Leakage", "Structural Damage", "Evasion (Security Breach)"];
-const SITE_IDS = ["A", "B", "C", "D", "E", "F"];
-
-const heat = {
-  "Oil Spilling":       { A: 50, B: 40, C: 15, D: 15, E: 25, F: 75 },
-  "Fire Outbreak":      { A: 25, B: 35, C: 20, D: 55, E: 20, F: 15 },
-  "Equipment Failure":  { A: 20, B: 25, C: 15, D: 45, E: 60, F: 10 },
-  "Explosion":          { A: 25, B: 15, C: 15, D: 15, E: 30, F: 10 },
-  "Gas Leakage":        { A: 15, B: 20, C: 20, D: 45, E: 30, F: 15 },
-  "Structural Damage":  { A: 15, B: 35, C: 20, D: 45, E: 35, F: 15 },
-  "Evasion (Security Breach)": { A: 15, B: 20, C: 15, D: 45, E: 30, F: 10 },
-};
 const heatLevel = (v) => (v >= 61 ? "Critical" : v >= 41 ? "High" : v >= 21 ? "Medium" : "Low");
-
-const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-const sifTrendRaw = {
-  A:[9,14,16,18,12,12,7,6,6,4,8,10], B:[16,20,21,21,18,21,18,11,12,13,13,13],
-  C:[16,24,23,24,23,22,17,15,14,15,15,16], D:[4,20,17,20,16,7,7,1,1,1,4,6],
-  E:[13,19,17,19,13,4,4,9,5,6,9,11], F:[6,9,10,11,8,5,1,3,1,1,4,3],
-};
-const trendData = MONTHS.map((m, i) => {
-  const row = { month: m };
-  SITE_IDS.forEach((s) => (row[s] = sifTrendRaw[s][i]));
-  return row;
-});
 const SITE_COLORS = { A: C.saffron, B: "#C79A1E", C: C.greenGood, D: C.redBright, E: "#8B4A9C", F: C.inkSoft };
 
 const toRiskLevel = (score) => score >= 81 ? "Critical" : score >= 61 ? "High" : score >= 31 ? "Medium" : "Low";
@@ -149,7 +107,8 @@ function normalizeReport(report) {
 }
 
 function buildDashboardData(reports) {
-  const analyzed = reports.filter((report) => report.analysis);
+  const sourceReports = reports.filter((report) => !report.is_synthetic);
+  const analyzed = sourceReports.filter((report) => report.analysis);
   const siteGroups = new Map();
   const hazardGroups = new Map();
   const barrierGroups = new Map();
@@ -157,12 +116,14 @@ function buildDashboardData(reports) {
   analyzed.forEach((report) => {
     const site = report.metadata?.site || "Unknown";
     const extraction = report.analysis.extracted_data || {};
-    const hazard = extraction.hazard || "Unknown";
+    const hazard = extraction.hazard;
     const barrier = extraction.barrier_failure || "Unknown";
     if (!siteGroups.has(site)) siteGroups.set(site, []);
     siteGroups.get(site).push(report);
-    if (!hazardGroups.has(hazard)) hazardGroups.set(hazard, new Map());
-    hazardGroups.get(hazard).set(site, (hazardGroups.get(hazard).get(site) || 0) + 1);
+    if (hazard && hazard.toLowerCase() !== "unknown") {
+      if (!hazardGroups.has(hazard)) hazardGroups.set(hazard, new Map());
+      hazardGroups.get(hazard).set(site, (hazardGroups.get(hazard).get(site) || 0) + 1);
+    }
     if (barrier !== "Unknown") barrierGroups.set(barrier, (barrierGroups.get(barrier) || 0) + 1);
   });
 
@@ -179,9 +140,12 @@ function buildDashboardData(reports) {
     const group = siteGroups.get(name);
     const risk = Math.round(group.reduce((sum, report) => sum + (report.analysis.risk_score || 0), 0) / group.length);
     const hazardCounts = {};
+    const fatigueScores = [];
     group.forEach((report) => {
-      const hazard = report.analysis.extracted_data?.hazard || "Unknown";
-      hazardCounts[hazard] = (hazardCounts[hazard] || 0) + 1;
+      const hazard = report.analysis.extracted_data?.hazard;
+      if (hazard && hazard.toLowerCase() !== "unknown") hazardCounts[hazard] = (hazardCounts[hazard] || 0) + 1;
+      const fatigueScore = report.analysis.risk_context?.fatigue_score ?? report.analysis.extracted_data?.risk_context?.fatigue_score;
+      if (Number.isFinite(fatigueScore)) fatigueScores.push(fatigueScore);
     });
     const datedGroup = [...group].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
     const latest = datedGroup.at(-1);
@@ -196,9 +160,12 @@ function buildDashboardData(reports) {
     return {
       id, name, risk, sif: group.filter((report) => report.analysis.sif_level === "HIGH").length,
       reports: group.length, psif: group.length, trend,
-      hazard: Object.entries(hazardCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || "Unknown",
+      hazard: Object.entries(hazardCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || "Not reported",
+      topHazardReports: Math.max(0, ...Object.values(hazardCounts)),
+      fatigueScore: fatigueScores.length ? Math.round(fatigueScores.reduce((sum, value) => sum + value, 0) / fatigueScores.length) : null,
+      fatigueReports: fatigueScores.length,
       barrier: latest.analysis.extracted_data?.barrier_failure || "No barrier failure identified",
-      lsr: SITES.find((site) => site.name === name)?.lsr || "ML classified",
+      lsr: latest.analysis.extracted_data?.life_saving_rule || "Not identified",
     };
   }).sort((a, b) => b.risk - a.risk);
 
@@ -237,187 +204,42 @@ function buildDashboardData(reports) {
     });
     return row;
   });
-  const sequenceReports = [...analyzed].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-  const bucketCount = Math.min(6, Math.max(2, sequenceReports.length));
-  const sequenceTrendData = Array.from({ length: bucketCount }, (_, bucketIndex) => {
-    const start = Math.floor((bucketIndex * sequenceReports.length) / bucketCount);
-    const end = Math.floor(((bucketIndex + 1) * sequenceReports.length) / bucketCount);
-    const bucketReports = sequenceReports.slice(start, end);
-    const row = { month: `Period ${bucketIndex + 1}` };
-    Object.entries(siteIds).forEach(([id, name]) => {
-      row[id] = bucketReports.filter((item) => item.metadata?.site === name && item.analysis.sif_level === "HIGH").length;
-    });
-    return row;
-  });
-  const sequenceReportData = Array.from({ length: bucketCount }, (_, bucketIndex) => {
-    const start = Math.floor((bucketIndex * sequenceReports.length) / bucketCount);
-    const end = Math.floor(((bucketIndex + 1) * sequenceReports.length) / bucketCount);
-    const bucketReports = sequenceReports.slice(start, end);
-    const row = { month: `Period ${bucketIndex + 1}` };
-    Object.entries(siteIds).forEach(([id, name]) => {
-      row[id] = bucketReports.filter((item) => item.metadata?.site === name).length;
-    });
-    return row;
-  });
-  const historicalTrendData = MONTHS.map((month, monthIndex) => {
-    const row = { month };
-    Object.entries(siteIds).forEach(([id, name], siteIndex) => {
-      const sourceId = SITES.find((site) => site.name === name)?.id || SITE_IDS[siteIndex % SITE_IDS.length];
-      row[id] = sifTrendRaw[sourceId][monthIndex];
-    });
-    return row;
-  });
-  const trendIsMock = monthKeys.length <= 1 && siteNames.length > 0;
-  const trendData = monthKeys.length > 1 ? monthlyTrendData : siteNames.length ? historicalTrendData : sequenceTrendData;
-  const reportVolumeData = monthKeys.length > 1 ? monthlyReportData : sequenceReportData;
+  const trendData = monthlyTrendData;
+  const reportVolumeData = monthlyReportData;
   const alerts = [...barrierGroups.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([barrier, count]) => ({
     title: "Recurring Barrier Failure", body: `${barrier} was identified in ${count} analyzed report${count === 1 ? "" : "s"}.`, sev: count >= 3 ? "Critical" : count >= 2 ? "High" : "Medium",
   }));
-  return { reports, sites, hazards, siteIds, heat, trendData, reportVolumeData, trendIsMock, siteColors: Object.fromEntries(Object.keys(siteIds).map((id, index) => [id, Object.values(SITE_COLORS)[index % Object.values(SITE_COLORS).length]])), alerts };
+  return { reports: sourceReports, sites, hazards, siteIds, heat, trendData, reportVolumeData, siteColors: Object.fromEntries(Object.keys(siteIds).map((id, index) => [id, Object.values(SITE_COLORS)[index % Object.values(SITE_COLORS).length]])), alerts };
 }
 
-const alerts = [
-  { title: "Emerging Pattern Detected", body: "Confined-space precursors increased 38% over the last 3 months at Sites B, D and E.", sev: "High" },
-  { title: "Recurring Barrier Failure", body: "Energy-isolation verification has appeared in 17 similar reports across 4 sites in the last quarter.", sev: "Critical" },
-  { title: "Rising PSIF Without SIF Growth", body: "Site D shows flat SIF counts but a 15% rise in potential-severity classification — recommend closer review.", sev: "Medium" },
-];
-
-const REPORTS_INITIAL = [
-  { id: "OSR-2026-1042", date: "2026-08-29", site: "Site A", hazard: "Oil Spilling", risk: "Critical", status: "Pending" },
-  { id: "OSR-2026-1041", date: "2026-08-28", site: "Site D", hazard: "Equipment Failure", risk: "High", status: "Validated" },
-  { id: "OSR-2026-1040", date: "2026-08-27", site: "Site B", hazard: "Fire Outbreak", risk: "High", status: "Pending" },
-  { id: "OSR-2026-1039", date: "2026-08-26", site: "Site E", hazard: "Gas Leakage", risk: "Medium", status: "Validated" },
-  { id: "OSR-2026-1038", date: "2026-08-24", site: "Site F", hazard: "Oil Spilling", risk: "Low", status: "Validated" },
-  { id: "OSR-2026-1037", date: "2026-08-23", site: "Site A", hazard: "Structural Damage", risk: "Medium", status: "Pending" },
-  { id: "OSR-2026-1036", date: "2026-08-21", site: "Site C", hazard: "Evasion (Security Breach)", risk: "Low", status: "Validated" },
-  { id: "OSR-2026-1035", date: "2026-08-20", site: "Site D", hazard: "Fire Outbreak", risk: "Critical", status: "Pending" },
-  { id: "OSR-2026-1034", date: "2026-08-18", site: "Site B", hazard: "Explosion", risk: "High", status: "Validated" },
-  { id: "OSR-2026-1033", date: "2026-08-15", site: "Site E", hazard: "Equipment Failure", risk: "High", status: "Pending" },
-];
-
-const DEMO_REPORTS = REPORTS_INITIAL.map((report, index) => {
-  const site = SITES.find((item) => `Site ${item.id}` === report.site);
-  const riskScore = { Critical: 88, High: 68, Medium: 48, Low: 24 }[report.risk];
-  const extractedData = {
-    activity: `${report.hazard} response and routine site operations`,
-    hazard: report.hazard,
-    exposure: "Personnel and operational assets in the affected work area",
-    barrier: site?.barrier || "Site control under review",
-    barrier_failure: site?.barrier || "Site control under review",
-    potential_consequence: `Escalation of ${report.hazard.toLowerCase()} with potential for serious injury or asset impact`,
-    report_type: "Near Miss",
-    report_type_confidence: 0.91,
-    sif_potential: `${report.risk} SIF potential`,
-    sif_confidence: 0.88,
-  };
-
-  return normalizeReport({
-    id: report.id,
-    created_at: `${report.date}T09:00:00Z`,
-    raw_text: report.id === "OSR-2026-1042"
-      ? undefined
-      : `Field report for ${report.hazard.toLowerCase()} at ${site?.name || report.site}. The observation was recorded for HSE review; confirm the affected barrier and exposure conditions during follow-up.`,
-    metadata: { site: site?.name || report.site, site_code: report.site },
-    isDemo: true,
-    analysis: {
-      extracted_data: extractedData,
-      risk_score: riskScore,
-      sif_level: riskScore >= 61 ? "HIGH" : riskScore >= 31 ? "MEDIUM" : "LOW",
-      confidence: 0.88,
-      status: report.status.toUpperCase(),
-    },
-  });
-});
-
-const REPORT_DETAIL = {
-  "OSR-2026-1042": {
-    text: "Field supervisor reported visible sheen near Tank Farm 3 outlet valve during routine 06:00 patrol at Digboi Terminal (Site A). Estimated 40-60 litres surface spread. Secondary containment bund found partially breached at south seam. Leak-detection sensor LDS-A3 logged no alarm prior to visual discovery, suggesting sensor threshold miscalibration. Response crew deployed absorbent booms within 22 minutes. No personnel injury. Similar bund-seam degradation was noted in a maintenance log 11 weeks earlier but not closed out.",
-    fields: { site: "Site A", hazard: "Oil Spilling", dateTime: "2026-08-29 06:14", reporter: "Field Supervisor, Shift-2", location: "Tank Farm 3, South Bund", volumeEstimate: "40–60 L", injuries: "None reported" },
-    riskScore: 88,
-    scoreBreakdown: [
-      { label: "Potential severity", value: 34, max: 40, note: "Uncontained hydrocarbon release near active bund" },
-      { label: "Recurrence", value: 18, max: 20, note: "2nd bund-seam issue at this tank farm in 11 weeks" },
-      { label: "Barrier failure", value: 22, max: 25, note: "Detection layer did not alarm as designed" },
-      { label: "Exposure/trend", value: 14, max: 15, note: "Site A precursor trend rising 24% quarter-on-quarter" },
-    ],
-    barrier: "Leak Detection / Containment",
-    barrierStatus: "Degraded — sensor threshold not recalibrated after last service; bund seam integrity compromised",
-    lsr: "Process Safety",
-    lsrActivity: "Bulk hydrocarbon storage and transfer within tank farm containment",
-    sif: {
-      classification: "SIF Precursor — High potential",
-      why: "Combines an active uncontained release pathway with a failed detection barrier and a documented but unclosed prior finding — three independent safeguards were compromised at once.",
-      consequence: "Uncontrolled tank-farm spill, potential ignition source contact, soil/groundwater contamination, statutory reporting obligation.",
-      factors: ["Bund seam degradation not closed out from prior finding", "Leak-detection sensor miscalibrated", "Delayed visual-only discovery (06:00 patrol, not real-time)"],
-    },
-    causalChain: ["Bulk transfer at Tank Farm 3", "Oil spilling", "Personnel & environment exposed to uncontained release", "Leak Detection / Containment", "Uncontrolled spread, possible ignition/contamination", "High SIF Risk"],
-    recurrence: { count: 6, freq: "3 events in last 90 days", hazard: "Oil Spilling", barrier: "Leak Detection / Containment", sites: "Site A, Site F" },
-    pattern: { direction: "up", pct: 24, note: "Bund-integrity precursors at Site A have risen for 3 consecutive months.", newHazard: "None newly emerging at this site" },
-    actions: [
-      "Recalibrate and function-test LDS-A3 and all Tank Farm 3 detection sensors within 72 hours",
-      "Close out the outstanding bund-seam maintenance finding before next transfer operation",
-      "Move to continuous (non-patrol) leak monitoring for Tank Farm 3 pending seam repair",
-    ],
-    similar: [
-      { id: "OSR-2025-0871", title: "Bund seam breach, Tank Farm 2", sim: 87 },
-      { id: "OSR-2025-0664", title: "LDS sensor missed threshold, Site A", sim: 79 },
-      { id: "OSR-2024-0392", title: "Containment overflow, Site F", sim: 61 },
-    ],
-    causal: {
-      nodes: [
-        { id: "n1", label: "Bund seam\ndegradation", x: 40, y: 70, kind: "cause" },
-        { id: "n2", label: "Maintenance\nlog not closed", x: 40, y: 190, kind: "cause" },
-        { id: "n3", label: "LDS-A3\nnot recalibrated", x: 250, y: 40, kind: "cause" },
-        { id: "n4", label: "Sensor failed\nto alarm", x: 250, y: 160, kind: "event" },
-        { id: "n5", label: "Undetected\noil spill", x: 460, y: 100, kind: "incident" },
-        { id: "n6", label: "Surface spread\n40–60 L", x: 660, y: 40, kind: "outcome" },
-        { id: "n7", label: "PSIF: env./\nprocess safety", x: 660, y: 160, kind: "outcome" },
-      ],
-      edges: [["n1","n4"], ["n2","n1"], ["n3","n4"], ["n4","n5"], ["n5","n6"], ["n5","n7"]],
-    },
-  },
-};
-const defaultDetail = (r) => {
-  const sev = { Critical: 86, High: 64, Medium: 42, Low: 18 }[r.risk] || 42;
+const defaultDetail = (report) => {
+  const extracted = report.extractedData || {};
+  const fields = Object.fromEntries(Object.entries(extracted).filter(([, value]) =>
+    ["string", "number", "boolean"].includes(typeof value),
+  ));
+  fields.site = report.site || report.metadata?.site || "";
+  fields.hazard = report.hazard || extracted.hazard || "";
   return {
-    text: `Automated incident summary for ${r.id}. Detailed narrative pending analyst review. Hazard category logged as ${r.hazard} at ${r.site}, classified as ${r.risk} risk pending validation.`,
-    fields: { site: r.site, hazard: r.hazard, dateTime: `${r.date} 09:00`, reporter: "Field Supervisor", location: `${r.site} — Zone TBD`, volumeEstimate: "—", injuries: "None reported" },
-    riskScore: sev,
-    scoreBreakdown: [
-      { label: "Potential severity", value: Math.round(sev*0.4), max: 40, note: "Based on hazard category and exposure pathway" },
-      { label: "Recurrence", value: Math.round(sev*0.2), max: 20, note: "Prior similar findings at this site" },
-      { label: "Barrier failure", value: Math.round(sev*0.25), max: 25, note: "Condition of nearest critical barrier" },
-      { label: "Exposure/trend", value: Math.round(sev*0.15), max: 15, note: "Site precursor trend, trailing 3 months" },
-    ],
-    barrier: "Under review",
-    barrierStatus: "Pending analyst confirmation of barrier condition",
-    lsr: "Process Safety",
-    lsrActivity: `${r.hazard}-related activity at ${r.site}`,
+    text: report.raw_text || "Original report text is not available.",
+    fields,
+    riskScore: report.analysis?.risk_score ?? null,
+    scoreBreakdown: [],
+    barrier: extracted.barrier_failure || extracted.barrier || "Not identified",
+    barrierStatus: extracted.barrier_status || "Not reported",
+    lsr: extracted.life_saving_rule || "Not identified",
+    lsrActivity: extracted.activity || "Not identified",
     sif: {
-      classification: `SIF Precursor — ${r.risk} potential`,
-      why: `Classified ${r.risk} based on hazard severity, site trend and barrier status pending full validation.`,
-      consequence: "Potential loss of containment or uncontrolled energy release depending on hazard type.",
-      factors: ["Hazard category history at this site", "Barrier condition not yet confirmed", "Site-level trend direction"],
+      classification: extracted.sif_potential || "Not classified",
+      why: extracted.classification_reason || extracted.sif_reason || "No explanation was returned by the analysis.",
+      consequence: extracted.potential_consequence || "Not identified",
+      factors: Array.isArray(extracted.contributing_factors) ? extracted.contributing_factors : [],
     },
-    causalChain: ["Routine site activity", r.hazard, "Personnel/asset exposure", "Barrier under review", "Potential loss of control", `${r.risk} SIF Risk`],
-    recurrence: { count: Math.max(2, Math.round(sev/20)), freq: "Multiple events, trailing 6 months", hazard: r.hazard, barrier: "Under review", sites: r.site },
-    pattern: { direction: sev > 55 ? "up" : "down", pct: Math.round(sev/4), note: `${r.hazard} precursors trending at ${r.site}.`, newHazard: "None newly emerging at this site" },
-    actions: [`Confirm condition of the nearest critical barrier for ${r.hazard}`, `Review last 3 similar findings at ${r.site} for recurrence`, "Assign HSE owner for closure within standard SLA"],
-    similar: [
-      { id: "OSR-2025-0512", title: `Related ${r.hazard} event`, sim: 58 },
-      { id: "OSR-2025-0207", title: `${r.site} historical precursor`, sim: 47 },
-      { id: "OSR-2024-0918", title: `${r.hazard} across network`, sim: 39 },
-    ],
-    causal: {
-      nodes: [
-        { id: "n1", label: "Precursor\ncondition", x: 70, y: 110, kind: "cause" },
-        { id: "n2", label: "Barrier\ngap", x: 290, y: 60, kind: "event" },
-        { id: "n3", label: r.hazard.split(" ").slice(0,2).join("\n"), x: 290, y: 170, kind: "event" },
-        { id: "n4", label: "Incident\nlogged", x: 520, y: 110, kind: "incident" },
-        { id: "n5", label: `Risk: ${r.risk}`, x: 730, y: 110, kind: "outcome" },
-      ],
-      edges: [["n1","n2"], ["n1","n3"], ["n2","n4"], ["n3","n4"], ["n4","n5"]],
-    },
+    causalChain: [],
+    recurrence: null,
+    pattern: null,
+    actions: Array.isArray(extracted.recommended_actions) ? extracted.recommended_actions : [],
+    similar: [],
+    causal: null,
   };
 };
 
@@ -484,7 +306,7 @@ function TopBar({ view, setView }) {
           </div>
         </div>
         <div className="portal-nav" style={{ maxWidth: 1320, margin: "0 auto", padding: "0 28px", display: "flex", justifyContent: "flex-end", gap: 8, flexWrap: "wrap" }}>
-          {[["command-center","Main Dashboard"],["dashboard","Results"],["reports","Reports"]].map(([k,label]) => (
+          {[["command-center","Main Dashboard"],["dashboard","Results"],["reports","Reports"],["models","Models"]].map(([k,label]) => (
             <button key={k} onClick={() => setView({ page: k })}
               style={{
                 background: view.page === k || (k==="reports" && view.page==="report-detail") ? "rgba(255,93,77,0.16)" : "transparent",
@@ -720,13 +542,19 @@ export function UploadWidget({ compact, onIngest, accept = ".csv,image/*", site 
 /* ------------------------------------------------------------------ */
 /* DASHBOARD                                                           */
 /* ------------------------------------------------------------------ */
-function ReportSummaryBanner({ onIngest, setView, data, demoMode }) {
+function ReportSummaryBanner({ onIngest, setView, data, focusReportId }) {
   const hazardCounts = data.reports.reduce((counts, report) => {
-    counts[report.hazard] = (counts[report.hazard] || 0) + 1;
+    if (report.hazard && report.hazard.toLowerCase() !== "unknown" && report.hazard !== "Not reported") {
+      counts[report.hazard] = (counts[report.hazard] || 0) + 1;
+    }
     return counts;
   }, {});
   const topHazard = Object.entries(hazardCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
   const highestRiskSite = data.sites[0];
+  const analyzedCount = data.reports.filter((report) => report.analysis).length;
+  const hazardSummary = topHazard
+    ? `${topHazard} is the most frequently reported hazard`
+    : "Hazard details are not available in the analyzed reports";
 
   return (
     <div style={{
@@ -734,19 +562,20 @@ function ReportSummaryBanner({ onIngest, setView, data, demoMode }) {
       backgroundSize: "cover", backgroundPosition: "center", borderRadius: 6, padding: "22px 24px", marginBottom: 26,
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, color: C.saffron, fontFamily: "'Inter',sans-serif", fontSize: 12.5, fontWeight: 700, marginBottom: 6 }}>
-        <Sparkles size={15} /> {demoMode ? "SAMPLE INTELLIGENCE DATA" : "REPORT ANALYSIS COMPLETE"}
+        <Sparkles size={15} /> {focusReportId ? "NEW ANALYSIS · NETWORK RESULTS" : "NETWORK RESULTS"}
       </div>
       <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 24, fontWeight: 700, color: "#fff", marginBottom: 6 }}>
-        Analysis complete · {data.reports.length} reports across {data.sites.length} sites
+        {analyzedCount} analyzed reports across {data.sites.length} sites
       </div>
       <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13.5, color: "#DCE6EA", lineHeight: 1.6, maxWidth: 760, marginBottom: 16 }}>
-        {data.reports.length
-          ? `${highestRiskSite?.name || "Highest-risk site"} leads the current ranking. ${topHazard || "Hazard"} is the most frequently reported hazard; site, barrier, and precursor trends below are calculated from analyzed reports.`
+        {analyzedCount
+          ? `${highestRiskSite?.name || "Highest-risk site"} leads the current ranking. ${hazardSummary}; site, barrier, and precursor trends below are calculated from analyzed reports.`
           : "Upload a CSV report to populate the site, hazard, trend, and barrier intelligence below."}
       </div>
       <div style={{ maxWidth: 520 }}>
         <UploadWidget onIngest={() => { onIngest && onIngest(); setView({ page: "dashboard" }); }} />
       </div>
+      {focusReportId && <button type="button" onClick={() => setView({ page: "report-detail", reportId: focusReportId })} style={{ display: "inline-flex", alignItems: "center", gap: 7, marginTop: 12, padding: "8px 11px", border: "1px solid rgba(255,160,120,.55)", borderRadius: 4, background: "rgba(255,93,77,.12)", color: "#fff", font: "700 11px 'Manrope',sans-serif", cursor: "pointer" }}>Open the report just analyzed <ChevronRight size={14} /></button>}
     </div>
   );
 }
@@ -754,17 +583,13 @@ function ReportSummaryBanner({ onIngest, setView, data, demoMode }) {
 function TopSites({ setView, data }) {
   return (
     <div style={{ marginBottom: 34 }}>
-      <SectionLabel sub="Ranked by composite Site Risk Score — SIF/PSIF potential, severity, recurrence, failed barriers and trend, normalised by report volume.">
+      <SectionLabel sub="Sites are ranked by average risk score from their analyzed reports. Hazard, barrier, trend, and fatigue context use report-derived values only.">
         All Sites by Risk
       </SectionLabel>
       <div className="portal-site-grid">
         {data.sites.map((s, i) => {
           const Icon = hazardIcon(s.hazard);
           const level = s.risk >= 61 ? "Critical" : s.risk >= 41 ? "High" : s.risk >= 21 ? "Medium" : "Low";
-          const workforce = oilSites.find((site) => {
-            const siteKey = site.reportSiteKey || site.name.toLowerCase().split(/\s+/)[0];
-            return s.name.toLowerCase().includes(siteKey);
-          });
           return (
             <button type="button" className="portal-site-card" key={s.id} onClick={() => setView({ page: "site-drill", siteId: s.id })}>
               <span className="portal-site-card__rank">SITE RANK <b>{String(i + 1).padStart(2, "0")}</b></span>
@@ -780,12 +605,10 @@ function TopSites({ setView, data }) {
               <span className="portal-site-card__hazard"><Icon size={17} /> <span>Top hazard <b>{s.hazard}</b></span></span>
               <span className="portal-site-card__barrier">Failed barrier <b>{s.barrier}</b></span>
               <span className="portal-site-card__workers">
-                <span className="portal-site-card__workers-heading">WORKER FATIGUE <small>{workforce ? "REPRESENTATIVE ROSTER" : "ROSTER NOT LINKED"}</small></span>
-                {workforce ? <span className="portal-site-card__fatigue-grid">
-                  {[ ["Very high", "veryHigh"], ["High", "high"], ["Medium", "medium"], ["Low", "low"] ].map(([label, key]) => (
-                    <span key={key}><i className={`portal-fatigue-dot portal-fatigue-dot--${key}`} />{label}<b>{workforce.workers[key]}</b></span>
-                  ))}
-                </span> : <span className="portal-site-card__unlinked">Fatigue counts are unavailable for this reporting site.</span>}
+                <span className="portal-site-card__workers-heading">FATIGUE CONTEXT <small>{s.fatigueReports ? `${s.fatigueReports} REPORTS` : "NO REPORT DATA"}</small></span>
+                {s.fatigueScore != null
+                  ? <span className="portal-site-card__unlinked">Average report-derived fatigue score: <b>{s.fatigueScore}/100</b></span>
+                  : <span className="portal-site-card__unlinked">No fatigue score was included in this site’s analyzed reports.</span>}
               </span>
               <span className="portal-site-card__action">Open site analysis <ChevronRight size={16} /></span>
             </button>
@@ -950,7 +773,7 @@ function TrendSection({ data }) {
   return (
     <div style={{ marginBottom: 34 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 10 }}>
-        <SectionLabel sub={`${selectedSite === "all" ? "Counts across all sites" : `Count for ${data.siteIds[selectedSite] || "selected site"}`}. Compare high-risk SIF reports with total analyzed report volume.${data.trendIsMock ? " Historical SIF sample fills gaps when reports cover only one month; report volume uses analyzed records." : ""}`}>
+        <SectionLabel sub={`${selectedSite === "all" ? "Counts across all sites" : `Count for ${data.siteIds[selectedSite] || "selected site"}`}. Compare high-risk SIF reports with total analyzed report volume.`}>
           SIF / Report Volume
         </SectionLabel>
         <div style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap", alignItems: "center" }}>
@@ -1087,7 +910,7 @@ function SiteDrilldown({ siteId, setView, data }) {
             <div style={miniLabel}>Historical Intelligence</div>
             <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: C.inkSoft, marginTop: 6 }}>
               Total analyzed reports: <b style={{ color: C.ink }}>{s.reports}</b> &nbsp;·&nbsp;
-              Recurrence count: <b style={{ color: C.ink }}>{Math.round(s.sif / 6)}</b>
+              Reports with top hazard: <b style={{ color: C.ink }}>{s.topHazardReports}</b>
             </div>
           </div>
         </div>
@@ -1096,12 +919,12 @@ function SiteDrilldown({ siteId, setView, data }) {
   );
 }
 
-function Dashboard({ setView, onIngest, data, demoMode }) {
-  const hasReports = data.reports.length > 0;
+function Dashboard({ setView, onIngest, data, focusReportId }) {
+  const hasReports = data.sites.length > 0;
 
   return (
     <div>
-      <ReportSummaryBanner onIngest={onIngest} setView={setView} data={data} demoMode={demoMode} />
+      <ReportSummaryBanner onIngest={onIngest} setView={setView} data={data} focusReportId={focusReportId} />
       {hasReports ? (
         <>
           <TopSites setView={setView} data={data} />
@@ -1131,7 +954,7 @@ function Dashboard({ setView, onIngest, data, demoMode }) {
 /* ------------------------------------------------------------------ */
 /* /reports  — Report Intelligence Table                               */
 /* ------------------------------------------------------------------ */
-function ReportsTable({ setView, reports, onIngest, siteFilter, hazardFilter, initialRiskFilter = "All", demoMode }) {
+function ReportsTable({ setView, reports, onIngest, siteFilter, hazardFilter, initialRiskFilter = "All" }) {
   const [q, setQ] = useState("");
   const [riskFilter, setRiskFilter] = useState(initialRiskFilter);
 
@@ -1155,7 +978,6 @@ function ReportsTable({ setView, reports, onIngest, siteFilter, hazardFilter, in
         <div style={{ color: "#DCE6EA", fontSize: 13.5, marginTop: 3, fontFamily: "'Inter',sans-serif" }}>
           Field incident and precursor reports submitted across all monitored sites, pending human validation.
         </div>
-        {demoMode && <div style={{ color: "#F4C982", fontSize: 12, marginTop: 7, fontFamily: "'Inter',sans-serif", fontWeight: 700 }}>Sample records are shown because the reports API returned no data.</div>}
       </div>
 
       <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>
@@ -1212,7 +1034,7 @@ function ReportsTable({ setView, reports, onIngest, siteFilter, hazardFilter, in
               </tr>
             ))}
             {filtered.length === 0 && (
-              <tr><td colSpan={7} style={{ padding: 26, textAlign: "center", color: C.inkSoft, fontSize: 13.5 }}>No reports match this search.</td></tr>
+              <tr><td colSpan={7} style={{ padding: 26, textAlign: "center", color: C.inkSoft, fontSize: 13.5 }}>{reports.length ? "No reports match this search." : "No reports are available from the API."}</td></tr>
             )}
           </tbody>
         </table>
@@ -1288,34 +1110,71 @@ function CausalChainStrip({ chain }) {
   );
 }
 
+function RiskScoreComparison({ baseScore, extraction = {}, context = {} }) {
+  const fatigueScore = context.fatigue_score;
+  const contextualScore = context.contextual_risk_score;
+  const adjustment = context.fatigue_adjustment;
+  const riskLevel = (score) => score == null ? "UNAVAILABLE" : score >= 80 ? "HIGH" : score >= 40 ? "MEDIUM" : "LOW";
+  const levelColor = (level) => level === "HIGH" ? C.redBright : level === "MEDIUM" ? C.orange : level === "LOW" ? C.greenGood : C.inkSoft;
+  const signals = context.fatigue_signals || {};
+  const fatigueLabels = {
+    working_hours: (value) => `${value} hours worked`,
+    consecutive_shifts: (value) => `${value} consecutive shifts`,
+    night_shifts: (value) => `${value} night shifts`,
+    rest_gap_hours: (value) => `Rest gap: ${value} hours`,
+    self_reported_fatigue: (value) => `Self-reported fatigue: ${value}`,
+  };
+  const signalItems = Object.entries(signals).map(([key, value]) => fatigueLabels[key]?.(value) || `${key.replaceAll("_", " ")}: ${value}`);
+  const base = context.base_sif_risk_score ?? baseScore;
+  const baseLevel = context.base_risk_level || riskLevel(base);
+  const contextualLevel = context.contextual_risk_level || riskLevel(contextualScore);
+
+  return (
+    <section style={{ margin: "12px 0 22px", padding: 18, border: `1px solid ${C.line}`, borderTop: `3px solid ${C.saffron}`, borderRadius: 5, background: "linear-gradient(145deg, rgba(18,25,29,.98), rgba(8,12,15,.98))" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 14 }}>
+        <div><div style={{ color: C.orange, font: "800 9px 'Manrope',sans-serif", letterSpacing: ".08em" }}>RISK SCORE COMPARISON</div><h2 style={{ margin: "4px 0 0", color: C.ink, font: "700 20px 'Cormorant Garamond',serif" }}>Operational risk with workforce context</h2></div>
+        <span title="Base SIF Risk represents the operational safety risk without workforce fatigue. Contextual Risk incorporates validated workforce fatigue signals to provide additional safety context." aria-label="Base SIF Risk represents the operational safety risk without workforce fatigue. Contextual Risk incorporates validated workforce fatigue signals to provide additional safety context." style={{ display: "inline-flex", alignItems: "center", gap: 6, color: C.inkSoft, font: "10px 'Inter',sans-serif", cursor: "help" }}><Info size={15} /> Score definitions</span>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(145px,1fr))", alignItems: "stretch", gap: 9 }}>
+        <div style={{ padding: 13, border: `1px solid ${C.line}`, borderRadius: 4, background: "rgba(255,255,255,.025)" }}><span style={{ color: C.inkSoft, font: "800 8px 'Manrope',sans-serif" }}>BASE SIF RISK</span><div style={{ margin: "7px 0 2px", color: C.ink, font: "700 29px 'Cormorant Garamond',serif" }}>{base ?? "--"}<small style={{ color: C.inkSoft, font: "700 11px 'Inter',sans-serif" }}> / 100</small></div><b style={{ color: levelColor(baseLevel), font: "800 9px 'Manrope',sans-serif" }}>{baseLevel}</b></div>
+        <div style={{ display: "grid", placeItems: "center", color: C.orange, font: "700 23px 'Cormorant Garamond',serif" }} aria-hidden="true">+</div>
+        <div style={{ padding: 13, border: `1px solid ${C.line}`, borderRadius: 4, background: "rgba(255,255,255,.025)" }}><span style={{ color: C.inkSoft, font: "800 8px 'Manrope',sans-serif" }}>WORKFORCE FATIGUE</span><div style={{ margin: "7px 0 2px", color: C.ink, font: "700 29px 'Cormorant Garamond',serif" }}>{fatigueScore ?? "--"}<small style={{ color: C.inkSoft, font: "700 11px 'Inter',sans-serif" }}> / 100</small></div><b style={{ color: levelColor(context.fatigue_level || riskLevel(fatigueScore)), font: "800 9px 'Manrope',sans-serif" }}>{context.fatigue_level || riskLevel(fatigueScore)}</b></div>
+        <div style={{ display: "grid", placeItems: "center", color: C.orange, font: "700 23px 'Cormorant Garamond',serif" }} aria-hidden="true">↓</div>
+        <div style={{ padding: 13, border: `1px solid ${contextualScore == null ? C.line : "rgba(255,107,74,.45)"}`, borderRadius: 4, background: "rgba(255,107,74,.06)" }}><span style={{ color: C.inkSoft, font: "800 8px 'Manrope',sans-serif" }}>CONTEXTUAL RISK</span><div style={{ margin: "7px 0 2px", color: C.ink, font: "700 29px 'Cormorant Garamond',serif" }}>{contextualScore ?? "Unavailable"}{contextualScore != null && <small style={{ color: C.inkSoft, font: "700 11px 'Inter',sans-serif" }}> / 100</small>}</div><b style={{ color: levelColor(contextualLevel), font: "800 9px 'Manrope',sans-serif" }}>{contextualLevel}</b></div>
+      </div>
+      <div style={{ display: "flex", gap: 18, flexWrap: "wrap", margin: "13px 0 0", padding: "10px 0", borderTop: `1px solid ${C.line}`, borderBottom: `1px solid ${C.line}`, color: C.inkSoft, font: "10px 'Manrope',sans-serif" }}>
+        <span>Risk before fatigue: <b style={{ color: C.ink }}>{base ?? "--"}</b></span><span>Risk after fatigue: <b style={{ color: C.ink }}>{contextualScore ?? "Not calculated"}</b></span><span>Change: <b style={{ color: adjustment > 0 ? C.orange : C.ink }}>{adjustment == null ? "No fatigue adjustment" : `${adjustment > 0 ? "+" : ""}${adjustment} points`}</b></span>
+      </div>
+      {adjustment > 0 && <div style={{ marginTop: 9, color: C.orange, font: "800 9px 'Manrope',sans-serif" }}>+{adjustment} POINTS FROM FATIGUE CONTEXT</div>}
+      <details style={{ marginTop: 12, color: C.inkSoft, font: "10px/1.6 'Inter',sans-serif" }}>
+        <summary style={{ width: "fit-content", color: C.ink, font: "700 10px 'Manrope',sans-serif", cursor: "pointer" }}>Why did the score change?</summary>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 16, marginTop: 10 }}>
+          <div><b style={{ color: C.ink }}>Base risk factors</b><ul style={{ margin: "5px 0 0", paddingLeft: 17 }}><li>Hazard: {extraction.hazard || "Not identified"}</li><li>Exposure: {extraction.exposure || "Not identified"}</li><li>Barrier condition: {extraction.barrier_failure || extraction.barrier || "Not identified"}</li><li>Potential consequence: {extraction.potential_consequence || "Not identified"}</li></ul></div>
+          <div><b style={{ color: C.ink }}>Fatigue context</b>{signalItems.length ? <ul style={{ margin: "5px 0 0", paddingLeft: 17 }}>{signalItems.map((item) => <li key={item}>{item}</li>)}</ul> : <p style={{ margin: "5px 0 0" }}>No report-derived fatigue indicators available. The base score is unchanged.</p>}</div>
+        </div>
+        <p style={{ margin: "10px 0 0", color: C.inkSoft }}>Fatigue is a contextual safety signal, not a medical diagnosis. Report-derived signals may be incomplete and are not a substitute for validated workforce roster data.</p>
+      </details>
+    </section>
+  );
+}
+
 function ReportDetail({ reportId, setView, reports, onIngest }) {
   const [remoteReport, setRemoteReport] = useState(null);
   const [remoteSimilar, setRemoteSimilar] = useState([]);
   const [remoteGraph, setRemoteGraph] = useState(null);
   const [barrierIntelligence, setBarrierIntelligence] = useState([]);
   const [emergingPatterns, setEmergingPatterns] = useState([]);
-  const meta = remoteReport || reports.find((r) => r.id === reportId) || reports[0];
-  const baseDetail = meta ? REPORT_DETAIL[meta.id] || defaultDetail(meta) : null;
+  const selectedFromList = reports.find((r) => r.id === reportId) || null;
+  const meta = remoteReport?.id === reportId ? remoteReport : selectedFromList;
+  const detail = meta ? defaultDetail(meta) : null;
   const extractedData = meta?.extractedData || {};
-  const detail = baseDetail && meta ? {
-    ...baseDetail,
-    text: meta.raw_text || baseDetail.text,
-    fields: {
-      ...baseDetail.fields,
-      ...extractedData,
-      site: meta.site,
-      hazard: meta.hazard,
-      dateTime: meta.created_at || baseDetail.fields.dateTime,
-    },
-    barrier: extractedData.barrier_failure || extractedData.barrier || baseDetail.barrier,
-  } : null;
   const [fields, setFields] = useState({});
   const [status, setStatus] = useState("Pending");
   const [feedback, setFeedback] = useState("");
   const [validationError, setValidationError] = useState("");
 
   useEffect(() => {
-    if (!reportId || reports.find((report) => report.id === reportId)?.isDemo) return undefined;
+    if (!reportId) return undefined;
     let active = true;
     setRemoteReport(null);
     setRemoteSimilar([]);
@@ -1345,13 +1204,14 @@ function ReportDetail({ reportId, setView, reports, onIngest }) {
     if (!meta) return;
     setFields(detail.fields);
     setStatus(meta.status);
+    setFeedback("");
   }, [meta?.id, meta?.status, remoteReport]);
 
   if (!meta) return (
     <div>
       <button onClick={() => setView({ page: "reports" })} style={backBtn}><ArrowLeft size={14} /> Back to reports</button>
       <div style={{ padding: "28px 0", color: C.inkSoft, fontFamily: "'Inter',sans-serif" }}>
-        No report data is available. Upload or analyze a report, then return here.
+        This report is not available in the current results. Refresh the list or analyze it again to load its details.
       </div>
     </div>
   );
@@ -1382,28 +1242,26 @@ function ReportDetail({ reportId, setView, reports, onIngest }) {
     item.precursor === meta?.hazard || item.precursor === detail?.barrier,
   );
   const recurrence = liveBarrier ? {
-    ...detail.recurrence,
     count: liveBarrier.incident_count,
     freq: `${liveBarrier.incident_count} analyzed reports`,
-    hazard: liveBarrier.associated_hazards?.[0]?.hazard || detail.recurrence.hazard,
+    hazard: liveBarrier.associated_hazards?.[0]?.hazard || "Not identified",
     barrier: liveBarrier.barrier_failure,
     sites: [...new Set(reports
       .filter((report) => report.extractedData?.barrier_failure === liveBarrier.barrier_failure)
-      .map((report) => report.metadata?.site || report.site))].join(", ") || detail.recurrence.sites,
-  } : detail?.recurrence;
+      .map((report) => report.metadata?.site || report.site))].join(", ") || "Not identified",
+  } : null;
   const pattern = livePattern ? {
-    ...detail.pattern,
     direction: livePattern.increase >= 0 ? "up" : "down",
     changeLabel: livePattern.percentage_increase == null
       ? `${livePattern.increase} new reports`
       : `${livePattern.percentage_increase}% increase`,
     note: `${livePattern.precursor} appeared in ${livePattern.current_count} recent reports versus ${livePattern.previous_count} in the prior period.`,
-  } : { ...detail?.pattern, changeLabel: `${detail?.pattern.pct}%` };
-  const similar = remoteSimilar.length ? remoteSimilar.map((item) => ({
+  } : null;
+  const similar = remoteSimilar.map((item) => ({
     id: item.report_id,
     title: `${item.hazard || "Related report"} · ${item.site || "Unknown site"}`,
     sim: Math.round((item.similarity || 0) * 100),
-  })) : detail?.similar || [];
+  }));
   const graphData = remoteGraph?.nodes?.length ? {
     nodes: remoteGraph.nodes.map((node, index) => ({
       id: node.id,
@@ -1413,7 +1271,8 @@ function ReportDetail({ reportId, setView, reports, onIngest }) {
       y: 110,
     })),
     edges: remoteGraph.edges.map((edge) => [edge.source, edge.target]),
-  } : detail?.causal;
+  } : null;
+  const riskContext = meta.analysis?.risk_context || extractedData.risk_context || {};
 
   return (
     <div className="portal-report-detail">
@@ -1422,11 +1281,12 @@ function ReportDetail({ reportId, setView, reports, onIngest }) {
         <FileText size={20} color={C.saffron} />
         <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 24, fontWeight: 700, color: C.ink }}>{meta.id}</div>
         <RiskBadge level={meta.risk} />
-        {meta.isDemo && <span style={{ color: C.orange, fontFamily: "'Inter',sans-serif", fontSize: 11, fontWeight: 800 }}>SAMPLE</span>}
       </div>
       <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: C.inkSoft, marginBottom: 20 }}>
         {meta.site} &nbsp;·&nbsp; {meta.hazard} &nbsp;·&nbsp; {meta.date}
       </div>
+
+      <RiskScoreComparison baseScore={meta.analysis?.risk_score} extraction={extractedData} context={riskContext} />
 
       <div className="portal-report-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 360px), 1fr))", gap: 20 }}>
         {/* LEFT PANE — DATA */}
@@ -1507,8 +1367,7 @@ function ReportDetail({ reportId, setView, reports, onIngest }) {
               Condition / status: <b style={{ color: C.orange }}>{detail.barrierStatus}</b>
             </div>
             <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: C.inkSoft, lineHeight: 1.55 }}>
-              This gap removed a layer of protection between the hazard and personnel/environment, directly raising the likelihood
-              that the precursor event could escalate to a serious injury or fatality outcome.
+              Barrier impact is based on the extracted report fields shown above.
             </div>
           </Panel>
 
@@ -1529,6 +1388,7 @@ function ReportDetail({ reportId, setView, reports, onIngest }) {
                   <span>{a}</span>
                 </div>
               ))}
+              {!detail.actions.length && <div style={{ color: C.inkSoft, font: "12px 'Inter',sans-serif" }}>No recommended actions were returned for this report.</div>}
             </div>
           </Panel>
 
@@ -1563,9 +1423,10 @@ function ReportDetail({ reportId, setView, reports, onIngest }) {
 
           <div style={{ background: C.navy, borderRadius: 4, padding: 20 }}>
             <div style={{ textAlign: "center", marginBottom: 14 }}>
-              <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, color: "#B9C6CF", letterSpacing: 0.4 }}>COMPUTED RISK SCORE</div>
-              <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 44, fontWeight: 700, color: "#fff", margin: "4px 0" }}>{detail.riskScore}<span style={{ fontSize: 18, color: "#B9BFC7" }}> /100</span></div>
+              <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, color: "#B9C6CF", letterSpacing: 0.4 }}>BASE SIF RISK SCORE</div>
+              <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 44, fontWeight: 700, color: "#fff", margin: "4px 0" }}>{detail.riskScore ?? "--"}<span style={{ fontSize: 18, color: "#B9BFC7" }}> /100</span></div>
             </div>
+            {!detail.scoreBreakdown.length && <div style={{ marginBottom: 12, color: "#B9C6CF", font: "11px/1.5 'Inter',sans-serif" }}>The backend base score is shown above. Report-specific factor values appear in the risk comparison.</div>}
             <div style={{ display: "grid", gap: 8 }}>
               {detail.scoreBreakdown.map((b, i) => (
                 <div key={i}>
@@ -1587,7 +1448,7 @@ function ReportDetail({ reportId, setView, reports, onIngest }) {
           <Panel title="Causal pathway — what led to the potential SIF outcome">
             <CausalChainStrip chain={detail.causalChain} />
             <div style={{ color: C.inkSoft, fontFamily: "'Inter',sans-serif", fontSize: 12, margin: "0 0 10px" }}>
-              Follow the arrows from the contributing causes through the control event to the incident and potential outcomes.
+              {graphData ? "Causal pathway returned for this report." : "No causal pathway was returned for this report."}
             </div>
             <div style={{ overflowX: "auto" }}>
               {graphData && <CausalGraph data={graphData} />}
@@ -1602,42 +1463,39 @@ function ReportDetail({ reportId, setView, reports, onIngest }) {
           </Panel>
 
           <Panel title="Recurring Precursor Intelligence" icon={TrendingUp} tone={C.orange}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
-              <div style={{ border: `1px solid ${C.line}`, borderRadius: 4, padding: "10px 12px" }}>
-                <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 22, fontWeight: 700, color: C.ink }}>{recurrence.count}</div>
-                <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11.5, color: C.inkSoft }}>Similar past events</div>
+            {recurrence ? <>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
+                <div style={{ border: `1px solid ${C.line}`, borderRadius: 4, padding: "10px 12px" }}>
+                  <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 22, fontWeight: 700, color: C.ink }}>{recurrence.count}</div>
+                  <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11.5, color: C.inkSoft }}>Similar past events</div>
+                </div>
+                <div style={{ border: `1px solid ${C.line}`, borderRadius: 4, padding: "10px 12px" }}>
+                  <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, fontWeight: 700, color: C.ink }}>{recurrence.freq}</div>
+                  <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11.5, color: C.inkSoft }}>Frequency / recurrence</div>
+                </div>
               </div>
-              <div style={{ border: `1px solid ${C.line}`, borderRadius: 4, padding: "10px 12px" }}>
-                <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, fontWeight: 700, color: C.ink }}>{recurrence.freq}</div>
-                <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11.5, color: C.inkSoft }}>Frequency / recurrence</div>
-              </div>
-            </div>
-            <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: C.ink, marginBottom: 4 }}>
-              Common hazard: <b>{recurrence.hazard}</b>
-            </div>
-            <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: C.ink, marginBottom: 4 }}>
-              Common failed barrier: <b>{recurrence.barrier}</b>
-            </div>
-            <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: C.ink }}>
-              Sites where it occurred: <b>{recurrence.sites}</b>
-            </div>
+              <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: C.ink, marginBottom: 4 }}>Common hazard: <b>{recurrence.hazard}</b></div>
+              <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: C.ink, marginBottom: 4 }}>Common failed barrier: <b>{recurrence.barrier}</b></div>
+              <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: C.ink }}>Sites where it occurred: <b>{recurrence.sites}</b></div>
+            </> : <div style={{ color: C.inkSoft, font: "12px 'Inter',sans-serif" }}>No recurring barrier result was returned for this report.</div>}
           </Panel>
 
-          <Panel title="Emerging Pattern Detection" icon={pattern.direction === "up" ? TrendingUp : TrendingDown} tone={pattern.direction === "up" ? C.redBright : C.greenGood}>
+          <Panel title="Emerging Pattern Detection" icon={pattern?.direction === "up" ? TrendingUp : TrendingDown} tone={pattern?.direction === "up" ? C.redBright : C.greenGood}>
+            {pattern ? <>
             <div style={{
               background: pattern.direction === "up" ? "#FCEDEB" : "#EAF5EE",
               border: `1px solid ${pattern.direction === "up" ? C.red : C.greenGood}44`,
               borderRadius: 4, padding: "10px 12px", display: "flex", alignItems: "center", gap: 10, marginBottom: 10,
             }}>
               {pattern.direction === "up" ? <TrendingUp size={17} color={C.redBright} /> : <TrendingDown size={17} color={C.greenGood} />}
-              <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: C.ink }}>
+              <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: pattern.direction === "up" ? "#4B1F1C" : "#17452C" }}>
                 <b>{pattern.direction === "up" ? "Increasing" : "Decreasing"} trend · {pattern.changeLabel}.</b> {pattern.note}
               </div>
             </div>
             <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5, color: C.inkSoft, marginBottom: 8 }}>
-              Newly emerging hazard: <b style={{ color: C.ink }}>{livePattern?.precursor_type === "hazard" ? livePattern.precursor : detail.pattern.newHazard}</b>
+              Newly emerging hazard: <b style={{ color: C.ink }}>{livePattern.precursor_type === "hazard" ? livePattern.precursor : "Not identified"}</b>
             </div>
-            {pattern.direction === "up" && (livePattern?.percentage_increase >= 20 || (!livePattern && detail.pattern.pct >= 20)) && (
+            {pattern.direction === "up" && livePattern.percentage_increase >= 20 && (
               <div style={{ display: "flex", gap: 8, background: C.red, borderRadius: 4, padding: "9px 12px" }}>
                 <ShieldAlert size={15} color="#fff" style={{ flexShrink: 0, marginTop: 1 }} />
                 <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5, color: "#fff" }}>
@@ -1645,10 +1503,11 @@ function ReportDetail({ reportId, setView, reports, onIngest }) {
                 </div>
               </div>
             )}
+            </> : <div style={{ color: C.inkSoft, font: "12px 'Inter',sans-serif" }}>No emerging pattern result was returned for this report.</div>}
           </Panel>
 
           <Panel title="Similar Incidents — Top 3 Historical Matches">
-            <div style={{ display: "grid", gap: 10 }}>
+            {similar.length ? <div style={{ display: "grid", gap: 10 }}>
               {similar.map((s) => (
                 <div key={s.id} style={{ border: `1px solid ${C.line}`, borderRadius: 4, padding: "10px 12px", display: "flex", alignItems: "center", gap: 12 }}>
                   <div style={{ flex: 1 }}>
@@ -1661,7 +1520,7 @@ function ReportDetail({ reportId, setView, reports, onIngest }) {
                   <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5, fontWeight: 700, color: C.ink, width: 34, textAlign: "right" }}>{s.sim}%</div>
                 </div>
               ))}
-            </div>
+            </div> : <div style={{ color: C.inkSoft, font: "12px 'Inter',sans-serif" }}>No similar reports were returned.</div>}
           </Panel>
         </div>
       </div>
@@ -1673,35 +1532,34 @@ function ReportDetail({ reportId, setView, reports, onIngest }) {
 /* ROOT                                                                 */
 /* ------------------------------------------------------------------ */
 export default function App() {
-  const [view, setView] = useState(() => {
-    try {
-      const savedView = JSON.parse(window.localStorage.getItem("oil-sentinel-view"));
-      const validPages = ["home", "command-center", "workforce-intelligence", "dashboard", "site-drill", "reports", "report-detail"];
-      return validPages.includes(savedView?.page) ? savedView : { page: "home" };
-    } catch {
-      return { page: "home" };
-    }
-  });
+  const [view, setView] = useState({ page: "home" });
   const [reports, setReports] = useState([]);
-  const [demoMode, setDemoMode] = useState(false);
+  const [reportsStatus, setReportsStatus] = useState("loading");
+  const [reportsError, setReportsError] = useState("");
+  const [modelMetrics, setModelMetrics] = useState(null);
+  const [modelMetricsStatus, setModelMetricsStatus] = useState("loading");
 
   useEffect(() => {
-    window.localStorage.setItem("oil-sentinel-view", JSON.stringify(view));
+    window.localStorage.removeItem("oil-sentinel-view");
+  }, []);
+
+  useEffect(() => {
+    if (view.page !== "home") {
+      window.localStorage.setItem("oil-sentinel-view", JSON.stringify(view));
+    }
   }, [view]);
 
   const refreshReports = async () => {
+    setReportsStatus("loading");
+    setReportsError("");
     try {
       const response = await getReports();
-      if (response.length) {
-        setReports(response.map(normalizeReport));
-        setDemoMode(false);
-      } else {
-        setReports(DEMO_REPORTS);
-        setDemoMode(true);
-      }
-    } catch {
-      setReports(DEMO_REPORTS);
-      setDemoMode(true);
+      setReports(Array.isArray(response) ? response.map(normalizeReport) : []);
+      setReportsStatus("ready");
+    } catch (error) {
+      setReports([]);
+      setReportsStatus("error");
+      setReportsError(error.message || "Unable to load reports.");
     }
   };
 
@@ -1713,7 +1571,21 @@ export default function App() {
     void refreshReports();
   }, []);
 
+  useEffect(() => {
+    let active = true;
+    getEvaluationMetrics().then((metrics) => {
+      if (!active) return;
+      setModelMetrics(metrics);
+      setModelMetricsStatus(Object.keys(metrics || {}).some((key) => metrics[key]?.total_samples) ? "ready" : "empty");
+    }).catch(() => {
+      if (active) setModelMetricsStatus("error");
+    });
+    return () => { active = false; };
+  }, []);
+
   const dashboardData = useMemo(() => buildDashboardData(reports), [reports]);
+  const modelReports = reports.filter((report) => !report.is_synthetic);
+  const modelReportsStatus = reportsStatus === "loading" ? "loading" : reports.length ? "ready" : "empty";
   const isHome = view.page === "home";
   const isCommandCenter = view.page === "command-center";
   const isWorkforceIntelligence = view.page === "workforce-intelligence";
@@ -1760,13 +1632,19 @@ export default function App() {
         padding: isFullWidthWorkspace ? 0 : isHome ? 0 : "26px 28px 60px",
         background: isFullWidthWorkspace ? "#05080a" : "transparent",
       }}>
+        {reportsError && ["dashboard", "reports", "report-detail", "site-drill"].includes(view.page) && (
+          <div role="alert" style={{ marginBottom: 16, padding: "10px 12px", border: `1px solid ${C.redBright}66`, borderRadius: 4, background: `${C.redBright}12`, color: C.ink, font: "12px 'Inter',sans-serif" }}>
+            Live report data could not be loaded: {reportsError}
+          </div>
+        )}
         {view.page === "home" && <Home onStart={() => setView({ page: "command-center" })} onWorkforce={() => setView({ page: "workforce-intelligence" })} />}
         {view.page === "command-center" && <CommandCenter setView={setView} onIngest={onIngest} reports={reports} resultsData={dashboardData} />}
         {view.page === "workforce-intelligence" && <WorkforceIntelligence onBack={() => setView({ page: "home" })} />}
-        {view.page === "dashboard" && <Dashboard setView={setView} onIngest={onIngest} data={dashboardData} demoMode={demoMode} />}
+        {view.page === "dashboard" && <Dashboard setView={setView} onIngest={onIngest} data={dashboardData} focusReportId={view.focusReportId} />}
         {view.page === "site-drill" && <SiteDrilldown siteId={view.siteId} setView={setView} data={dashboardData} />}
-        {view.page === "reports" && <ReportsTable setView={setView} reports={reports} onIngest={onIngest} siteFilter={view.siteFilter} hazardFilter={view.hazardFilter} initialRiskFilter={view.riskFilter} demoMode={demoMode} />}
+        {view.page === "reports" && <ReportsTable setView={setView} reports={reports} onIngest={onIngest} siteFilter={view.siteFilter} hazardFilter={view.hazardFilter} initialRiskFilter={view.riskFilter} />}
         {view.page === "report-detail" && <ReportDetail reportId={view.reportId} setView={setView} reports={reports} onIngest={onIngest} />}
+        {view.page === "models" && <ModelPerformance metrics={modelMetrics} status={modelMetricsStatus} reports={modelReports} reportsStatus={modelReportsStatus} />}
       </div>
 
       {!isFullWidthWorkspace && !isHome && <div style={{

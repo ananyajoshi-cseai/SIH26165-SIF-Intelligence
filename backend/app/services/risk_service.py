@@ -1,3 +1,5 @@
+import re
+
 HAZARD_WEIGHTS: dict[str, float] = {
     "suspended load": 30,
     "confined space": 30,
@@ -74,6 +76,14 @@ CONSEQUENCE_WEIGHTS: dict[str, float] = {
     "medical treatment": 10,
 }
 
+FATIGUE_SIGNAL_WEIGHTS: dict[str, float] = {
+    "working_hours": 0.25,
+    "consecutive_shifts": 0.25,
+    "night_shifts": 0.20,
+    "rest_gap_hours": 0.15,
+    "self_reported_fatigue": 0.15,
+}
+
 
 def _match_weight(value: str | None, weights: dict[str, float]) -> float:
     if not value:
@@ -140,6 +150,123 @@ def get_sif_level(score: int) -> str:
     if score >= 40:
         return "MEDIUM"
     return "LOW"
+
+
+def calculate_fatigue_score(signals: dict | None) -> int | None:
+    if not signals:
+        return None
+
+    if signals.get("fatigue_score") is not None:
+        try:
+            return max(0, min(100, round(float(signals["fatigue_score"]))))
+        except (TypeError, ValueError):
+            return None
+
+    components: dict[str, float] = {}
+    for key, value in signals.items():
+        try:
+            number = float(value)
+        except (TypeError, ValueError):
+            if key == "self_reported_fatigue" and isinstance(value, str):
+                level = value.strip().lower()
+                components[key] = {
+                    "low": 25,
+                    "moderate": 50,
+                    "medium": 50,
+                    "high": 75,
+                    "very high": 90,
+                    "extreme": 100,
+                }.get(level, -1)
+            continue
+
+        if key == "working_hours":
+            components[key] = max(0, min(100, (number - 40) / 32 * 100))
+        elif key == "consecutive_shifts":
+            components[key] = max(0, min(100, (number - 4) / 8 * 100))
+        elif key == "night_shifts":
+            components[key] = max(0, min(100, number / 7 * 100))
+        elif key == "rest_gap_hours":
+            components[key] = max(0, min(100, (12 - number) / 8 * 100))
+        elif key == "self_reported_fatigue" and 0 <= number <= 100:
+            components[key] = number
+
+    weighted_values = [
+        (components[key], weight)
+        for key, weight in FATIGUE_SIGNAL_WEIGHTS.items()
+        if key in components and components[key] >= 0
+    ]
+    if not weighted_values:
+        return None
+
+    total_weight = sum(weight for _, weight in weighted_values)
+    return round(sum(value * weight for value, weight in weighted_values) / total_weight)
+
+
+def extract_fatigue_signals(text: str) -> dict[str, int | float | str]:
+    patterns = {
+        "working_hours": r"\b(\d+(?:\.\d+)?)\s*(?:hours?|hrs?)\s*(?:worked|this roster|per week|in the roster)\b",
+        "consecutive_shifts": r"\b(\d+)\s+consecutive\s+shifts?\b",
+        "night_shifts": r"\b(\d+)\s+night\s+shifts?\b",
+        "rest_gap_hours": r"\b(?:average\s+)?rest(?:\s+gap|\s+period)?\s*(?:of|:)?\s*(\d+(?:\.\d+)?)\s*(?:hours?|hrs?|h)\b",
+    }
+    signals: dict[str, int | float | str] = {}
+    for key, pattern in patterns.items():
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            value = float(match.group(1))
+            signals[key] = int(value) if value.is_integer() else value
+
+    self_report = re.search(
+        r"(?:self[- ]reported\s+)?fatigue(?:\s+level)?\s*[:=-]?\s*(very high|extreme|high|moderate|medium|low)\b",
+        text,
+        re.IGNORECASE,
+    )
+    if self_report:
+        signals["self_reported_fatigue"] = self_report.group(1).lower()
+    return signals
+
+
+def get_fatigue_level(score: int) -> str:
+    if score >= 61:
+        return "HIGH"
+    if score >= 31:
+        return "MEDIUM"
+    return "LOW"
+
+
+def calculate_contextual_risk(
+    base_score: int,
+    fatigue_score: int | None,
+    max_adjustment: int = 8,
+) -> dict[str, object]:
+    base = max(0, min(100, int(base_score)))
+    fatigue = max(0, min(100, int(fatigue_score))) if fatigue_score is not None else None
+    result: dict[str, int | str | None] = {
+        "base_sif_risk_score": base,
+        "base_risk_level": get_sif_level(base),
+        "fatigue_score": fatigue,
+        "fatigue_level": get_fatigue_level(fatigue) if fatigue is not None else None,
+        "fatigue_adjustment": None,
+        "contextual_risk_score": None,
+        "contextual_risk_level": None,
+        "risk_change": None,
+    }
+    if fatigue is None:
+        return result
+
+    # Prototype default: calibrate against historical data and HSE/domain-expert validation.
+    proposed_adjustment = round(max(0, max_adjustment) * fatigue / 100)
+    adjustment = min(proposed_adjustment, 100 - base)
+    contextual = base + adjustment
+    result.update(
+        {
+            "fatigue_adjustment": adjustment,
+            "contextual_risk_score": contextual,
+            "contextual_risk_level": get_sif_level(contextual),
+            "risk_change": contextual - base,
+        }
+    )
+    return result
 
 
 def calculate_confidence(extracted_data: dict) -> float:

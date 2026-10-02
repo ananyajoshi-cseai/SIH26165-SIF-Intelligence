@@ -33,6 +33,7 @@ class AnalysisResponse(BaseModel):
     sif_level: str
     confidence: float
     status: str
+    risk_context: dict | None = None
 
 
 class FeedbackRequest(BaseModel):

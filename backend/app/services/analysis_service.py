@@ -14,6 +14,7 @@ Pipeline order
 
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.models.analysis import Analysis
 from app.models.report import Report
 from app.services.classification_service import (
@@ -29,7 +30,10 @@ except ImportError:                                            # pragma: no cove
 
 from app.services.risk_service import (
     calculate_confidence,
+    calculate_contextual_risk,
+    calculate_fatigue_score,
     calculate_risk_score,
+    extract_fatigue_signals,
     get_sif_level,
 )
 
@@ -70,6 +74,15 @@ def analyze_report(db: Session, report: Report) -> Analysis:
             "sif_confidence": sif_confidence,
         }
     )
+    fatigue_signals = extract_fatigue_signals(report.raw_text)
+    risk_context = calculate_contextual_risk(
+        risk_score,
+        calculate_fatigue_score(fatigue_signals),
+        settings.fatigue_max_adjustment,
+    )
+    risk_context["fatigue_signals"] = fatigue_signals
+    risk_context["fatigue_context_note"] = "Report-derived signals; not a medical diagnosis."
+    extracted_dict["risk_context"] = risk_context
 
     analysis = Analysis(
         report_id=report.id,

@@ -38,7 +38,8 @@ Return ONLY the JSON object."""
 
 class NLPService:
     def __init__(self):
-        self._client = Groq(api_key=settings.groq_api_key)
+        self._enabled = settings.use_groq_llm and bool(settings.groq_api_key)
+        self._client = Groq(api_key=settings.groq_api_key) if self._enabled else None
         self._fallback = MockNLPService()
 
     def extract(self, text: str) -> ExtractionData:
@@ -54,6 +55,9 @@ class NLPService:
                 potential_consequence="Unknown",
             )
 
+        if not self._enabled or self._client is None:
+            return self._fallback.extract(text)
+
         try:
             return self._extract_via_groq(text)
         except Exception as e:
@@ -62,7 +66,7 @@ class NLPService:
 
     def _extract_via_groq(self, text: str) -> ExtractionData:
         response = self._client.chat.completions.create(
-            model="llama-3.1-8b-instant",
+            model=settings.groq_model,
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": f"Extract safety entities from this report:\n\n{text}"},

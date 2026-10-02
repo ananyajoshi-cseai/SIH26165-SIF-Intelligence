@@ -6,10 +6,7 @@ from io import StringIO
 from sqlalchemy.orm import Session
 
 from app.models.report import Report
-from app.services.report_service import create_report
-
-
-REQUIRED_COLUMNS = {"site"}
+from app.services.report_service import create_report, infer_report_site
 
 
 def parse_csv(content: bytes) -> list[dict]:
@@ -35,19 +32,29 @@ def parse_csv(content: bytes) -> list[dict]:
     if reader.fieldnames is None:
         raise ValueError("CSV file must contain a header row")
 
-    columns = {column.strip().lower() for column in reader.fieldnames if column}
-
-    missing_columns = REQUIRED_COLUMNS - columns
-
-    if missing_columns:
-        missing = ", ".join(sorted(missing_columns))
-        raise ValueError(f"Missing required columns: {missing}")
-
+    site_column = next(
+        (column for column in reader.fieldnames if column and column.strip().lower() == "site"),
+        None,
+    )
+    text_columns = {
+        column.strip().lower(): column
+        for column in reader.fieldnames
+        if column
+    }
     text_column = next(
         (
-            column
-            for column in reader.fieldnames
-            if column and column.strip().lower() in {"text", "report_text"}
+            text_columns[name]
+            for name in (
+                "modified_report_text",
+                "report_text_modified",
+                "modified_text",
+                "text_modified",
+                "edited_report_text",
+                "corrected_report_text",
+                "text",
+                "report_text",
+            )
+            if name in text_columns
         ),
         None,
     )
@@ -58,20 +65,22 @@ def parse_csv(content: bytes) -> list[dict]:
     rows = []
 
     for row_number, row in enumerate(reader, start=2):
-        site = (row.get("site") or "").strip()
         report_text = (row.get(text_column) or "").strip()
+        site = (row.get(site_column) or "").strip() if site_column else ""
 
         if not report_text:
             raise ValueError(
                 f"Row {row_number}: 'text' cannot be empty"
             )
 
+        site = site or infer_report_site(report_text)
+
         rows.append(
             {
-                "site": site or "Unknown",
+                "site": site,
                 "text": report_text,
                 "is_synthetic": (
-                    str(row.get("is_synthetic", "true")).strip().lower()
+                    str(row.get("is_synthetic", "false")).strip().lower()
                     == "true"
                 ),
             }
@@ -111,6 +120,7 @@ def import_reports_from_csv(db: Session, content: bytes) -> tuple[list[Report], 
             metadata={
                 "upload_batch_id": upload_batch_id,
                 "upload_hash": upload_hash,
+                "ingestion_source": "csv_upload",
             },
         )
         reports.append(report)
