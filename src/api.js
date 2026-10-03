@@ -1,39 +1,42 @@
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api/v1";
 async function request(path, options = {}) {
-  const response = await fetch(`${API_BASE_URL}${path}`, options);
-
-  let data = null;
-
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), options.method === "POST" ? 120000 : 30000);
   try {
-    data = await response.json();
-  } catch {
-    // Response may have no JSON body.
+    const response = await fetch(`${API_BASE_URL}${path}`, { ...options, signal: controller.signal });
+    const data = await response.json().catch(() => null);
+    if (!response.ok) {
+      const detail = data?.detail || data?.message;
+      throw new Error(typeof detail === "string" ? detail : `Request failed with status ${response.status}`);
+    }
+    return data;
+  } catch (error) {
+    if (error.name === "AbortError") throw new Error("The service took too long to respond. Your submission may have been saved; retry the same content to check it safely.");
+    throw error;
+  } finally {
+    window.clearTimeout(timeout);
   }
-
-  if (!response.ok) {
-    const message =
-      data?.detail ||
-      data?.message ||
-      `Request failed with status ${response.status}`;
-
-    throw new Error(message);
-  }
-
-  return data;
 }
 
-export async function analyzeReport({ site, text }) {
-  return request("/reports/analyze", {
+const pendingSubmissions = new Map();
+export async function analyzeReport({ site, text, is_synthetic = false }) {
+  const bytes = new TextEncoder().encode(JSON.stringify({ site, text, is_synthetic }));
+  const hash = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)), (b) => b.toString(16).padStart(2, "0")).join("");
+  const key = `sif-pending-${hash}`;
+  let requestId = pendingSubmissions.get(key);
+  try { requestId ||= sessionStorage.getItem(key); } catch { /* storage may be disabled */ }
+  requestId ||= crypto.randomUUID();
+  pendingSubmissions.set(key, requestId);
+  try { sessionStorage.setItem(key, requestId); } catch { /* in-memory retry remains available */ }
+  const result = await request("/reports/analyze", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      site,
-      text,
-    }),
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ site, text, is_synthetic, request_id: requestId }),
   });
+  pendingSubmissions.delete(key);
+  try { sessionStorage.removeItem(key); } catch { /* storage may be disabled */ }
+  return result;
 }
 
 export async function uploadReports(file) {

@@ -250,7 +250,7 @@ class MockNLPService:
                 hazard="Suspended load",
                 exposure="Worker in line of fire",
                 barrier="Rigging and exclusion zone",
-                barrier_failure="Rigging failure",
+                barrier_failure=("Exclusion zone breached" if "exclusion" in text_lower and any(term in text_lower for term in ("bypass", "breach", "entered", "entering")) else "Rigging failure"),
                 potential_consequence=consequence,
             )
 
@@ -428,7 +428,7 @@ class MockNLPService:
                 hazard="Suspended load",
                 exposure="Worker in line of fire",
                 barrier="Rigging and exclusion zone",
-                barrier_failure="Rigging failure",
+                barrier_failure=("Exclusion zone breached" if "exclusion" in text_lower and any(term in text_lower for term in ("bypass", "breach", "entered", "entering")) else "Rigging failure"),
                 potential_consequence=consequence,
             )
 

@@ -3,7 +3,10 @@ import hashlib
 from uuid import uuid4
 from io import StringIO
 
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.orm import Session, selectinload
+
+from app.services.ingestion_lock import lock_ingestion
 
 from app.models.report import Report
 from app.services.report_service import create_report, infer_report_site
@@ -92,37 +95,39 @@ def parse_csv(content: bytes) -> list[dict]:
     return rows
 
 
-def import_reports_from_csv(db: Session, content: bytes) -> tuple[list[Report], bool]:
-    """
-    Parse a CSV file and create Report records in the database.
+def import_reports_from_csv(db: Session, content: bytes) -> tuple[list[Report], int]:
+    """Stage a complete batch; caller commits rows and analyses atomically.
+
+    Recover legacy partial batches by matching each source row once, in order.
+    An exact-file retry is serialized until the caller commits or rolls back.
     """
     rows = parse_csv(content)
     upload_hash = hashlib.sha256(content).hexdigest()
-
-    existing = [
-        report
-        for report in db.query(Report).all()
-        if report.metadata_.get("upload_hash") == upload_hash
-    ]
-    if existing:
-        return existing, True
-
-    upload_batch_id = str(uuid4())
-
+    lock_ingestion(db, "csv:" + upload_hash)
+    existing = list(db.scalars(
+        select(Report).options(selectinload(Report.analysis))
+        .where(Report.metadata_["upload_hash"].as_string() == upload_hash)
+        .order_by(Report.created_at, Report.id)
+    ).all())
+    upload_batch_id = (existing[0].metadata_.get("upload_batch_id") if existing else None) or str(uuid4())
+    remaining = list(existing)
     reports = []
-
-    for row in rows:
-        report = create_report(
-            db=db,
-            raw_text=row["text"],
-            site=row["site"],
-            is_synthetic=row["is_synthetic"],
-            metadata={
-                "upload_batch_id": upload_batch_id,
-                "upload_hash": upload_hash,
-                "ingestion_source": "csv_upload",
-            },
-        )
+    created = 0
+    for index, row in enumerate(rows):
+        report = next((item for item in remaining
+                       if item.raw_text == row["text"]
+                       and item.metadata_.get("site") == row["site"]), None)
+        if report is not None:
+            remaining.remove(report)
+        else:
+            report = create_report(
+                db=db, raw_text=row["text"], site=row["site"],
+                is_synthetic=row["is_synthetic"], commit=False,
+                metadata={"upload_batch_id": upload_batch_id,
+                          "upload_hash": upload_hash,
+                          "upload_row_index": index,
+                          "ingestion_source": "csv_upload"},
+            )
+            created += 1
         reports.append(report)
-
-    return reports, False
+    return reports, created

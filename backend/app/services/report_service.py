@@ -4,7 +4,7 @@ from io import StringIO
 from uuid import UUID
 from app.services.vector_service import generate_and_store_embedding
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.models.report import Report
 
@@ -52,22 +52,27 @@ def create_report(
     site: str,
     is_synthetic: bool = True,
     metadata: dict | None = None,
+    *,
+    commit: bool = True,
+    report_id: UUID | None = None,
 ) -> Report:
     report_metadata = {"site": site}
     if metadata:
         report_metadata.update(metadata)
 
     report = Report(
+        **({"id": report_id} if report_id else {}),
         raw_text=raw_text,
         metadata_=report_metadata,
         is_synthetic=is_synthetic,
     )
 
     db.add(report)
-    db.commit()
-    db.refresh(report)
-
-    generate_and_store_embedding(db, report)
+    db.flush()
+    generate_and_store_embedding(db, report, commit=False)
+    if commit:
+        db.commit()
+        db.refresh(report)
 
     return report
 
@@ -75,7 +80,7 @@ def get_report(
     db: Session,
     report_id: UUID,
 ) -> Report | None:
-    statement = select(Report).where(Report.id == report_id)
+    statement = select(Report).options(selectinload(Report.analysis)).where(Report.id == report_id)
 
     return db.scalar(statement)
 
@@ -83,7 +88,7 @@ def get_report(
 def get_reports(
     db: Session,
 ) -> list[Report]:
-    statement = select(Report).order_by(Report.created_at.desc())
+    statement = select(Report).options(selectinload(Report.analysis)).order_by(Report.created_at.desc())
     reports = list(db.scalars(statement).all())
     return [report for report in reports if not is_report_csv_document(report.raw_text)]
 

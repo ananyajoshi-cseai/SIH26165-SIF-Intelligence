@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.schemas.analysis import AnalysisResponse, ExtractionData, RiskBreakdown
 
@@ -22,8 +22,15 @@ class ReportResponse(BaseModel):
     is_synthetic: bool
     analysis: AnalysisResponse | None = None
 
+    @field_validator("metadata")
+    @classmethod
+    def public_metadata(cls, value):
+        return {key: item for key, item in value.items() if key != "embedding"}
+
 
 class AnalyzeRequest(BaseModel):
+    request_id: UUID | None = None
+    is_synthetic: bool = False
     site: str | None = None
     text: str = Field(..., min_length=1)
 

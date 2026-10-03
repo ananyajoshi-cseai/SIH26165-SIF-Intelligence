@@ -1,4 +1,7 @@
-﻿from fastapi import FastAPI
+import logging
+from fastapi import FastAPI
+from fastapi.responses import JSONResponse
+from sqlalchemy.exc import SQLAlchemyError
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 
@@ -45,3 +48,9 @@ def health_check():
         "version": "0.1.0",
     }
 
+
+
+@app.exception_handler(SQLAlchemyError)
+async def database_failure(request, exc):
+    logging.getLogger(__name__).error("Database request failed (%s)", type(exc).__name__)
+    return JSONResponse(status_code=503, content={"detail": "Database request could not be completed. Retry the same submission after the service recovers."})

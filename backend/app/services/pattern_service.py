@@ -132,6 +132,7 @@ def detect_emerging_patterns(
                         "increase": increase,
                         "percentage_increase": percentage_increase,
                         "severity": _severity_label(current_count),
+                        "affected_site_count": len(current_info["sites"]),
                         "top_sites": [
                             {"site": site, "count": count}
                             for site, count in top_sites[:3]

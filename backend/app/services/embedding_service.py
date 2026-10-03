@@ -1,16 +1,21 @@
+from __future__ import annotations
+
 import hashlib
 import math
 import re
 from collections import Counter
 from typing import Protocol
 
-from sentence_transformers import SentenceTransformer
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from sentence_transformers import SentenceTransformer
 
 from app.core.config import settings
 
 
 EMBEDDING_DIMENSION = 384
-EMBEDDING_VERSION = "hash-v2"
+EMBEDDING_VERSION = "minilm-l6-v2" if settings.enable_sentence_transformers else "hash-v2"
 MODEL_NAME = "all-MiniLM-L6-v2"
 
 
@@ -35,6 +40,7 @@ class SentenceTransformerEmbeddingService:
 
         if self.model is None:
             try:
+                from sentence_transformers import SentenceTransformer
                 self.model = SentenceTransformer(MODEL_NAME)
             except Exception:
                 self.model = None
@@ -80,6 +86,8 @@ class SentenceTransformerEmbeddingService:
             except Exception:
                 pass
 
+        if settings.enable_sentence_transformers:
+            raise RuntimeError("Configured embedding model is unavailable; retry after model recovery.")
         return self._fallback_embed(text)
 
 

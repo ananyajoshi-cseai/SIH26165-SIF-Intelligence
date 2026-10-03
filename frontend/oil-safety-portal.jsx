@@ -87,7 +87,7 @@ const hazardIcon = (h) => {
 const heatLevel = (v) => (v >= 61 ? "Critical" : v >= 41 ? "High" : v >= 21 ? "Medium" : "Low");
 const SITE_COLORS = { A: C.saffron, B: "#C79A1E", C: C.greenGood, D: C.redBright, E: "#8B4A9C", F: C.inkSoft };
 
-const toRiskLevel = (score) => score >= 81 ? "Critical" : score >= 61 ? "High" : score >= 31 ? "Medium" : "Low";
+const toRiskLevel = (score) => score >= 80 ? "High" : score >= 40 ? "Medium" : "Low";
 
 function normalizeReport(report) {
   const analysis = report.analysis;
@@ -107,7 +107,7 @@ function normalizeReport(report) {
 }
 
 function buildDashboardData(reports) {
-  const sourceReports = reports.filter((report) => !report.is_synthetic);
+  const sourceReports = reports.filter((report) => !report.isDemo);
   const analyzed = sourceReports.filter((report) => report.analysis);
   const siteGroups = new Map();
   const hazardGroups = new Map();
@@ -589,7 +589,7 @@ function TopSites({ setView, data }) {
       <div className="portal-site-grid">
         {data.sites.map((s, i) => {
           const Icon = hazardIcon(s.hazard);
-          const level = s.risk >= 61 ? "Critical" : s.risk >= 41 ? "High" : s.risk >= 21 ? "Medium" : "Low";
+          const level = toRiskLevel(s.risk);
           return (
             <button type="button" className="portal-site-card" key={s.id} onClick={() => setView({ page: "site-drill", siteId: s.id })}>
               <span className="portal-site-card__rank">SITE RANK <b>{String(i + 1).padStart(2, "0")}</b></span>
@@ -846,7 +846,7 @@ function SiteDrilldown({ siteId, setView, data }) {
       </div>
     </div>
   );
-  const level = s.risk >= 61 ? "Critical" : s.risk >= 41 ? "High" : s.risk >= 21 ? "Medium" : "Low";
+  const level = toRiskLevel(s.risk);
   const hazardsAtSite = data.hazards.map((h) => ({ h, v: data.heat[h][s.id] || 0 })).sort((a, b) => b.v - a.v);
   return (
     <div>
@@ -1172,6 +1172,7 @@ function ReportDetail({ reportId, setView, reports, onIngest }) {
   const [status, setStatus] = useState("Pending");
   const [feedback, setFeedback] = useState("");
   const [validationError, setValidationError] = useState("");
+  const [detailError, setDetailError] = useState("");
 
   useEffect(() => {
     if (!reportId) return undefined;
@@ -1182,20 +1183,14 @@ function ReportDetail({ reportId, setView, reports, onIngest }) {
     setBarrierIntelligence([]);
     setEmergingPatterns([]);
 
-    Promise.allSettled([
-      getReport(reportId),
-      getSimilarReports(reportId),
-      getReportGraph(reportId),
-      getBarrierIntelligence(),
-      getEmergingPatterns(),
-    ]).then(([reportResult, similarResult, graphResult, barriersResult, patternsResult]) => {
-      if (!active) return;
-      if (reportResult.status === "fulfilled") setRemoteReport(normalizeReport(reportResult.value));
-      if (similarResult.status === "fulfilled") setRemoteSimilar(similarResult.value?.similar_reports || []);
-      if (graphResult.status === "fulfilled") setRemoteGraph(graphResult.value);
-      if (barriersResult.status === "fulfilled") setBarrierIntelligence(barriersResult.value?.barrier_failures || []);
-      if (patternsResult.status === "fulfilled") setEmergingPatterns(patternsResult.value?.patterns || []);
-    });
+    setDetailError("");
+    getReport(reportId).then((report) => {
+      if (active) setRemoteReport(normalizeReport(report));
+    }).catch((error) => { if (active) setDetailError(error.message); });
+    getSimilarReports(reportId).then((result) => { if (active) setRemoteSimilar(result?.similar_reports || []); }).catch(() => {});
+    getReportGraph(reportId).then((result) => { if (active) setRemoteGraph(result); }).catch(() => {});
+    getBarrierIntelligence().then((result) => { if (active) setBarrierIntelligence(result?.barrier_failures || []); }).catch(() => {});
+    getEmergingPatterns().then((result) => { if (active) setEmergingPatterns(result?.patterns || []); }).catch(() => {});
 
     return () => { active = false; };
   }, [reportId]);
@@ -1211,7 +1206,7 @@ function ReportDetail({ reportId, setView, reports, onIngest }) {
     <div>
       <button onClick={() => setView({ page: "reports" })} style={backBtn}><ArrowLeft size={14} /> Back to reports</button>
       <div style={{ padding: "28px 0", color: C.inkSoft, fontFamily: "'Inter',sans-serif" }}>
-        This report is not available in the current results. Refresh the list or analyze it again to load its details.
+        {detailError ? `Saved report could not be loaded: ${detailError}. Return to reports and retry loading; do not resubmit.` : "Loading saved report…"}
       </div>
     </div>
   );
@@ -1547,7 +1542,6 @@ export default function App() {
       setReports(Array.isArray(response) ? response.map(normalizeReport) : []);
       setReportsStatus("ready");
     } catch (error) {
-      setReports([]);
       setReportsStatus("error");
       setReportsError(error.message || "Unable to load reports.");
     }
@@ -1574,8 +1568,8 @@ export default function App() {
   }, []);
 
   const dashboardData = useMemo(() => buildDashboardData(reports), [reports]);
-  const modelReports = reports.filter((report) => !report.is_synthetic);
-  const modelReportsStatus = reportsStatus === "loading" ? "loading" : reports.length ? "ready" : "empty";
+  const modelReports = reports.filter((report) => !report.isDemo);
+  const modelReportsStatus = reportsStatus === "error" ? "error" : reportsStatus === "loading" ? "loading" : modelReports.length ? "ready" : "empty";
   const isHome = view.page === "home";
   const isCommandCenter = view.page === "command-center";
   const isWorkforceIntelligence = view.page === "workforce-intelligence";
@@ -1628,7 +1622,7 @@ export default function App() {
           </div>
         )}
         {view.page === "home" && <Home onStart={() => setView({ page: "command-center" })} onWorkforce={() => setView({ page: "workforce-intelligence" })} />}
-        {view.page === "command-center" && <CommandCenter setView={setView} onIngest={onIngest} reports={reports} resultsData={dashboardData} />}
+        {view.page === "command-center" && <CommandCenter setView={setView} onIngest={onIngest} reports={reports} resultsData={dashboardData} reportsStatus={reportsStatus} reportsError={reportsError} />}
         {view.page === "workforce-intelligence" && <WorkforceIntelligence onBack={() => setView({ page: "home" })} />}
         {view.page === "dashboard" && <Dashboard setView={setView} onIngest={onIngest} data={dashboardData} focusReportId={view.focusReportId} />}
         {view.page === "site-drill" && <SiteDrilldown siteId={view.siteId} setView={setView} data={dashboardData} />}

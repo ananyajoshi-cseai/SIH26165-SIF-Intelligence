@@ -1,8 +1,8 @@
-﻿import math
+import math
 from uuid import UUID
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.models.report import Report
 from app.services.embedding_service import EMBEDDING_VERSION, embedding_service
@@ -79,7 +79,7 @@ def generate_and_store_embedding(
         return report
 
     embedding = embedding_service.embed(fresh.raw_text)
-    metadata = fresh.metadata_ or {}
+    metadata = dict(fresh.metadata_ or {})
     metadata["embedding"] = embedding
     metadata["embedding_version"] = EMBEDDING_VERSION
     fresh.metadata_ = metadata
@@ -109,7 +109,7 @@ def find_similar_reports(
         report_embedding = _get_embedding_vector(report)
 
     candidates: list[tuple[Report, float]] = []
-    for candidate in db.scalars(select(Report).where(Report.id != report_id)).all():
+    for candidate in db.scalars(select(Report).options(selectinload(Report.analysis)).where(Report.id != report_id)).all():
         candidate_embedding = _get_embedding_vector(candidate)
         if candidate_embedding is None:
             candidate = generate_and_store_embedding(db, candidate, commit=False)
@@ -127,7 +127,4 @@ def find_similar_reports(
 
     scored = sorted(candidates, key=lambda item: item[1], reverse=True)
     above_threshold = [item for item in scored if item[1] >= SIMILARITY_THRESHOLD]
-    if above_threshold:
-        scored = above_threshold
-
-    return scored[: max(1, top_k)]
+    return above_threshold[: max(1, top_k)]

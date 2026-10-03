@@ -16,6 +16,7 @@ from app.schemas.report import (
     ReportResponse,
 )
 from app.services.analysis_service import analyze_report
+from app.services.ingestion_lock import lock_ingestion
 from app.services.barrier_service import get_barrier_failure_intelligence
 from app.services.csv_service import import_reports_from_csv
 from app.services.dashboard_service import get_dashboard_summary
@@ -125,20 +126,31 @@ def analyze_report_endpoint(
             detail="CSV files contain multiple reports. Upload them as a CSV batch instead.",
         )
 
-    report = create_report(
-        db=db,
-        raw_text=payload.text,
-        site=payload.site or infer_report_site(payload.text),
-        is_synthetic=False,
-        metadata={"ingestion_source": "analyze_tab"},
-    )
-
-    analysis = analyze_report(
-        db=db,
-        report=report,
-    )
-
-    return _analyze_response(report, analysis)
+    site = payload.site or infer_report_site(payload.text)
+    try:
+        if payload.request_id:
+            lock_ingestion(db, "analyze:" + str(payload.request_id))
+            existing = get_report(db, payload.request_id)
+            if existing:
+                if existing.raw_text != payload.text or existing.metadata_.get("site") != site:
+                    raise HTTPException(status_code=409, detail="Submission ID already used for different content")
+                analysis = existing.analysis or analyze_report(db, existing, commit=False)
+                result = _analyze_response(existing, analysis)
+                db.commit()
+                return result
+        report = create_report(
+            db=db, raw_text=payload.text, site=site,
+            is_synthetic=payload.is_synthetic,
+            metadata={"ingestion_source": "analyze_tab"},
+            report_id=payload.request_id, commit=False,
+        )
+        analysis = analyze_report(db, report, commit=False)
+        result = _analyze_response(report, analysis)
+        db.commit()
+        return result
+    except Exception:
+        db.rollback()
+        raise
 
 
 @router.post("/ocr")
@@ -230,7 +242,7 @@ async def analyze_image_endpoint(
 
 
 @router.post("/upload", status_code=status.HTTP_201_CREATED)
-async def upload_reports(
+def upload_reports(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
 ):
@@ -240,26 +252,30 @@ async def upload_reports(
             detail="Only CSV files are supported",
         )
 
-    content = await file.read()
+    content = file.file.read()
 
     try:
-        reports, duplicate = import_reports_from_csv(db, content)
+        reports, created = import_reports_from_csv(db, content)
         analyses = [
-            report.analysis or analyze_report(db, report)
+            report.analysis or analyze_report(db, report, commit=False)
             for report in reports
         ]
     except ValueError as exc:
+        db.rollback()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
         ) from exc
+    except Exception:
+        db.rollback()
+        raise
 
-    return {
+    result = {
         "filename": file.filename,
         "total_rows": len(reports),
-            "created": 0 if duplicate else len(reports),
+        "created": created,
         "analyzed": len(analyses),
-            "duplicate": duplicate,
+        "duplicate": created == 0,
         "reports": [
             {
                 "report_id": str(report.id),
@@ -286,6 +302,9 @@ async def upload_reports(
             for report, analysis in zip(reports, analyses)
         ],
     }
+
+    db.commit()
+    return result
 
 
 @router.get("/{report_id}/similar")

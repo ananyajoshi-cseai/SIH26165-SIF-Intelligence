@@ -38,7 +38,7 @@ from app.services.risk_service import (
 )
 
 
-def analyze_report(db: Session, report: Report) -> Analysis:
+def analyze_report(db: Session, report: Report, *, commit: bool = True) -> Analysis:
     """
     Run the full pipeline on *report* and persist an Analysis row.
 
@@ -94,7 +94,10 @@ def analyze_report(db: Session, report: Report) -> Analysis:
     )
 
     db.add(analysis)
-    db.commit()
-    db.refresh(analysis)
+    report.analysis = analysis
+    db.flush()
+    if commit:
+        db.commit()
+        db.refresh(analysis)
 
     return analysis

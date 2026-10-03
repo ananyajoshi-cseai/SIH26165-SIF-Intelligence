@@ -14,6 +14,7 @@ class EmergingPattern(BaseModel):
     increase: int
     percentage_increase: float | None = None
     severity: str
+    affected_site_count: int = 0
     top_sites: list[TopSite] = []
     affected_report_ids: list[str] = []
     last_reported_at: str | None = None

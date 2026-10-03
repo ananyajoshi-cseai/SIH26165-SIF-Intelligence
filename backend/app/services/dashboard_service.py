@@ -8,14 +8,11 @@ from app.models.analysis import Analysis
 from app.models.report import Report
 from app.services.barrier_service import get_barrier_failure_intelligence
 from app.services.pattern_service import detect_emerging_patterns
+from app.services.risk_service import get_sif_level
 
 
 def _risk_level(score: float) -> str:
-    if score >= 70:
-        return "HIGH"
-    if score >= 40:
-        return "MEDIUM"
-    return "LOW"
+    return get_sif_level(score)
 
 
 def _percentage_change(current: int, previous: int) -> float | None:
@@ -45,10 +42,7 @@ def get_dashboard_summary(db: Session) -> dict:
             Report.created_at <= now,
         )
     ).all()
-    total_reports = len({
-        report.metadata_.get("upload_batch_id", str(report.id))
-        for report in today_reports
-    })
+    total_reports = len(today_reports)
 
     high_sif_precursors = db.scalar(
         select(func.count(Analysis.id))
